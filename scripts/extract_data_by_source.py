@@ -1,11 +1,14 @@
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 
 # Configuration
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 token = os.getenv("SKYPORTAL_API_TOKEN")
 if not token:
     raise ValueError("SKYPORTAL_API_TOKEN environment variable is not set")
