@@ -1,49 +1,61 @@
 # SkyPortal Workflow Documentation
 
-This folder documents the current operational workflow used to audit the
-SkyPortal API and generate raw source inventories.
+This folder documents the current, reproducible SkyPortal workflow used in this
+repository.
+
+It is focused on what we can run today: setup, endpoint audit, source
+inventories, named inventory profiles, and the conclusions supported by those
+runs.
+
+## How this fits with the code
+
+The current implementation is split in a simple way:
+
+| Layer | Purpose |
+|---|---|
+| `scripts/` | Thin CLI entrypoints |
+| `src/skyportal_corpus/core/` | Shared config and path helpers |
+| `src/skyportal_corpus/extraction/` | Operational audit and extraction logic |
+| `configs/extraction/skyportal.yaml` | Shared runtime config and named inventory profiles |
 
 ## Scope
 
 Included here:
 
-| Area | Description |
+| Topic | File |
 |---|---|
-| Setup | Environment variables, dependencies, and output directories |
-| Endpoint audit | How endpoint availability is tested |
-| Source inventory extraction | How `/api/sources` inventories are downloaded |
-| Inventory recipes | Baseline and filtered inventory commands |
-| Current findings | What the observed runs already show |
-| Endpoint selection | Which API endpoints are the most relevant for source-bundle extraction |
-| Filter selection | Which `/api/sources` filters are the most relevant for inventory building |
+| Environment and shared config | [00_setup.md](./00_setup.md) |
+| Endpoint audit workflow | [01_endpoint_audit.md](./01_endpoint_audit.md) |
+| Source inventory workflow | [02_source_inventory.md](./02_source_inventory.md) |
+| Named inventory profiles and observed runs | [03_filtered_inventories.md](./03_filtered_inventories.md) |
+| Current findings | [04_current_findings.md](./04_current_findings.md) |
+| Shortlist of relevant endpoints | [05_relevant_endpoints.md](./05_relevant_endpoints.md) |
+| Practical `/api/sources` filters | [06_relevant_source_filters.md](./06_relevant_source_filters.md) |
 
-Not duplicated here:
+Related documents outside this folder:
 
 | Topic | Canonical document |
 |---|---|
-| Global project decisions | [docs/decisiones.md](../decisiones.md) |
-| Endpoint catalog | [docs/endpoints.md](../endpoints.md) |
-| Open coordination questions | [docs/questions_for_team.md](../questions_for_team.md) |
+| Design decisions | [docs/decisiones.md](../decisiones.md) |
+| Broad endpoint catalog | [docs/endpoints.md](../endpoints.md) |
+| Team questions | [docs/questions_for_team.md](../questions_for_team.md) |
 
-## Recommended reading order
+## Suggested reading order
 
-| Step | File | Purpose |
-|---:|---|---|
-| 0 | [00_setup.md](./00_setup.md) | Prepare the environment and understand the raw output layout |
-| 1 | [01_endpoint_audit.md](./01_endpoint_audit.md) | Run the endpoint availability audit and interpret its outputs |
-| 2 | [02_source_inventory.md](./02_source_inventory.md) | Understand how the paginated `/api/sources` extractor works |
-| 3 | [03_filtered_inventories.md](./03_filtered_inventories.md) | Review the inventory recipes and the run summaries used in the documentation |
-| 4 | [04_current_findings.md](./04_current_findings.md) | See the current technical conclusions supported by those runs |
-| 5 | [05_relevant_endpoints.md](./05_relevant_endpoints.md) | Review the subset of SkyPortal endpoints that matters most for the first corpus-oriented extraction workflow |
-| 6 | [06_relevant_source_filters.md](./06_relevant_source_filters.md) | Review the `/api/sources` filters that are the most useful for targeted source selection |
+1. [00_setup.md](./00_setup.md)
+2. [01_endpoint_audit.md](./01_endpoint_audit.md)
+3. [02_source_inventory.md](./02_source_inventory.md)
+4. [03_filtered_inventories.md](./03_filtered_inventories.md)
+5. [04_current_findings.md](./04_current_findings.md)
+6. [05_relevant_endpoints.md](./05_relevant_endpoints.md)
+7. [06_relevant_source_filters.md](./06_relevant_source_filters.md)
 
-## Raw data roots
+## Local output roots
 
-Raw outputs are written under `data/raw/skyportal/`. They are working artifacts,
-not repository content.
+The workflow writes raw outputs under `data/raw/skyportal/`:
 
 | Path | Purpose |
 |---|---|
-| `data/raw/skyportal/endpoint_audit/` | One directory per endpoint audit run |
+| `data/raw/skyportal/endpoint_audit/` | One directory per endpoint-audit run |
 | `data/raw/skyportal/inventory/` | One directory per `/api/sources` inventory run |
-| `data/raw/skyportal/sources_bundles/` | Reserved for a later source-bundle stage; not produced by the current two scripts |
+| `data/raw/skyportal/sources_bundles/` | Reserved for a later source-bundle stage |

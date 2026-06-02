@@ -2,17 +2,26 @@
 
 ## Goal
 
-`scripts/01_audit_endpoint_availability.py` checks which SkyPortal API
-endpoints are reachable with the current token and with the sample identifiers
-provided through the command line.
+The endpoint audit checks which SkyPortal API routes are reachable with the
+current token and with the sample identifiers available at runtime.
 
 It is an access-and-structure audit, not a full scientific extraction step.
 
-## Script
+## Entry points
 
-```text
-scripts/01_audit_endpoint_availability.py
-```
+| File | Role |
+|---|---|
+| `scripts/01_audit_endpoint_availability.py` | Thin CLI wrapper |
+| `src/skyportal_corpus/extraction/endpoint_audit.py` | Actual audit logic |
+
+By default, the script reads `configs/extraction/skyportal.yaml` for:
+
+- the base URL;
+- the default output directory;
+- timeout and sleep defaults;
+- sample context such as `source_id` and `resource_type`.
+
+CLI arguments still override the config when needed.
 
 ## What the audit records
 
@@ -23,32 +32,34 @@ scripts/01_audit_endpoint_availability.py
 | Payload validation | Whether the response is valid JSON |
 | API status | SkyPortal `status` and `message` when present |
 | Structure summary | Top-level keys, `data` type, `data` keys, and data length |
-| Failure mode | Request error, HTTP error, or skipped reason |
+| Failure mode | Request error, HTTP error, non-JSON response, or skipped reason |
 
 ## Common inputs
 
-Some endpoints need example IDs to be meaningful.
+Some endpoints only make sense if example IDs are available.
 
-| Argument | Used for |
+| Argument | Typical use |
 |---|---|
 | `--source-id` | Source-level endpoints such as `/sources/{source_id}` |
 | `--candidate-id` | Candidate endpoints |
 | `--resource-type` and `--resource-id` | Comments and annotations |
 | `--dateobs` | GCN-related endpoints |
 | `--category` | Restrict the run to one endpoint family |
-| `--save-responses` | Persist full payloads under `responses/` |
+
+If `--source-id` is omitted, the script can fall back to the sample context in
+the YAML config. Endpoints that need IDs not present in the config are skipped,
+which is expected.
 
 ## Typical commands
 
-Minimal audit:
+Minimal audit using the shared config:
 
 ```bash
 python scripts/01_audit_endpoint_availability.py \
-  --run-label initial \
-  --source-id 2023qye
+  --run-label initial
 ```
 
-Audit one category:
+Audit one category with an explicit source:
 
 ```bash
 python scripts/01_audit_endpoint_availability.py \
@@ -63,20 +74,14 @@ Each run creates a directory under `data/raw/skyportal/endpoint_audit/`.
 
 | File | Purpose |
 |---|---|
-| `endpoint_status.csv` | Tabular endpoint-by-endpoint summary |
+| `endpoint_status.csv` | Flat endpoint-by-endpoint summary |
 | `endpoint_status.json` | Full structured results for each endpoint |
 | `summary.json` | Compact aggregate metrics |
 | `endpoint_audit.log` | Execution log |
 
 ## Example run
 
-During the current audit, one example run was generated at:
-
-```text
-data/raw/skyportal/endpoint_audit/endpoint_audit_initial_20260528_141555/
-```
-
-The metrics below are documented from that run's `summary.json`:
+One observed run produced the following metrics:
 
 | Metric | Value |
 |---|---:|
@@ -91,19 +96,20 @@ The metrics below are documented from that run's `summary.json`:
 | Status | Meaning |
 |---|---|
 | `success` | Endpoint returned a valid successful JSON response |
-| `skipped` | Required context was missing; this is not necessarily a failure |
+| `skipped` | Required context was missing |
 | `request_error` | Transport-level failure such as timeout or connection issue |
 | `http_<code>` | HTTP response was received, but it was not a successful API call |
-| `http_200_non_json` | Endpoint returned content successfully, but not as JSON |
+| `http_<code>_non_json` | HTTP response was received, but the payload was not JSON |
+| `http_200_json_no_api_status` | JSON was returned, but without the usual SkyPortal API status field |
 
-## Reading the result correctly
+## How to read the result
 
-The audit should be interpreted with two constraints in mind:
+Two points matter when interpreting the audit:
 
 | Constraint | Practical meaning |
 |---|---|
-| Missing IDs | Many endpoints require identifiers such as `spectrum_id`, `classification_id`, `followup_request_id`, or `taxonomy_id` |
-| Non-JSON resources | Some endpoints naturally behave like file or asset downloads rather than JSON APIs |
+| Missing IDs | Many routes need identifiers such as `spectrum_id`, `classification_id`, `followup_request_id`, or `taxonomy_id` |
+| Non-JSON resources | Some endpoints naturally behave like downloads or assets rather than JSON APIs |
 
-That is why the audit is best used to establish reachable endpoint families and
-response shapes before building a deeper extractor.
+So the audit is best used as a map of reachable endpoint families and response
+shapes before building a deeper extractor.

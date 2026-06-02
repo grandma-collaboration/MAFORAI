@@ -2,36 +2,81 @@
 
 ## Goal
 
-`scripts/02_fetch_source_inventory.py` downloads raw paginated responses from
-`GET /api/sources` and writes each page as JSON output.
+The source inventory workflow downloads raw paginated responses from
+`GET /api/sources` and saves each page as JSON.
 
-It does not normalize fields, flatten nested objects, or build the final
-dataset. Its role is to generate reproducible inventory snapshots.
+It does not normalize fields or build the final dataset. Its role is to create
+reproducible source subsets that can later feed deeper extraction.
 
-## Script
+## Entry points
 
-```text
-scripts/02_fetch_source_inventory.py
-```
+| File | Role |
+|---|---|
+| `scripts/02_fetch_source_inventory.py` | Thin CLI wrapper |
+| `src/skyportal_corpus/extraction/source_inventory.py` | Actual extraction logic |
 
-## Operating modes
+The script reads `configs/extraction/skyportal.yaml` by default and can use a
+named profile through `--profile`.
 
-The script supports two practical modes.
+## Practical modes
 
-| Mode | Typical use | Main settings | Result shape |
-|---|---|---|---|
-| Bounded recent window | Quick baseline inventory of the most recent saved sources | `--max-pages 5`, `sortBy=saved_at`, `sortOrder=desc` | Up to 500 sources with `num-per-page=100` |
-| Complete filtered subset | Full retrieval of one meaningful subset | `--max-pages 0` plus a semantic filter | Stops when `api_total_matches_reached` |
+The current workflow has two practical modes:
+
+| Mode | Typical use | Result |
+|---|---|---|
+| Named profile | Run a known inventory recipe from the shared config | Short command, consistent defaults |
+| Ad hoc query | Try a new filter without editing the YAML yet | Flexible one-off run |
 
 ## Core arguments
 
 | Argument | Meaning |
 |---|---|
-| `--run-label` | Human-readable label used in the output folder name |
-| `--num-per-page` | Number of sources requested per page |
-| `--start-page` | First page to download |
-| `--max-pages` | Maximum number of pages to fetch; `0` means "continue until the API-reported total is reached" |
-| `--query-param key=value` | Additional `/api/sources` query parameter; can be repeated |
+| `--profile` | Use a named profile from `configs/extraction/skyportal.yaml` |
+| `--run-label` | Override the run label used in the output directory |
+| `--num-per-page` | Override page size |
+| `--start-page` | Override the first page |
+| `--max-pages` | Override the page limit; `0` means "continue until the API total is reached" |
+| `--timeout` | Override request timeout |
+| `--max-retries` | Override retry count |
+| `--sleep` | Override inter-request delay |
+| `--query-param key=value` | Add or override `/api/sources` query parameters |
+
+CLI arguments override the shared config and the selected profile.
+
+## Typical commands
+
+Recent bounded inventory:
+
+```bash
+python scripts/02_fetch_source_inventory.py \
+  --profile recent_500
+```
+
+Complete filtered subset:
+
+```bash
+python scripts/02_fetch_source_inventory.py \
+  --profile has_spectrum
+```
+
+Profile with one override:
+
+```bash
+python scripts/02_fetch_source_inventory.py \
+  --profile classified \
+  --max-pages 2 \
+  --run-label classified_preview
+```
+
+Ad hoc query without a named profile:
+
+```bash
+python scripts/02_fetch_source_inventory.py \
+  --run-label recent_custom \
+  --max-pages 2 \
+  --query-param sortBy=saved_at \
+  --query-param sortOrder=desc
+```
 
 ## Output files
 
@@ -54,6 +99,7 @@ The run directory contains:
 | Field | Meaning |
 |---|---|
 | `run_label` | Semantic label for the run |
+| `profile_name` | Named profile used, if any |
 | `query_parameters` | Effective query parameters used for the request |
 | `pagination` | Starting page and page limit |
 | `api_reported_total_matches` | API-reported `totalMatches` value |
@@ -71,36 +117,19 @@ Common `stopped_reason` values:
 | `empty_sources_page` | The API returned an empty page |
 | `request_failed` | A page failed after retries |
 
-## Reference commands
+## Current defaults
 
-Baseline recent window:
+Unless you override them, the inventory workflow uses the shared defaults from
+`configs/extraction/skyportal.yaml`:
 
-```bash
-python scripts/02_fetch_source_inventory.py \
-  --run-label recent_500 \
-  --num-per-page 100 \
-  --max-pages 5 \
-  --query-param sortBy=saved_at \
-  --query-param sortOrder=desc
-```
+| Setting | Value |
+|---|---:|
+| `num_per_page` | 100 |
+| `start_page` | 1 |
+| `max_pages` | 5 |
+| `timeout_seconds` | 30 |
+| `max_retries` | 3 |
+| `sleep_seconds` | 0.3 |
 
-Observed example for this mode:
-
-| Run label | API reported total matches | Pages saved | Sources saved | Stopped reason |
-|---|---:|---:|---:|---|
-| `recent_500` | 50618 | 5 | 500 | `max_pages_reached` |
-
-Complete filtered subset:
-
-```bash
-python scripts/02_fetch_source_inventory.py \
-  --run-label YOUR_LABEL \
-  --num-per-page 100 \
-  --max-pages 0 \
-  --query-param YOUR_FILTER
-```
-
-## Directory convention
-
-Generated runs follow the directory pattern shown above under
-`data/raw/skyportal/inventory/`.
+The main named profiles are documented in
+[03_filtered_inventories.md](./03_filtered_inventories.md).

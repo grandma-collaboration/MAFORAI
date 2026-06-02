@@ -1,58 +1,74 @@
 # Design Decisions
 
-## Decision 001 — Audit before corpus design
+## 1. Audit first, design later
 
-We decided to audit the API and data availability before defining the corpus schema.
+We started by auditing the API instead of jumping directly to a final corpus
+schema.
 
-### Motivation
+The reason is straightforward: SkyPortal exposes several different data
+families, and the schema should be shaped by what is actually accessible and
+useful, not by assumptions made too early.
 
-The SkyPortal API exposes many heterogeneous data families. Designing the corpus too early could lead to missing important modalities or overfitting the schema to a small subset of sources.
+Current consequence:
 
-### Consequence
+- the first phase focuses on endpoint coverage, raw inventories, and source
+  selection;
 
-The first phase focuses on raw extraction, endpoint availability, filtered inventories and source selection.
+## 2. Keep raw responses before normalizing
 
----
+For now, the workflow saves raw API responses rather than immediately
+flattening them into a final tabular or canonical format.
 
-## Decision 002 — Preserve raw JSON responses
+That choice preserves nested structures, metadata, and optional fields while we
+are still learning what matters.
 
-We decided to save raw API responses instead of immediately normalizing them.
+Current consequence:
 
-### Motivation
+- audit runs and inventory runs are stored separately under
+  `data/raw/skyportal/`;
 
-Raw JSON preserves nested structures, metadata and fields that may later become important.
+## 3. Use `/api/sources` as the inventory layer
 
-### Consequence
+The current extraction strategy uses `GET /api/sources` as the main entry point
+for discovering and filtering sources.
 
-Normalization and feature engineering will be done only after inspecting the raw
-data. Raw outputs are stored per run under `data/raw/skyportal/`, which keeps
-audit runs and source inventories separated and reproducible. These outputs are
-treated as local artifacts rather than repository content.
+This endpoint already gives us a practical way to build targeted subsets:
+spectra, follow-up, classifications, redshift, multiple detections, GCN-like
+IDs, and EP-like IDs.
 
----
+Current consequence:
 
-## Decision 003 — Use `/api/sources` as a targeted inventory endpoint
+- inventories are built first;
+- deeper extraction comes only after a subset of sources has been selected.
 
-The documentation shows that `/api/sources` supports filters such as `hasSpectrum`, `hasFollowupRequest`, `classified`, `minRedshift`, `numberDetections`, `sourceID`, and optional include flags.
+## 4. Combine the source root object with specialized endpoints
 
-### Motivation
+The audit showed that `GET /api/sources/{source_id}` is rich, but not complete
+for every modality.
 
-The API contains a large source catalog. Downloading everything is unnecessary
-for the first audit phase. Filtered inventories allow us to build small,
-meaningful subsets.
+In practice, a later source-bundle stage will still need specialized endpoints
+for at least:
 
-### Consequence
+- photometry;
+- spectra;
+- comments;
+- classifications;
+- GCN-related context.
 
-We created complete filtered inventories for spectra, follow-up,
-classifications, redshift, multiple detections, GCN-like sources and EP-like
-sources in local runs under `data/raw/skyportal/inventory/source_inventory_*`.
+Current consequence:
 
----
+- the root source object is the hub;
+- specialized endpoints remain part of the design.
 
-## Decision 004 — Use specialized endpoints when source root data is incomplete
+## 5. Keep runtime configuration shared, but keep secrets out of it
 
-`/api/sources/{source_id}` is a rich root object, but the audit showed that some modalities, such as full photometry and comments, require specialized endpoints.
+The current workflow now uses a shared config file at
+`configs/extraction/skyportal.yaml`.
 
-### Consequence
+That file is meant for stable runtime settings such as base URL, output paths,
+HTTP defaults, and named inventory profiles.
 
-The future source-bundle extractor will combine the root source endpoint with specialized source-level endpoints.
+Current consequence:
+
+- the scripts no longer need to repeat the same defaults;
+- inventory recipes can be run by profile name;

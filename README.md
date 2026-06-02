@@ -1,53 +1,66 @@
 # MAFORAI
-MAFORAI Internship repository
 
-## Current stage: API and data availability audit
+Repository for the MAFORAI internship work.
 
-Before designing the final corpus, we first audited the SkyPortal API to understand which data families are available, which endpoints are accessible, and how to retrieve representative source subsets.
+## Current focus
 
-The goal of this phase is not to build the final dataset yet, but to identify useful data modalities for a future multimodal corpus: source metadata, photometry, spectra, classifications, comments, annotations, follow-up requests, GCN/EP-like events, and operational metadata.
+The current phase is a study of the SkyPortal API. The goal is to understand
+what we can actually extract, which endpoint families are usable, and how to
+build representative source subsets before committing to a final corpus design.
 
-## Reproducible workflow
+Right now the work is centered on three things:
 
-The current SkyPortal extraction workflow is documented in:
+- auditing endpoint availability and response shape;
+- downloading raw source inventories from `GET /api/sources`;
+- testing filters that produce useful subsets such as sources with spectra,
+  follow-up, classifications, redshift, GCN-like IDs, and EP-like IDs.
+
+## Where to start
+
+The main operational guide lives in:
 
 - `docs/skyportal/README.md`
 
-This documentation explains how to:
+That folder covers setup, audit runs, source inventories, named inventory
+profiles, and the current findings.
 
-1. configure the environment;
-2. run the endpoint availability audit;
-3. download a general source inventory;
-4. create filtered source inventories;
-5. interpret the current findings.
+The broader context stays in:
 
-## Scripts used so far
+- `docs/decisiones.md`: design decisions taken so far;
+- `docs/endpoints.md`: broad endpoint catalog for the next extraction steps;
+- `docs/questions_for_team.md`: place to record open questions when they appear.
 
-- `scripts/01_audit_endpoint_availability.py`: tests endpoint availability and response structure.
-- `scripts/02_fetch_source_inventory.py`: downloads raw paginated source inventories from `/api/sources`, optionally using filters.
+## Current code layout
 
-## Current output layout
+The current SkyPortal workflow is split into a few small layers:
 
-The generated raw files are written locally under `data/raw/skyportal/`, with
-one folder per run:
+| Path | Role |
+|---|---|
+| `scripts/` | Thin CLI entrypoints |
+| `src/skyportal_corpus/core/` | Shared config and path helpers |
+| `src/skyportal_corpus/extraction/` | Reusable audit and extraction logic |
+| `configs/extraction/skyportal.yaml` | Shared runtime configuration |
+| `tests/` | Small tests for config loading and inventory-profile resolution |
 
-- Endpoint audit runs:
-  `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/`
-  containing `endpoint_status.csv`, `endpoint_status.json`, `summary.json`,
-  `endpoint_audit.log`, and optionally `responses/`.
-- Source inventory runs:
-  `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/`
-  containing `manifest.json`, `source_inventory.log`, and one or more
-  `sources_page_XXX.json`.
+The two entrypoints used today are:
 
-These raw outputs are local artifacts and are not intended to be committed to
-the repository. A fresh clone may therefore contain only the directory
-placeholders and documentation, not the generated run folders.
+- `scripts/01_audit_endpoint_availability.py`
+- `scripts/02_fetch_source_inventory.py`
 
-## Main findings so far
+## Raw outputs
 
-- `/api/sources/{source_id}` is a rich root object, but specialized endpoints are still needed for complete photometry, comments, spectra and other modalities.
-- `/api/sources` supports many useful filters, allowing targeted inventories instead of downloading the full catalog.
-- Seven complete filtered inventories were generated in local runs: spectra,
-  follow-up, classified, redshift, multiple detections, GCN-like IDs and
-  EP-like IDs.
+Generated files are written locally under `data/raw/skyportal/`, one folder per
+run:
+
+- `endpoint_audit/endpoint_audit_<label>_<timestamp>/`
+- `inventory/source_inventory_<run_label>_<timestamp>/`
+
+Those folders are working artifacts. The repository keeps the directory
+structure and the documentation, but not the generated run folders themselves.
+
+## Current takeaways
+
+- `/api/sources` is a practical inventory layer and already supports useful
+  filters for targeted subsets.
+- `GET /api/sources/{source_id}` is a strong root object, but it is not enough
+  on its own for full photometry, comments, or spectra.

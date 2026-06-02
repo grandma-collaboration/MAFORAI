@@ -3,23 +3,18 @@
 ## Goal
 
 This document describes the minimum setup needed to run the current SkyPortal
-audit and inventory scripts.
+workflow.
 
-## Prerequisites
+## What the current workflow uses
 
-| Item | Required | Notes |
-|---|---|---|
-| Python 3 | Yes | Used to run both extraction scripts |
-| `SKYPORTAL_API_TOKEN` | Yes | Required for authenticated API requests |
-| `requirements.txt` dependencies | Yes | Includes the packages used by the scripts |
-
-Current packages used directly by the two scripts:
+The repository has broader dependencies for notebooks and later analysis, but
+the current SkyPortal scripts mainly depend on:
 
 | Package | Used for |
 |---|---|
 | `requests` | HTTP requests to the API |
-| `pandas` | Exporting the endpoint audit summary to CSV |
-| `python-dotenv` | Loading the token from a local `.env` file |
+| `python-dotenv` | Loading `SKYPORTAL_API_TOKEN` from a local `.env` file |
+| `pyyaml` | Loading the shared SkyPortal config |
 
 ## Installation
 
@@ -31,8 +26,7 @@ pip install -r requirements.txt
 
 ## Authentication
 
-Both scripts read the API token from the `SKYPORTAL_API_TOKEN` environment
-variable.
+Both scripts read the API token from `SKYPORTAL_API_TOKEN`.
 
 Recommended option:
 
@@ -46,41 +40,58 @@ Optional local `.env` file:
 SKYPORTAL_API_TOKEN=your_token_here
 ```
 
-If `python-dotenv` is installed, the scripts will load `.env` automatically.
+If `python-dotenv` is installed, the workflow loads `.env` automatically.
 
-## Default API target
+## Shared config
 
-| Setting | Value |
+The shared runtime config lives at:
+
+```text
+configs/extraction/skyportal.yaml
+```
+
+That file is already used by the current scripts. It centralizes:
+
+| Area | Stored there |
 |---|---|
-| Default base URL | `https://skyportal-icare.ijclab.in2p3.fr/api` |
+| API target | Base URL and token environment-variable name |
+| Output paths | Raw output roots for audit and inventory runs |
+| Shared HTTP defaults | Timeouts and retries |
+| Audit defaults | Timeout, inter-request sleep, and sample context |
+| Inventory defaults | Page size, retries, sleep, and start page |
+| Named inventory profiles | `recent_500`, `has_spectrum`, `has_followup`, `classified`, `redshift`, `many_detections`, `gcn`, `ep` |
+
+Secrets still belong in `.env`, not in YAML.
+
+## Code layout
+
+The current implementation is intentionally small:
+
+| Path | Role |
+|---|---|
+| `scripts/01_audit_endpoint_availability.py` | CLI wrapper for the endpoint audit |
+| `scripts/02_fetch_source_inventory.py` | CLI wrapper for the source inventory |
+| `src/skyportal_corpus/core/` | Shared config and path helpers |
+| `src/skyportal_corpus/extraction/` | Shared audit, client, and inventory logic |
+| `tests/` | Small tests for config loading and inventory profiles |
 
 ## Output layout
 
-The current workflow writes one directory per run under `data/raw/skyportal/`.
+The workflow writes one directory per run under `data/raw/skyportal/`.
 
 | Path pattern | Produced by | Typical contents |
 |---|---|---|
-| `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/` | `scripts/01_audit_endpoint_availability.py` | `endpoint_status.csv`, `endpoint_status.json`, `summary.json`, `endpoint_audit.log`, optional `responses/` |
+| `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/` | `scripts/01_audit_endpoint_availability.py` | `endpoint_status.csv`, `endpoint_status.json`, `summary.json`, `endpoint_audit.log` |
 | `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/` | `scripts/02_fetch_source_inventory.py` | `manifest.json`, `source_inventory.log`, `sources_page_XXX.json` |
 | `data/raw/skyportal/sources_bundles/` | Not used yet by the current scripts | Reserved for a later extraction stage |
-
-Current on-disk structure:
-
-```text
-data/
-  raw/
-    skyportal/
-      endpoint_audit/
-      inventory/
-      sources_bundles/
-```
 
 ## Basic verification
 
 ```bash
 python scripts/01_audit_endpoint_availability.py --help
 python scripts/02_fetch_source_inventory.py --help
+PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-If both commands print help successfully and the token is configured, the local
-setup is ready for the current workflow.
+If the help commands work, the tests pass, and the token is configured, the
+local setup is ready for the current workflow.

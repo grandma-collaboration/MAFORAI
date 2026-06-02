@@ -2,107 +2,79 @@
 
 ## Goal
 
-This document organizes the inventory recipes used with
-`scripts/02_fetch_source_inventory.py` and distinguishes between:
+This document organizes the inventory profiles currently used with
+`scripts/02_fetch_source_inventory.py`.
 
-| Type | Meaning |
+The important distinction is simple:
+
+- `recent_500` is a bounded orientation run;
+- the other named profiles are semantic subsets intended to run until the API
+  total is reached.
+
+## Current profile matrix
+
+| Profile | Type | Main filter | Intended use |
+|---|---|---|---|
+| `recent_500` | Bounded recent slice | `sortBy=saved_at`, `sortOrder=desc`, `max_pages=5` | Quick overview of recently saved sources |
+| `has_spectrum` | Complete filtered subset | `hasSpectrum=true` | Sources with at least one spectrum |
+| `has_followup` | Complete filtered subset | `hasFollowupRequest=true` | Sources with at least one follow-up request |
+| `classified` | Complete filtered subset | `classified=true` | Sources with at least one classification |
+| `redshift` | Complete filtered subset | `minRedshift=0.0001` | Sources with positive redshift |
+| `many_detections` | Complete filtered subset | `numberDetections=5` | Sources with at least five detections |
+| `gcn` | Complete filtered subset | `sourceID=GCN` | GCN-like sources |
+| `ep` | Complete filtered subset | `sourceID=EP` | EP-like sources |
+
+## Shared query templates
+
+The YAML config uses two shared query templates:
+
+| Template | Parameters |
 |---|---|
-| Baseline bounded inventory | A recent slice used for orientation, not a complete semantic subset |
-| Complete filtered inventory | A subset defined by a semantic filter and downloaded until `api_total_matches_reached` |
+| `recent_desc` | `sortBy=saved_at`, `sortOrder=desc` |
+| `enriched_recent_desc` | `includePhotometryExists=true`, `includeSpectrumExists=true`, `includeCommentExists=true`, `includeDetectionStats=true`, `sortBy=saved_at`, `sortOrder=desc` |
 
-## Inventory matrix
+In practice:
 
-| Run label | Type | Primary query condition | Intended use | Output folder pattern |
-|---|---|---|---|---|
-| `recent_500` | Baseline bounded inventory | `sortBy=saved_at`, `sortOrder=desc`, `max-pages=5` | Inspect a recent slice of saved sources | `source_inventory_recent_500_<timestamp>/` |
-| `has_spectrum` | Complete filtered inventory | `hasSpectrum=true` | Sources with at least one spectrum | `source_inventory_has_spectrum_<timestamp>/` |
-| `has_followup` | Complete filtered inventory | `hasFollowupRequest=true` | Sources with at least one follow-up request | `source_inventory_has_followup_<timestamp>/` |
-| `classified` | Complete filtered inventory | `classified=true` | Sources with at least one classification | `source_inventory_classified_<timestamp>/` |
-| `redshift` | Complete filtered inventory | `minRedshift=0.0001` | Sources with positive redshift | `source_inventory_redshift_<timestamp>/` |
-| `many_detections` | Complete filtered inventory | `numberDetections=5` | Sources with at least five detections | `source_inventory_many_detections_<timestamp>/` |
-| `gcn` | Complete filtered inventory | `sourceID=GCN` | GCN-like sources | `source_inventory_gcn_<timestamp>/` |
-| `ep` | Complete filtered inventory | `sourceID=EP` | EP-like sources | `source_inventory_ep_<timestamp>/` |
+- `recent_500` uses `recent_desc`;
+- the filtered subsets use `enriched_recent_desc`.
 
-## Shared enrichment flags
+## Commands
 
-The complete filtered inventories use the same enrichment flags.
+The normal way to run these inventories is now by profile name:
 
-| Query parameter | Why it is included |
-|---|---|
-| `includePhotometryExists=true` | Indicates whether photometry is available |
-| `includeSpectrumExists=true` | Indicates whether spectra are available |
-| `includeCommentExists=true` | Indicates whether comments are available |
-| `includeDetectionStats=true` | Adds detection-level summary information |
-| `sortBy=saved_at` | Sorts results by most recently saved sources |
-| `sortOrder=desc` | Returns newest matching sources first |
-| `numPerPage=100` | Uses the standard page size for these runs |
+```bash
+python scripts/02_fetch_source_inventory.py --profile recent_500
+python scripts/02_fetch_source_inventory.py --profile has_spectrum
+python scripts/02_fetch_source_inventory.py --profile has_followup
+python scripts/02_fetch_source_inventory.py --profile classified
+python scripts/02_fetch_source_inventory.py --profile redshift
+python scripts/02_fetch_source_inventory.py --profile many_detections
+python scripts/02_fetch_source_inventory.py --profile gcn
+python scripts/02_fetch_source_inventory.py --profile ep
+```
 
-## Command recipes
-
-### 1. Baseline recent slice
-
-This command retrieves up to 500 recently saved sources and is useful as a
-general orientation run.
+If you need a quick variation, use CLI overrides instead of editing the profile
+immediately. Example:
 
 ```bash
 python scripts/02_fetch_source_inventory.py \
-  --run-label recent_500 \
-  --num-per-page 100 \
-  --max-pages 5 \
-  --query-param sortBy=saved_at \
-  --query-param sortOrder=desc
+  --profile recent_500 \
+  --max-pages 2 \
+  --run-label recent_200_preview
 ```
 
-Notes:
-
-| Aspect | Value |
-|---|---|
-| Semantic filter | None |
-| Completeness | No; bounded to five pages |
-| Expected stop reason | `max_pages_reached` |
-| Example observed run | `source_inventory_recent_500_20260528_161939` |
-
-### 2. Complete filtered subsets
-
-Common command template:
-
-```bash
-python scripts/02_fetch_source_inventory.py \
-  --run-label YOUR_LABEL \
-  --num-per-page 100 \
-  --max-pages 0 \
-  --query-param YOUR_FILTER \
-  --query-param includePhotometryExists=true \
-  --query-param includeSpectrumExists=true \
-  --query-param includeCommentExists=true \
-  --query-param includeDetectionStats=true \
-  --query-param sortBy=saved_at \
-  --query-param sortOrder=desc
-```
-
-Primary filter substitutions:
-
-| Run label | Substitute `YOUR_FILTER` with |
-|---|---|
-| `has_spectrum` | `hasSpectrum=true` |
-| `has_followup` | `hasFollowupRequest=true` |
-| `classified` | `classified=true` |
-| `redshift` | `minRedshift=0.0001` |
-| `many_detections` | `numberDetections=5` |
-| `gcn` | `sourceID=GCN` |
-| `ep` | `sourceID=EP` |
-
-## Example run summaries
+## Observed run summaries
 
 The table below records the runs used while writing this documentation.
 
-| Run label | Example folder | Main filter | API reported total matches | Pages saved | Sources saved | Stopped reason |
-|---|---|---|---:|---:|---:|---|
-| `recent_500` | `source_inventory_recent_500_20260528_161939` | `sortBy=saved_at`, `sortOrder=desc` | 50618 | 5 | 500 | `max_pages_reached` |
-| `has_spectrum` | `source_inventory_has_spectrum_20260528_135105` | `hasSpectrum=true` | 60 | 1 | 60 | `api_total_matches_reached` |
-| `has_followup` | `source_inventory_has_followup_20260528_135114` | `hasFollowupRequest=true` | 370 | 4 | 370 | `api_total_matches_reached` |
-| `classified` | `source_inventory_classified_20260528_135135` | `classified=true` | 834 | 9 | 834 | `api_total_matches_reached` |
-| `redshift` | `source_inventory_redshift_20260528_135144` | `minRedshift=0.0001` | 51 | 1 | 51 | `api_total_matches_reached` |
-| `many_detections` | `source_inventory_many_detections_20260528_135148` | `numberDetections=5` | 71 | 1 | 71 | `api_total_matches_reached` |
-| `gcn` | `source_inventory_gcn_20260528_135155` | `sourceID=GCN` | 144 | 2 | 144 | `api_total_matches_reached` |
-| `ep` | `source_inventory_ep_20260528_135202` | `sourceID=EP` | 193 | 2 | 193 | `api_total_matches_reached` |
+| Run label | Main filter | API reported total matches | Pages saved | Sources saved | Stopped reason |
+|---|---|---:|---:|---:|---|
+| `recent_500` | `sortBy=saved_at`, `sortOrder=desc` | 50,618 | 5 | 500 | `max_pages_reached` |
+| `has_spectrum` | `hasSpectrum=true` | 60 | 1 | 60 | `api_total_matches_reached` |
+| `has_followup` | `hasFollowupRequest=true` | 370 | 4 | 370 | `api_total_matches_reached` |
+| `classified` | `classified=true` | 834 | 9 | 834 | `api_total_matches_reached` |
+| `redshift` | `minRedshift=0.0001` | 51 | 1 | 51 | `api_total_matches_reached` |
+| `many_detections` | `numberDetections=5` | 71 | 1 | 71 | `api_total_matches_reached` |
+| `gcn` | `sourceID=GCN` | 144 | 2 | 144 | `api_total_matches_reached` |
+| `ep` | `sourceID=EP` | 193 | 2 | 193 | `api_total_matches_reached` |
+
