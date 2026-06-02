@@ -21,9 +21,9 @@ the current SkyPortal scripts mainly depend on:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install --no-build-isolation -e .
 ```
-
 ## Authentication
 
 Both scripts read the API token from `SKYPORTAL_API_TOKEN`.
@@ -90,7 +90,7 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 ```bash
 python scripts/01_audit_endpoint_availability.py --help
 python scripts/02_fetch_source_inventory.py --help
-PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 If the help commands work, the tests pass, and the token is configured, the

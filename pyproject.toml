@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skyportal-corpus"
+version = "0.1.0"
+description = "SkyPortal API audit and source-inventory workflow for the MAFORAI project."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "jupyter",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "python-dotenv",
+  "pyyaml",
+  "requests",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

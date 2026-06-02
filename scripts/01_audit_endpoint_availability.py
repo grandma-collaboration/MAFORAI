@@ -8,14 +8,6 @@ This script is a thin CLI entrypoint around the shared audit logic in
 from __future__ import annotations
 
 import argparse
-import sys
-from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = PROJECT_ROOT / "src"
-
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
 
 from skyportal_corpus.core import default_skyportal_config_path
 from skyportal_corpus.extraction import run_endpoint_audit

@@ -39,6 +39,7 @@ The current SkyPortal workflow is split into a few small layers:
 | `scripts/` | Thin CLI entrypoints |
 | `src/skyportal_corpus/core/` | Shared config and path helpers |
 | `src/skyportal_corpus/extraction/` | Reusable audit and extraction logic |
+| `pyproject.toml` | Project metadata and package/dependency definition |
 | `configs/extraction/skyportal.yaml` | Shared runtime configuration |
 | `tests/` | Small tests for config loading and inventory-profile resolution |
 

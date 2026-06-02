@@ -28,9 +28,8 @@ Included here:
 | Endpoint audit workflow | [01_endpoint_audit.md](./01_endpoint_audit.md) |
 | Source inventory workflow | [02_source_inventory.md](./02_source_inventory.md) |
 | Named inventory profiles and observed runs | [03_filtered_inventories.md](./03_filtered_inventories.md) |
-| Current findings | [04_current_findings.md](./04_current_findings.md) |
-| Shortlist of relevant endpoints | [05_relevant_endpoints.md](./05_relevant_endpoints.md) |
-| Practical `/api/sources` filters | [06_relevant_source_filters.md](./06_relevant_source_filters.md) |
+| Shortlist of relevant endpoints | [04_relevant_endpoints.md](./04_relevant_endpoints.md) |
+| Practical `/api/sources` filters | [05_relevant_source_filters.md](./05_relevant_source_filters.md) |
 
 Related documents outside this folder:
 
@@ -46,9 +45,8 @@ Related documents outside this folder:
 2. [01_endpoint_audit.md](./01_endpoint_audit.md)
 3. [02_source_inventory.md](./02_source_inventory.md)
 4. [03_filtered_inventories.md](./03_filtered_inventories.md)
-5. [04_current_findings.md](./04_current_findings.md)
-6. [05_relevant_endpoints.md](./05_relevant_endpoints.md)
-7. [06_relevant_source_filters.md](./06_relevant_source_filters.md)
+5. [04_relevant_endpoints.md](./04_relevant_endpoints.md)
+6. [05_relevant_source_filters.md](./05_relevant_source_filters.md)
 
 ## Local output roots
 
