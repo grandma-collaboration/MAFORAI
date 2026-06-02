@@ -11,7 +11,7 @@ paths:
   raw_root: "data/raw/skyportal"
   endpoint_audit: "data/raw/skyportal/endpoint_audit"
   inventory: "data/raw/skyportal/inventory"
-  sources_bundles: "data/raw/skyportal/sources_bundles"
+  source_bundles: "data/raw/skyportal/source_bundles"
 
 http_defaults:
   timeout_seconds: 30

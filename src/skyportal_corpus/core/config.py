@@ -31,7 +31,7 @@ class PathsConfig:
     raw_root: str
     endpoint_audit: str
     inventory: str
-    sources_bundles: str
+    source_bundles: str
 
 
 @dataclass(frozen=True)
@@ -170,7 +170,7 @@ def load_skyportal_config(config_path: str | Path | None = None) -> SkyPortalCon
             raw_root=_require_str(paths_raw, "raw_root", parent_path="paths"),
             endpoint_audit=_require_str(paths_raw, "endpoint_audit", parent_path="paths"),
             inventory=_require_str(paths_raw, "inventory", parent_path="paths"),
-            sources_bundles=_require_str(paths_raw, "sources_bundles", parent_path="paths"),
+            source_bundles=_require_str(paths_raw, "source_bundles", parent_path="paths"),
         ),
         http_defaults=HttpDefaults(
             timeout_seconds=_require_int(http_raw, "timeout_seconds", parent_path="http_defaults"),

@@ -37,9 +37,9 @@ def endpoint_audit_output_dir(config: "SkyPortalConfig") -> Path:
     return resolve_project_path(config.paths.endpoint_audit)
 
 
-def sources_bundles_output_dir(config: "SkyPortalConfig") -> Path:
-    """Return the reserved source-bundles directory as an absolute path."""
-    return resolve_project_path(config.paths.sources_bundles)
+def source_bundles_output_dir(config: "SkyPortalConfig") -> Path:
+    """Return the reserved source-bundle directory as an absolute path."""
+    return resolve_project_path(config.paths.source_bundles)
 
 
 def build_run_output_dir(base_output_dir: str | Path, run_name: str) -> Path:

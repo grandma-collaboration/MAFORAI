@@ -83,7 +83,7 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 |---|---|---|
 | `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/` | `scripts/01_audit_endpoint_availability.py` | `endpoint_status.csv`, `endpoint_status.json`, `summary.json`, `endpoint_audit.log` |
 | `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/` | `scripts/02_fetch_source_inventory.py` | `manifest.json`, `source_inventory.log`, `sources_page_XXX.json` |
-| `data/raw/skyportal/sources_bundles/` | Not used yet by the current scripts | Reserved for a later extraction stage |
+| `data/raw/skyportal/source_bundles/` | Not used yet by the current scripts | Reserved for a later extraction stage |
 
 ## Basic verification
 

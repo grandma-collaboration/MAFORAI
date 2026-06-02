@@ -231,6 +231,6 @@ __marimo__/
 /data/raw/skyportal/inventory/**
 !/data/raw/skyportal/inventory/
 !/data/raw/skyportal/inventory/.gitkeep
-/data/raw/skyportal/sources_bundles/**
-!/data/raw/skyportal/sources_bundles/
-!/data/raw/skyportal/sources_bundles/.gitkeep
+/data/raw/skyportal/source_bundles/**
+!/data/raw/skyportal/source_bundles/
+!/data/raw/skyportal/source_bundles/.gitkeep
