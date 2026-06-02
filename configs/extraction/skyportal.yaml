@@ -1,0 +1,105 @@
+# Shared runtime configuration for the current SkyPortal workflow.
+
+version: 1
+
+skyportal:
+  base_url: "https://skyportal-icare.ijclab.in2p3.fr/api"
+  auth:
+    token_env_var: "SKYPORTAL_API_TOKEN"
+
+paths:
+  raw_root: "data/raw/skyportal"
+  endpoint_audit: "data/raw/skyportal/endpoint_audit"
+  inventory: "data/raw/skyportal/inventory"
+  sources_bundles: "data/raw/skyportal/sources_bundles"
+
+http_defaults:
+  timeout_seconds: 30
+  max_retries: 3
+
+audit:
+  defaults:
+    timeout_seconds: 20
+    sleep_seconds: 0.2
+  sample_context:
+    source_id: "2023qye"
+    candidate_id: null
+    resource_type: "sources"
+    resource_id: null
+    dateobs: null
+
+inventory:
+  defaults:
+    num_per_page: 100
+    start_page: 1
+    max_pages: 5
+    timeout_seconds: 30
+    max_retries: 3
+    sleep_seconds: 0.3
+  shared_query_params:
+    recent_desc:
+      sortBy: "saved_at"
+      sortOrder: "desc"
+    enriched_recent_desc:
+      includePhotometryExists: "true"
+      includeSpectrumExists: "true"
+      includeCommentExists: "true"
+      includeDetectionStats: "true"
+      sortBy: "saved_at"
+      sortOrder: "desc"
+  profiles:
+    recent_500:
+      description: "Baseline bounded inventory of the 500 most recently saved sources."
+      run_label: "recent_500"
+      max_pages: 5
+      query_template: "recent_desc"
+      query_params: {}
+    has_spectrum:
+      description: "Complete filtered inventory of sources with at least one spectrum."
+      run_label: "has_spectrum"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        hasSpectrum: "true"
+    has_followup:
+      description: "Complete filtered inventory of sources with at least one follow-up request."
+      run_label: "has_followup"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        hasFollowupRequest: "true"
+    classified:
+      description: "Complete filtered inventory of sources with at least one classification."
+      run_label: "classified"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        classified: "true"
+    redshift:
+      description: "Complete filtered inventory of sources with positive redshift."
+      run_label: "redshift"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        minRedshift: "0.0001"
+    many_detections:
+      description: "Complete filtered inventory of sources with at least five detections."
+      run_label: "many_detections"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        numberDetections: "5"
+    gcn:
+      description: "Complete filtered inventory of GCN-like sources."
+      run_label: "gcn"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        sourceID: "GCN"
+    ep:
+      description: "Complete filtered inventory of EP-like sources."
+      run_label: "ep"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        sourceID: "EP"
