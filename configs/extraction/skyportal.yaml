@@ -68,6 +68,16 @@ inventory:
       query_template: "enriched_recent_desc"
       query_params:
         hasFollowupRequest: "true"
+    grandma_followup_det2_base:
+      description: "Complete filtered inventory of GRANDMA sources with follow-up requests and at least two detections."
+      run_label: "grandma_followup_det2_base"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        hasFollowupRequest: "true"
+        group_ids: "3"
+        numberDetections: "2"
+        includeHosts: "true"
     classified:
       description: "Complete filtered inventory of sources with at least one classification."
       run_label: "classified"
