@@ -1,0 +1,730 @@
+{
+  "selection_run": {
+    "created_at": "2026-06-03T11:54:18.906680+00:00",
+    "inventory_dir": "/home/meneses/project_astronomical/MAFORAI/data/raw/skyportal/inventory/source_inventory_grandma_followup_det2_base_20260603_111255",
+    "inventory_run_label": "grandma_followup_det2_base",
+    "inventory_profile_name": "has_followup",
+    "output_file": "/home/meneses/project_astronomical/MAFORAI/data/samples/selected_sources_for_bundles_grandma_followup_det2_base.json",
+    "target_counts": {
+      "grb_like": 20,
+      "non_grb": 10
+    }
+  },
+  "criteria": {
+    "base": [
+      "group_ids=3",
+      "hasFollowupRequest=true",
+      "numberDetections>=2"
+    ],
+    "family_rules": {
+      "grb_like": "id starts with GCN or GRB",
+      "non_grb": "not GCN, not GRB, not EP"
+    },
+    "priority_rules": {
+      "high": "redshift < 1 or redshift > 4",
+      "medium": "has redshift or (comment_exists and num_det_global >= 5)",
+      "low": "everything else in the base inventory"
+    }
+  },
+  "selected": {
+    "grb_like": [
+      {
+        "id": "GCN-251013_173943",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.572,
+          "num_det_global": 197,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "Refined photometry from VT. SN rising\nAt 17:39:41 UT on 13 Oct 2025 FERMI GBM detect Long GRB 251013C [GCN 42221]. At 2025-10-13T17:39:42 UTC SVOM/ECLAIRs also detected GRB 251013C and after 203 s SVOM/MXT began to observe [GCN 42222]. 6.85 minutes later t0 SVOM/VT deteced OT at R.A., Dec. 345.8356, -0.2103 degrees with an uncertainty of 0.5 arcsec [GCN 42223]. BOOTES-6, LAST, NOT, LCO,SAO RAS Zeiss-1000, GOTO, SLKT, DDOTI,COLIBRI, SYSU, ABO, Asiago, NUTTelA, BBO, OHP/T193, MerSEC, OANV, Calapai Observatory, MAO/AZT-22, KNC, JinShan, Leavitt Observatory and Liverpool 2-m t telscopes also detected afterglow of the GRB251013C\nRedshidt z = 0.572 found by NOT [GCN 42227].\n "
+      },
+      {
+        "id": "GRB-250424_065229",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.31,
+          "num_det_global": 178,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "Long GRB 250424A was detected by **SWIFT/BAT** at 2025-04-24T06:52:28.51 UT. It is a long GRB (T90=19s in the 15-350 keV), GCN 40224. The GRB was independently detected by other experiments as **CZT** measures T90 of 9.2 (+1.5 -1.0) s in the 20-200 keV (GCN 40231), **Astrosat/CSi** measures a T90 of 14 (+1, -3) s in 100-500 keV (GCN 40231), **Konus-Wind** on 2025-04-24T06:52:13.431 with a duration of about 40.5 s in the 20 keV - 10 MeV (GCN 40243), **EIRSAT-1** on 2025-04-24T06:52:12.6 (GCN 40249), **SVOM/GRM** on 2025-04-24T06:52:08 with a T90 of 18.8 +1.0/-1.0 s in the 15-5000 keV (GCN 40252), **CGBM** on 2025-04-24T06:52:04.323 with T90 = 13.5 +/- 0.8 s in 40-1000 keV (GCN 40298).  T0 is defined as the **SVOM/GRM** trigger.The X-ray counterpart was found by **Swift/XRT** (GCN 40224, 40233, 40232) and was enhanced the position (using the **XRT-UVOT** alignment): RA, Dec = 217.49920, -35.02504 (GCN 40232). An optical follow-up campaign was performed including **MASTER-OAFA** (GCN 40222), **SWIFT/UVOT** (GCN 40224, 40244), **REM** (GCN 40225, including NIR afterglow), **DDOTI** (GCN 40226), **VLT** (GCN 40228), **BlackGEM** (GCN 40229), **COLIBRÍ** (GCN 40230), **Skynet** (GCN 40241), **SVOM/VT** (GCN 40246), **LCO** (GCN 40263). A NIR observation campaign was performed including **REM** (GCN 40225), **WINTER** (GCN 40250), **PRIME** (GCN 40251). The Redshift estimated in GCN Circular 40228 (**VLT/X-shooter**). The host galaxy proposed in GCN Circular 40227 was also identified. The GRB have possibility to be a supernova as GCN 40461 reported. The coordinates of the Skyportal page of the ones provided by the detection of the afterglow optical counterpart of Swift/UVOT (GCN 40224).\nGRANDMA and KNC (GCN 40240, GCN 40920) also responded to the alert."
+      },
+      {
+        "id": "GRB250221A",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.768,
+          "num_det_global": 30,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "Swift Burst Alert Telescope (BAT) detected a 5s relatively short-duration GRB at 21-02-2025 03:34:37 UT (T0=60727.14903935 [MJD]) with the position 59.477, -15.139 (uncertainty of 3 arcmin) (GCN 39396). The peak count rate was ~2200 counts/sec (15-350 keV), at ~0 sec after the trigger. REM 60cm robotic telescope at the ESO observatory detected an optical counterpart 70s after T0 (60727.14984954 MJD) in r = 16.5 +/- 0.2 (GCN 39406). Ongoing, the optical afterglow was detected by the following teams in chronological order: DDRAGO (GCN 39397), REM (GCN 39406), GRANDMA/TAROT (GCN 39417), 1.6m Mephisto (GCN 39412), Mondy (GCN 39424), Assy (GCN 39422), NOT (GCN 39413), LCO (GCN 39425), TNOT (GCN 39446). The possible rebrightening to ~20 mag was reported by one team with two instruments (GCN 39426, GCN 39427) at T+1.4 days (60728.54903935 MJD), but was not confirmed by others. A common redshift of z=0.768 was found by VLT/X-shooter at the position of the afterglow trace ~22.5h after T0 (60728.08653935 MJD). However, no clear emission or absorption features are detected. The X-ray burst emission was detected by the Konus-Wind (GCN 39423) at T+4.4 s (60727.14909028 MJD) and X-ray afterglow by EP-FXT (GCN 39491) at T+2.1 days (60729.24903935 MJD) at the enhanced Swift_XRT position (39404). The radio afterglow was detected by VLA at the centre frequency of 10 GHz (X-band), bandwidth of 4 GHz at T+1.95 days (60729.09903935 MJD), and by ATCA (GCN 39501) at the enhanced Swift-XRT (GCN 39404) position at T+2.2 days (60729.34903935 MJD), with no detection at the initial Swift-XRT position (GCN 39396) at T+6 minutes (60727.15320602 MJD). Swift released refined analysis circulars for the XRT and BAT instruments 1-2 days after the initial trigger (T0). The first XRT refined analysis occurred approximately 600s after the burst, while the BAT detection was refined around 18 hours post-trigger (GCN 39414, GCN 39471). The final BAT analysis yielded a T90 duration of 1.80 +/- 0.32 seconds in the 15-350 keV band."
+      },
+      {
+        "id": "GRB-241025_013651",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 4.2,
+          "num_det_global": 22,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "GRB 241025A **long and high redshift** discovered by **SWIFT/BAT** at 2024-10-25T01:36:50 UT (T0 is defined as the Swift trigger) is a long GRB (T90=180s in the 15-350 keV), GCN 37859. The GRB was independently detected by other experiments as **Konus-Wind** on 2024-10-25T01:36:26 with a duration of about 140s in the 20-300 keV (GCN 37927), **VZLUSAT-2** about 63s on 2024-10-25 01:36:50 UTC in the 60 - 1700 keV (GCN 38162), **Fermi/GBM** on 2024-10-25T01:36:26 of T90 of 124 s (50-300 keV  (GCN 37860, 37886), **SVOM/GRM** on 2024-10-25T01:36:40 with T90 of 37.6 +1.7/-1.1 s in the 15 - 5000 keV (GCN 37863), **EP/WXT** on 2024-10-25T01:35:29 with T90 of about 300s in the 0.5-4.0 keV (GCN 37864,37872). The X-ray counterpart was found by **Swift/XRT** (GCN 37868, GCN 37888) and **EP/FXT** (at the same location). A optical follow-up campaign was performed including SVOM/UVOT (only in white filter, GCN 37919) **TRT** (GCN 37862), **DDOTI** (GCN 37865), **SVOM/VT** (GCN 37871), **GRANDMA and KNC** (GCN 37882,37926,38298 including VIRT and TNOT), **GROWTH-India** Telescope (GCN 37890), **Konkoly** (GCN 37891), **DFOT** (GCN 37893), **Mondy** (GCN 37912), **SAO RAS** (GCN 37914, 37923), **LBT** (GCN 38114), **COLIBRI** (GCN 37889) The redshift was measured by **NOT** (GCN 37866). Radio observations were also performed with VLA (GCN 38130). The coordinates of the Skyportal page of the ones provided by the detection of the afterglow optical counterpart of Swift/UVOT"
+      },
+      {
+        "id": "GCN-260515_190819",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.764,
+          "num_det_global": 21,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA",
+            "GRANDMA/Kilonova-Catcher"
+          ]
+        },
+        "source_summary": "**SVOM/ECLAIRs** Long GRB (T90 is 16.6 +/-1.5 s in the 5-120 keV, GCN44622). The GRB was also detected by **SVOM/GRM** (GCN44622). Follow-up were performed by **JinShan 100B** (GCN44623), **SVOM/VT** (GCN44624). The coordinates of the page come from **SVOM/VT** (GCN44624) and **JinShan 100B** (GCN44623). The redshift was measured by **GTC** (GCN44629). T0 is referering to the **SVOM/ECLAIRs** (GCN44622) , **LCO 1-m (Sutherland)**  captured (GCN 44645); **CrAO ZTSh (2.6m)** provided high-cadence BVRI photometry tracking the afterglow decay (GCN 44652); and deep late-time points were delivered by **COLIBRÍ** (GCN 44643). GRANDMA observed the GRB with **TAROT/TCH and TCA**"
+      },
+      {
+        "id": "GCN-250706_170544",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.942,
+          "num_det_global": 12,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "**SVOM/ECLAIRs** found the burst (GCN 40989, T90 45s ),  also seen with **Fermi-LAT** (GCN 41019) and **Konus-Wind** (GCN 41013 Duration 50 s (20-1500 keV, 41027), **Insight-HXMT/HE** detection (GCN 41049), **IPN** (GCN 41041). X-ray detection with **SVOM/MXT** (GCN 41009) and **Swift-XRT** (GCN 40996) confirmed . Optical observation from **TRT** (GCN 40991), **SVOM/VT** (GCN 40992), **iTelescope** (GCN 40995), **Swift/UVOT** (GCN 41015), **VLT/X-shooter** (GCN  41022), **7DT** (GCN  41087). Optical upper limits from **REM** (GCN 41007).  **SVOM** confirms the interpretation of GRB 250706B as an afterglow of GRB 250706C (GCN 41026). Coordinates according to **Swift/UVOT** (GCN 41015). "
+      },
+      {
+        "id": "GRB-250725_015136",
+        "source_family": "grb_like",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 5.26,
+          "num_det_global": 5,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "Fermi/GBM detected **Long GRB** at 01:51:34UTC [GCN 41150]. **Swift/BAT** triggered **at 01:51:36UTC**  T90 is 20 s [GCN 41152]. Coordinates of the source in skyportal page from **Swift/XRT** counterpart and T0 from Swift triggered time. **Swift/UVOT** no detected afterglow. Global Master-net found Optical transient in 02h 21m 55.91s , -82d 47m 28.0s with brightness 15.6 mag [GCN 41151] BOOTES-7 not detected [GCN 41159] but SVOM detected the source in VT_B and VT_R filters [GCN 41158]    **z =5.26** from VLT/FORS2 [GCN 41160]. **SWIFT/XRT** 2 sources identified, 7.7 and 4.9 arcmin from SVOM/ECLAIR [GCN 41180]. **SVOM/VT**  No uncatalogued sources are detected in single or stacked images with R = 23.4 mag upper limit [GCN 41181]."
+      },
+      {
+        "id": "GCN-251222_170549",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 3.171,
+          "num_det_global": 446,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "**GRB 251222A** (also associated with **EP251222b** ) was triggered by **SVOM/ECLAIRs** at **2025-12-22T17:05:46** UTC (T0=61031.712337963 is defined as the SVOM trigger) and is a **long GRB** , detected for ** >200 s** in 4–120 keV with multiple peaks (GCN 43516). The burst was independently detected by Fermi/GBM at 2025-12-22 17:05:51.27 UT with **T90 ≈ 83 s** (50–300 keV, GCN 43222). SVOM/GRM triggered at 2025-12-22T17:05:52 UT with **T90 = 85.5 (+3.0/−3.5) s** (15–5000 keV, GCN 43202). Einstein Probe/WXT detected EP251222b with an event starting at 2025-12-22T17:04:52 UT and lasting **~350 s** (0.5–4 keV, GCN 43215). Konus-Wind reported a long burst with total duration **~83 s** and prompt spectral fits (CPL; e.g. time-integrated **Ep ~ 102 keV** ) and derived energetics assuming **z = 3.171** (including **Eiso ≈ 2.21×10^53 erg** ) - GCN 43214. The **X-ray** counterpart was found by **Swift/XRT** (GCN 43191, GCN 43213) at RA, Dec (J2000) = 05:08:46.81, −07:12:48.7. \nA optical follow-up campaign was performed including **SVOM/VT** (GCN 43189,GCN 43203), **NOT** (GCN 43194), **Calapai** (GCN 43195), **DFOT** (GCN 43207, GCN 43224), **LCO** (GCN 43208, GCN 43212), **GOTO** (GCN 43209), **SVOM/COLIBR** (GCN 43225), **ZTSH** (GCN 43226), **KNC** (GCN 43229), **AbAO** (GCN 43230), **FTW** (GCN 43233), **Kinder** (GCN 43236), **NUTTelA-TAO** (GCN 43237), **Mephisto** (GCN 43250), **Mondy** (GCN 43273). The redshift was measured by **VLT/X-shooter** (GCN 43204). Radio observation was performed with **VLA** (GCN 43415).  The coordinates of the Skyportal page of the ones provided by the detection of the afterglow optical counterpart of SVOM/VT. To be confirmed: TAROT, COLIBRI"
+      },
+      {
+        "id": "GRB241030",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 1.411,
+          "num_det_global": 151,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "All offline data from GRANDMA."
+      },
+      {
+        "id": "GRB-250702_210643",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 1.52,
+          "num_det_global": 58,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "**Long** GRB detected by Swift (GCN 40894, 40928, T90 s in the 15 - 150 keV) and **Fermi GBM** (GCN 40892, 40927 T90 54 s in the 50- 300 keV) and **Konus-Wind** (40948, T90 46 s in the 20 keV - 10 MeV). T0 refers to Swift BAT. Localization refers to **UVOT** (GCN 40894).  X-ray counterpart with **Swift/XRT** (GCN 40902), **EP** (GCN 40967), **Chandra** (GCN 41309). Optical follow-up with **Ondrejov D50** (GCN 40895) **GOTO** (GCN 40894), **NOT** (GCN 40900),**COLIBRI**(GCN 40907), **DDOTI** (GCN 40911). **REM** (GCN 40913). **TRT**(GCN 40916). **Skynet** (GCN 40921), **AKO** (GCN 40925).  **Skynet** V, R observations (GCN40921). **AKO** (GCN40925), **Leavitt** (GCN 40926), **Swift/UVOT**(GCN 40933). **SVOM/VT** (GCN 40936). **Konkoly**  (GCN 40939), **GROWTH** (GCN 40946). **Monte Agliale** (GCN 40968), **Calapai** (GCN 40973). **GTC/Osiris** measured the redshift (GCN 40901). \n\n**GRANDMA** observed with **KNC** astronomers and with **TAROT** team (measurements are calibrated from Gaia). TAROT responded 1 min post T0 with TAROT/TCA (GCN 40969)."
+      },
+      {
+        "id": "GCN-260511_110100",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 2.006,
+          "num_det_global": 49,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA",
+            "GRANDMA/Kilonova-Catcher"
+          ]
+        },
+        "source_summary": "**GRB 260511B** was triggered by **SVOM/ECLAIRs** at 2026-05-11T11:00:32 UTC and is a **long GRB** with **T0=41.2 seconds (5-120 keV) (GCN 44543). The burst was independently detected by **Fermi/GBM** at 2026-05-11T11:00:31 UT with T90=41 seconds (50-300 keV) (GCN 44542) and **NuSTAR** (T90 XXX) in the X-ray.  X-ray counterpart was found by XX.. An optical counteprat was was found by : **SVOM/C-GFT** (GCN 44547), **MITSuME** (GCN 44549), **TRT** (GCN 44551), **SVOM/VT** (GCN 44568), **GROWTH-India** (GCN 44561), **GOTO** (GCN 44572), **Mephisto** (GCN 44610), **SAO RAS** (GCN 44582), **Calapai** (GCN 44592), **LCO** (GCN 44577), **MAO/AZT-22** (GCN 44576) and **NOT** (GCN 44618).  **OSIRIS+/GTC** derived redshift = 2.006 then confirmed by **Xinglong 2.16m/BEFOSC** (GCN 44571) and **OHP/T193** (GCN 44573). \n\n**GRANDMA** observed with **TAROT/TCH** and **TAROT/TRE**"
+      },
+      {
+        "id": "GCN-260509_215104",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 1.95,
+          "num_det_global": 25,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA",
+            "GRANDMA/Kilonova-Catcher"
+          ]
+        },
+        "source_summary": "**SVOM/ECLAIRs** long GRB (T90 duration of about 14.7 +/-0.6 s, GCN44504). The GRB was also detected by **SVOM/GRM** (GCN44504). Follow-up were performed by **GOTO** (GCN44505), **LCO Sinistro** (GCN44506, GCN44513), **SVOM/VT** (GCN44507, GCN44598), **Colibri-VIS** (GCN44509), **KAIT** (GCN44510), **Liverpool telescope** (GCN44516), **MASTER-OAFA robotic telescope** (GCN44512), SAO RAS (GCN44563), **CrAO ZTSh** (GCN44662). The coordinates of the page are from the **GOTO** (GCN44505) follow-up. T0 from the **SVOM/ECLAIRs** trigger (GCN44504).\n\nGRANDMA observed the GRB with **TAROT/TCH**."
+      },
+      {
+        "id": "GRB-251230_012141",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": null,
+          "num_det_global": 25,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "Coordinates are from Swift/UVOT (GCN 43252)"
+      },
+      {
+        "id": "GCN-250704_034220",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 1.091,
+          "num_det_global": 20,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA/Kilonova-Catcher",
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "GRB **SVOM/ECLAIRs and GRM** (GCN 40934, long around 8s duration in GRM) and with **Swift/BAT-GUANO** (GCN 41012).. **X-ray afterglow** by **Swift-XRT** (40950). Followup in optical with  **SVOM/VT** (GCN 40964), **Swift/UVOT** (GCN 40981) . Upper limit with **REM** (GCN 40938 and GCN 40944), **SVOM/COLIBRÍ (FM-GFT)** (GCN 41017).  **VLT/X-shooter** provides redshift (GCN 40953) measured the redshift. Coordinates are from **Swift/UVOT**, T0 refers to ECLAIRs.\n\n**GRANDMA** observations: one **KNC** measurement (AIP R. Hellot) and one **TRT/SBO** observations (upper limit) and one **TAROT/TCH** R-band (detection)"
+      },
+      {
+        "id": "GRB250226A",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 3.315,
+          "num_det_global": 19,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "GRB250226A is **long GRB** with (T90) duration 61 s [GCN 39530, 50 - 300 keV]. **Fermi GBM** triggered on **2025-02-26T06:34:57 UT** [GCN 39479] which is referred here at T0. The GRB was also detected by **GECAM-B** [GCN 39492,T90 63.5 +/- 11.7 in the 5-2000 keV] and INTEGRAL SPI-ACS -PICsIT [GCN  39518, duration of 15s with E>80 keV], **Konus-Wind**  [GCN  39542, with T90 of 32s in 20 keV - 10 MeV], Swift/BAT-GUANO [GCN  39672] .  **EP-WXT detect x-ray transient EP250226a at 2025-02-26T06:35:16 UTC** [39482,39513]. At 21.8 min after the **EP trigger TRT** detect uncatalogued optical source in **r~17.7 mag RA = 14:57:03.63 Dec = +20:58:32.31** [GCN 39486]. **VLT/X-shooter** measured the red shift of the GRB **z = 3.315** [GCN 39487]. **COLIBRI** detect optical candidate 82 minutes after the trigger \"i\" filter 19.05 mag [GCN 39488]. In the same position optical candidate detected by **GSP** [GCN 39489], **LOT/kinder** [GCN 39509], **Mephisto** [GCN 39511], **SVOM** [GCN 39514] **Xinglong** [GCN 39515] and **LCO** [GCN 39524], **Mondy** [GCN 39730], **KAIT**  [GCN39796].\n\n**GRANDMA observation started** 0.4 days post T0 with TRT-SBO, KAO Lisnyky/AZT-8, AbAO-T70 and OPD/60cm. We detect optical afterglow from TRT-SBO, KAO and OPD/60cm data. "
+      },
+      {
+        "id": "GRB250309B",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 1.898,
+          "num_det_global": 18,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "Fermi/GBM triggered and located a burst on 09 March 2025 at 07:38:30.66 UT (T0). Shortly after (0.3h), Zwicky Transient Facility (ZTF) identified a red optical counterpart (AT2025dws) located at RA= 210.801761, DEC= -8.502842, with Magnitude (AB) = 18.48 in the r filter (g-r>0.4 mag). No telescopes have provided their images yet, and GCN points in the light curve are up to date (14 UT, 11th of March, 2025)"
+      },
+      {
+        "id": "GCN-250818_032908",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 1.216,
+          "num_det_global": 17,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "**SVOM** short GRB (GCN 41405) also detected by **SVOM/GRM** (GCN 41405). X-ray counterpart found by **Swift/XRT** (GCN 41407), **EP/FXT** (GCN 41424). **GOTO** optical candidate (GCN 41406), **VT** (GCN 41409),  **KAIT** (41417), **NOT** (41426). Coordinates correspond to **NOT**.\n**Redshift** of z=1.216 (GCN 41419; Keck)\n\n**GRANDMA** was triggered on **KNC** (images, analysed, GCN 41444), **OPD** (observing 19th UTC, **pending analysis**), **TRT/SBO/CTO** (pending **images** and asked new obs on 19.08), **UBAI** (image on 18th analyzed, asked obs 19th?), **AbAO** (pending **images**, re-ask obs 19th), **ShAO** (foggy on 18th, trying with the two meeter on 20th), **KAO** (**pending analysis**), **TTT** (images analyzed, 19th). **TAROT** is not available. No observations from **Oukaimenden** (cloudy, no observations, 19th ?), **NAO** (raining, observations on 19th ?),  **Euler** (no answer)."
+      },
+      {
+        "id": "GCN-250812_024503",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 2.571,
+          "num_det_global": 14,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "SVOM trigger with SNR in the image of 7. gcn 41324: optical counterpart with an uncertainty of ~0.5 arcsec. **Swift-XRT** detected X-ray source (GCN 41325).\n"
+      },
+      {
+        "id": "GCN-260511_061333",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": null,
+          "num_det_global": 13,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA",
+            "GRANDMA/Kilonova-Catcher"
+          ]
+        },
+        "source_summary": "**SVOM/ECLAIRs** long GRB (T90 duration of 13.5 (-0.4/+0.6) s in the 5-120 keV, GCN44532). Also detected by **FERMI/GBM** (GCN44529), **SVOM/GRM** (GCN44532), **Konus–Wind** (GCN44585) in gamma and **NuSTAR** (GCN44555) in X-rays. The X-ray counterpart was found by **SVOM/MXT** (GCN44532) and **EP-FXT** (GCN44579). The optical counterpart was found by **SVOM/VT** (GCN44538), **SVOM/COLIBRI/DDRAGO** (GCN44534), **TRT** (GCN44533), **REM** (GCN44562), **UTGO H50** (GCN44545), **KAIT** (GCN44536) and **LCO** (GCN44535). The coordinates are from the **TRT** (GCN44533) follow-up. T0 from the **SVOM/ECLAIRs** trigger (GCN44532). \n\n\n**GRANDMA/TAROT TCH observed about 6 min post T0**"
+      },
+      {
+        "id": "GRB241026",
+        "source_family": "grb_like",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 2.791,
+          "num_det_global": 13,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "The Swift Burst Alert Telescope (**BAT**) triggered and located the long GRB (30 duration s in the 15-350 keV range) GRB 241026A on 2024-10-26 at 22:42:32 UT (T0) (GCN 37896,37971). The GRB has also been detected and located by **Fermi/GBM** in the 44-300 keV (T90 16s)  (GCN 37894,37917), by **GECAM** with a T90 = 4.9(+4.8,-3.6) s in the 6-6000 keV range (GCN 37924), by **SVOM/GRM** with a T90 of 18.5 +4.0/-3.7 s in the 15-300 keV range (GCN 37921), and by **GRBAlpha** with a T90 duration of 10 seconds in the 80 - 950 keV range (GCN 37929).**XRT** identified an uncatalogued X-ray source (GCN 37896, 37904, 37908), same as  **EP** (GCN 37909).\n\nThe optical follow-up campaign was performed: **UVOT** (non-detection - GCN 37947), **SAO RAS** (detections - GCN 37899, GCN 37953, GCN 38028), **WINTER** (non-detection - GCN 37915), Colibri (detection - GCN 37900), **KAIT** (marginal detection - GCN 37903), **Las Cumbres** (detection - GCN 37913), **GROWTH-India** (detection - GCN 37918), **BTA** and **Zeiss-1000** (detection - GCN 37922), VIRT (non-detection - GCN 38299), **LBT** (detection - GCN 37969). \n\n*BTA* provided the redshift and was confirmed by LBT.\n\nOn GRANDMA side: TNOT (detection - GCN 37928, GCN 38035) detected the afterglow at T0+16.7 hrs and T0+33.7 hrs, as well as KNC-Utah, which found a faint afterglow at 19.91 +/- 0.17 mag and a limit of 20.29 mag in Rc and TRT, which marginally detected the afterglow. VLA detected a radio source at T0+4.05 days with central frequencies of 6, 10, and 15 GHz. Redshift is found to be 2.79 (GCN 37916 and GCN 37925). The coordinates in Skyportal are from SAO-RAS (GCN 37899)."
+      }
+    ],
+    "non_grb": [
+      {
+        "id": "SN2023wrk",
+        "source_family": "non_grb",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.023,
+          "num_det_global": 571,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": null
+      },
+      {
+        "id": "ZTF25aciopbi",
+        "source_family": "non_grb",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.0461,
+          "num_det_global": 20,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "T0 corresponds to Fermi-GBM GRB time"
+      },
+      {
+        "id": "GOTO23baj",
+        "source_family": "non_grb",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 0.056,
+          "num_det_global": 16,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": null
+      },
+      {
+        "id": "ZTF23abidzvf",
+        "source_family": "non_grb",
+        "priority": "high",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "redshift_extreme",
+          "has_comments"
+        ],
+        "selection_context": {
+          "redshift": 0.15,
+          "num_det_global": 3,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": null
+      },
+      {
+        "id": "2025aji",
+        "source_family": "non_grb",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 2.151,
+          "num_det_global": 331,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "GRB 250129A data. The GRANDMA collaboration began observing the GRB using the Télescopes à Action Rapide pour les Objets Transitoires (TAROT) about 106 s after T0. "
+      },
+      {
+        "id": "2026cex",
+        "source_family": "non_grb",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": null,
+          "num_det_global": 181,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA",
+            "GRANDMA/Kilonova-Catcher"
+          ]
+        },
+        "source_summary": "LBOT candidate: check the ATeL story -> https://www.astronomerstelegram.org/?read=17646.\nZTF candidate ID is ZTF26aaedxli. T0 is time of first alert"
+      },
+      {
+        "id": "ATLAS24fsk",
+        "source_family": "non_grb",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": null,
+          "num_det_global": 139,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA",
+            "GRANDMA/Kilonova-Catcher"
+          ]
+        },
+        "source_summary": null
+      },
+      {
+        "id": "PKS0446+11",
+        "source_family": "non_grb",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": null,
+          "num_det_global": 41,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": null
+      },
+      {
+        "id": "2025gcz",
+        "source_family": "non_grb",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_redshift",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": 3.035,
+          "num_det_global": 40,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": "AKA GRB250327B SVOM/ECLAIRs long GRB high redshift detected in the energy range of [8-120] keV (standard long), detected in X-ray with MXT and in optical. The optical counterpart was extremely bright R = 14.1 ± 0.1, 17 min post T0. The coordinates corresponds to the GOTO automatic source. GRB 250327B: NOT spectroscopic redshift z = 3.035  GCN 39893"
+      },
+      {
+        "id": "2025adht",
+        "source_family": "non_grb",
+        "priority": "medium",
+        "selection_reasons": [
+          "in_grandma_group",
+          "has_followup",
+          "at_least_2_detections",
+          "has_comments",
+          "num_det_global_gte_5"
+        ],
+        "selection_context": {
+          "redshift": null,
+          "num_det_global": 23,
+          "comment_exists": true,
+          "groups": [
+            "GRANDMA"
+          ]
+        },
+        "source_summary": null
+      }
+    ]
+  },
+  "summary": {
+    "input_counts": {
+      "total_sources": 82,
+      "grb_like_candidates": 36,
+      "non_grb_candidates": 39,
+      "excluded_ep_candidates": 7
+    },
+    "candidate_priority_counts": {
+      "grb_like": {
+        "high": 7,
+        "medium": 25,
+        "low": 4
+      },
+      "non_grb": {
+        "high": 4,
+        "medium": 14,
+        "low": 21
+      }
+    },
+    "selected_counts": {
+      "grb_like": 20,
+      "non_grb": 10
+    }
+  }
+}
