@@ -27,9 +27,10 @@ Included here:
 | Environment and shared config | [00_setup.md](./00_setup.md) |
 | Endpoint audit workflow | [01_endpoint_audit.md](./01_endpoint_audit.md) |
 | Source inventory workflow | [02_source_inventory.md](./02_source_inventory.md) |
-| Named inventory profiles and observed runs | [03_filtered_inventories.md](./03_filtered_inventories.md) |
-| Shortlist of relevant endpoints | [04_relevant_endpoints.md](./04_relevant_endpoints.md) |
-| Practical `/api/sources` filters | [05_relevant_source_filters.md](./05_relevant_source_filters.md) |
+| Source selection for later bundles | [03_source_selection.md](./03_source_selection.md) |
+| Named inventory profiles and observed runs | [04_filtered_inventories.md](./04_filtered_inventories.md) |
+| Shortlist of relevant endpoints | [05_relevant_endpoints.md](./05_relevant_endpoints.md) |
+| Practical `/api/sources` filters | [06_relevant_source_filters.md](./06_relevant_source_filters.md) |
 
 Related documents outside this folder:
 
@@ -44,9 +45,10 @@ Related documents outside this folder:
 1. [00_setup.md](./00_setup.md)
 2. [01_endpoint_audit.md](./01_endpoint_audit.md)
 3. [02_source_inventory.md](./02_source_inventory.md)
-4. [03_filtered_inventories.md](./03_filtered_inventories.md)
-5. [04_relevant_endpoints.md](./04_relevant_endpoints.md)
-6. [05_relevant_source_filters.md](./05_relevant_source_filters.md)
+4. [03_source_selection.md](./03_source_selection.md)
+5. [04_filtered_inventories.md](./04_filtered_inventories.md)
+6. [05_relevant_endpoints.md](./05_relevant_endpoints.md)
+7. [06_relevant_source_filters.md](./06_relevant_source_filters.md)
 
 ## Local output roots
 

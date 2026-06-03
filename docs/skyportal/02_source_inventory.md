@@ -132,4 +132,12 @@ Unless you override them, the inventory workflow uses the shared defaults from
 | `sleep_seconds` | 0.3 |
 
 The main named profiles are documented in
-[03_filtered_inventories.md](./03_filtered_inventories.md).
+[04_filtered_inventories.md](./04_filtered_inventories.md).
+
+## Next step: source selection
+
+Once a filtered inventory looks good, the next step is to derive a smaller,
+explicit list of bundle candidates from that saved run.
+
+That workflow is documented separately in
+[03_source_selection.md](./03_source_selection.md).

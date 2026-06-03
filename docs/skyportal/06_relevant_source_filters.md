@@ -15,6 +15,7 @@ The following filters are already part of the documented inventory profiles.
 |---|---|---|---:|
 | `has_spectrum` | `hasSpectrum=true` | Select sources with at least one spectrum | 60 |
 | `has_followup` | `hasFollowupRequest=true` | Select sources with at least one follow-up request | 370 |
+| `grandma_followup_det2_base` | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2` | Select GRANDMA follow-up sources with at least two detections | 82 |
 | `classified` | `classified=true` | Select classified sources | 834 |
 | `redshift` | `minRedshift=0.0001` | Select sources with positive redshift | 51 |
 | `many_detections` | `numberDetections=5` | Select sources with broader photometric coverage | 71 |

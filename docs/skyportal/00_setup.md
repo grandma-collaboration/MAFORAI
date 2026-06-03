@@ -59,7 +59,7 @@ That file is already used by the current scripts. It centralizes:
 | Shared HTTP defaults | Timeouts and retries |
 | Audit defaults | Timeout, inter-request sleep, and sample context |
 | Inventory defaults | Page size, retries, sleep, and start page |
-| Named inventory profiles | `recent_500`, `has_spectrum`, `has_followup`, `classified`, `redshift`, `many_detections`, `gcn`, `ep` |
+| Named inventory profiles | `recent_500`, `has_spectrum`, `has_followup`, `grandma_followup_det2_base`, `classified`, `redshift`, `many_detections`, `gcn`, `ep` |
 
 Secrets still belong in `.env`, not in YAML.
 

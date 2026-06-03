@@ -151,4 +151,4 @@ For the current phase, the most important pieces are:
 3. specialized source-level endpoints for photometry, spectra, comments,
    classifications, and GCN context.
 
-The shorter operational shortlist lives in `docs/skyportal/04_relevant_endpoints.md`.
+The shorter operational shortlist lives in `docs/skyportal/05_relevant_endpoints.md`.

@@ -72,3 +72,44 @@ Current consequence:
 
 - the scripts no longer need to repeat the same defaults;
 - inventory recipes can be run by profile name;
+
+## 6. Select source bundles from one clear operational baseline
+
+The current source-selection step starts from one saved inventory:
+`grandma_followup_det2_base`.
+
+That baseline was chosen because it already combines the practical conditions
+we wanted to preserve for the next stage:
+
+- membership in the `GRANDMA` group;
+- at least one follow-up request;
+- at least two detections.
+
+Current consequence:
+
+- bundle selection is based on one explicit and reproducible inventory, not on
+  a mix of ad hoc subsets;
+- the first curated sample favors `GCN*` and `GRB*` sources as `grb_like`
+  candidates;
+- `EP*` sources are excluded from the initial `non_grb` set to avoid mixing
+  ambiguous cases too early.
+
+## 7. Keep the first selection compact and explainable
+
+The first curated selection is intentionally small and easy to review:
+
+- 20 `grb_like` sources;
+- 10 `non_grb` sources.
+
+Priority is assigned with simple rules rather than a complex score:
+
+- `high` for extreme redshift cases (`z < 1` or `z > 4`);
+- `medium` when redshift is present, or when comments and stronger detection
+  coverage suggest a better-documented source;
+- `low` for the remaining valid candidates.
+
+Current consequence:
+
+- the selection JSON stays readable and reproducible;
+- every chosen source can be justified with explicit criteria instead of opaque
+  ranking logic.
