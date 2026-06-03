@@ -11,6 +11,7 @@ from .skyportal_client import (
     load_dotenv_if_available,
     parse_json_response,
 )
+from .source_selection import run_source_selection
 from .source_inventory import run_source_inventory
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "load_dotenv_if_available",
     "parse_json_response",
     "run_endpoint_audit",
+    "run_source_selection",
     "run_source_inventory",
 ]
