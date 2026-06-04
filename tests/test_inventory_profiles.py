@@ -18,6 +18,9 @@ class InventoryProfileTests(unittest.TestCase):
     def test_expected_profile_exists(self) -> None:
         self.assertIn("recent_500", self.config.inventory.profiles)
         self.assertIn("has_spectrum", self.config.inventory.profiles)
+        self.assertIn("has_robotic_followup", self.config.inventory.profiles)
+        self.assertIn("grandma_det2_base", self.config.inventory.profiles)
+        self.assertIn("grandma_base", self.config.inventory.profiles)
 
     def test_profile_resolution_applies_defaults_and_template(self) -> None:
         profile = resolve_inventory_profile(self.config, "recent_500")

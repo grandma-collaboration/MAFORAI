@@ -61,22 +61,39 @@ inventory:
       query_template: "enriched_recent_desc"
       query_params:
         hasSpectrum: "true"
-    has_followup:
-      description: "Complete filtered inventory of sources with at least one follow-up request."
-      run_label: "has_followup"
+    has_robotic_followup:
+      description: "Complete filtered inventory of sources with the explicit robotic/request-based follow-up flag."
+      run_label: "has_robotic_followup"
       max_pages: 0
       query_template: "enriched_recent_desc"
       query_params:
         hasFollowupRequest: "true"
-    grandma_followup_det2_base:
-      description: "Complete filtered inventory of GRANDMA sources with follow-up requests and at least two detections."
-      run_label: "grandma_followup_det2_base"
+    grandma_has_robotic_followup_det2_base:
+      description: "Complete filtered inventory of GRANDMA sources with the robotic follow-up request flag and at least two detections."
+      run_label: "grandma_has_robotic_followup_det2_base"
       max_pages: 0
       query_template: "enriched_recent_desc"
       query_params:
         hasFollowupRequest: "true"
         group_ids: "3"
         numberDetections: "2"
+        includeHosts: "true"
+    grandma_det2_base:
+      description: "Complete filtered inventory of GRANDMA sources with at least two detections and no follow-up request filter."
+      run_label: "grandma_det2_base"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        group_ids: "3"
+        numberDetections: "2"
+        includeHosts: "true"
+    grandma_base:
+      description: "Complete enriched inventory of GRANDMA sources without follow-up or detection filters."
+      run_label: "grandma_base"
+      max_pages: 0
+      query_template: "enriched_recent_desc"
+      query_params:
+        group_ids: "3"
         includeHosts: "true"
     classified:
       description: "Complete filtered inventory of sources with at least one classification."

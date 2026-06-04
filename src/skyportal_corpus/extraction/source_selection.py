@@ -1,8 +1,7 @@
-"""Operational scaffolding for selecting sources from one saved inventory."""
+"""Helpers for selecting GCN-derived GRANDMA events from saved inventories."""
 
 from __future__ import annotations
 
-import argparse
 import json
 from collections import Counter
 from datetime import datetime, timezone
@@ -12,26 +11,25 @@ from typing import Any
 from ..core import resolve_project_path
 
 DEFAULT_SELECTION_OUTPUT = "data/samples/selected_sources_for_bundles.json"
+DEFAULT_GCN_GRANDMA_OUTPUT = "data/samples/gcn_grandma.json"
+DEFAULT_GCN_GRANDMA_INPUT = "data/samples/gcn_grandma_grandma_base.json"
 GRANDMA_GROUP_ID = 3
 KNC_GROUP_ID = 38
-BASE_CRITERIA = [
-    "group_ids=3",
-    "hasFollowupRequest=true",
-    "numberDetections>=2",
-]
-FAMILY_RULES = {
-    "grb_like": "id starts with GCN or GRB",
-    "non_grb": "not GCN, not GRB, not EP",
-}
-PRIORITY_RULES = {
-    "high": "redshift < 1 or redshift > 4",
-    "medium": "has redshift or (comment_exists and num_det_global >= 5)",
-    "low": "everything else in the base inventory",
-}
 PRIORITY_RANK = {
     "high": 0,
     "medium": 1,
     "low": 2,
+}
+GCN_DERIVED_RULES = {
+    "grb": "id starts with GRB",
+    "gw": "id starts with GW",
+    "ep": "id starts with EP",
+    "gcn": "id starts with GCN",
+}
+GCN_BUNDLE_PRIORITY_RULES = {
+    "high": "extreme redshift, or redshift+comments+num_det_global>=5, or GO GRANDMA (HIGH PRIORITY)",
+    "medium": "known redshift, or comments+num_det_global>=5, or GRB/GO GRANDMA classification support",
+    "low": "remaining GCN-derived events",
 }
 
 
@@ -41,6 +39,17 @@ def save_json(path: Path, data: Any) -> None:
         json.dump(data, handle, ensure_ascii=False, indent=2)
 
 
+def load_json_object(path: Path) -> dict[str, Any]:
+    """Load one JSON object from disk."""
+    with path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected a JSON object: {path}")
+
+    return payload
+
+
 def load_inventory_manifest(inventory_dir: Path) -> dict[str, Any]:
     """Load the manifest for one saved source-inventory run."""
     manifest_path = inventory_dir / "manifest.json"
@@ -48,13 +57,7 @@ def load_inventory_manifest(inventory_dir: Path) -> dict[str, Any]:
     if not manifest_path.exists():
         raise FileNotFoundError(f"Inventory manifest not found: {manifest_path}")
 
-    with manifest_path.open("r", encoding="utf-8") as handle:
-        manifest = json.load(handle)
-
-    if not isinstance(manifest, dict):
-        raise ValueError(f"Inventory manifest must be a JSON object: {manifest_path}")
-
-    return manifest
+    return load_json_object(manifest_path)
 
 
 def load_inventory_sources(inventory_dir: Path) -> list[dict[str, Any]]:
@@ -62,9 +65,7 @@ def load_inventory_sources(inventory_dir: Path) -> list[dict[str, Any]]:
     sources: list[dict[str, Any]] = []
 
     for page_path in sorted(inventory_dir.glob("sources_page_*.json")):
-        with page_path.open("r", encoding="utf-8") as handle:
-            payload = json.load(handle)
-
+        payload = load_json_object(page_path)
         page_sources = payload.get("data", {}).get("sources", [])
         if not isinstance(page_sources, list):
             continue
@@ -79,13 +80,22 @@ def load_inventory_sources(inventory_dir: Path) -> list[dict[str, Any]]:
     return sources
 
 
-def classify_source_family(source_id: str) -> str:
-    """Classify a source ID into the family buckets used by bundle selection."""
-    if source_id.startswith("GCN") or source_id.startswith("GRB"):
-        return "grb_like"
+def classify_gcn_derived_type(source_id: str) -> str:
+    """Classify a GCN-derived source ID into its subtype."""
+    if source_id.startswith("GRB"):
+        return "grb"
+    if source_id.startswith("GW"):
+        return "gw"
     if source_id.startswith("EP"):
         return "ep"
-    return "non_grb"
+    if source_id.startswith("GCN"):
+        return "gcn"
+    return "other"
+
+
+def is_gcn_derived_source(source_id: str) -> bool:
+    """Return whether the source ID follows the GCN-derived naming scheme."""
+    return classify_gcn_derived_type(source_id) != "other"
 
 
 def extract_num_det_global(source: dict[str, Any]) -> int:
@@ -122,201 +132,339 @@ def extract_relevant_groups(source: dict[str, Any]) -> list[str]:
     return relevant_names
 
 
-def build_selection_reasons(source: dict[str, Any], redshift: float | None, num_det_global: int) -> list[str]:
-    """Build the explicit list of criteria that explain one source selection."""
-    reasons = [
-        "in_grandma_group",
-        "has_followup",
-        "at_least_2_detections",
-    ]
+def extract_classification_labels(source: dict[str, Any]) -> list[str]:
+    """Extract the compact list of classification labels from one source row."""
+    labels: list[str] = []
+    for classification in source.get("classifications", []):
+        if not isinstance(classification, dict):
+            continue
 
-    if redshift is not None:
-        reasons.append("has_redshift")
-        if redshift < 1 or redshift > 4:
-            reasons.append("redshift_extreme")
+        label = classification.get("classification")
+        if isinstance(label, str) and label not in labels:
+            labels.append(label)
 
-    if source.get("comment_exists"):
-        reasons.append("has_comments")
-
-    if num_det_global >= 5:
-        reasons.append("num_det_global_gte_5")
-
-    return reasons
+    return labels
 
 
-def assign_priority(redshift: float | None, comment_exists: bool, num_det_global: int) -> str:
-    """Assign one simple priority bucket from the agreed rules."""
-    if redshift is not None and (redshift < 1 or redshift > 4):
-        return "high"
-    if redshift is not None or (comment_exists and num_det_global >= 5):
-        return "medium"
-    return "low"
+def extract_has_host(source: dict[str, Any]) -> bool:
+    """Return whether the source row exposes a host association."""
+    host_id = source.get("host_id")
+    return isinstance(host_id, int)
 
 
-def build_selected_event(source: dict[str, Any]) -> dict[str, Any]:
-    """Build the compact selected-event record written to the final JSON."""
+def build_gcn_grandma_event(source: dict[str, Any]) -> dict[str, Any]:
+    """Build one compact GCN-derived source record."""
     source_id = str(source.get("id", ""))
-    source_family = classify_source_family(source_id)
     redshift = source.get("redshift")
     if not isinstance(redshift, (int, float)):
         redshift = None
 
-    num_det_global = extract_num_det_global(source)
-    comment_exists = bool(source.get("comment_exists"))
-    priority = assign_priority(redshift, comment_exists, num_det_global)
-
     return {
         "id": source_id,
-        "source_family": source_family,
-        "priority": priority,
-        "selection_reasons": build_selection_reasons(source, redshift, num_det_global),
-        "selection_context": {
-            "redshift": redshift,
-            "num_det_global": num_det_global,
-            "comment_exists": comment_exists,
-            "groups": extract_relevant_groups(source),
-        },
+        "gcn_source_type": classify_gcn_derived_type(source_id),
+        "redshift": redshift,
+        "comment_exists": bool(source.get("comment_exists")),
+        "num_det_global": extract_num_det_global(source),
+        "has_host": extract_has_host(source),
+        "groups": extract_relevant_groups(source),
+        "classification_labels": extract_classification_labels(source),
         "source_summary": source.get("summary"),
     }
 
 
-def candidate_sort_key(candidate: dict[str, Any]) -> tuple[int, int, int, str]:
-    """Sort candidates deterministically within each family."""
+def build_gcn_grandma_contract(
+    inventory_dir: Path,
+    output_path: Path,
+    manifest: dict[str, Any],
+    sources: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build the base list of all GCN-derived GRANDMA sources."""
+    gcn_sources = [
+        build_gcn_grandma_event(source)
+        for source in sources
+        if is_gcn_derived_source(str(source.get("id", "")))
+    ]
+    gcn_sources.sort(key=lambda item: (item["gcn_source_type"], item["id"]))
+    subtype_counts = Counter(item["gcn_source_type"] for item in gcn_sources)
+
+    return {
+        "gcn_grandma_run": {
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "inventory_dir": str(inventory_dir),
+            "inventory_run_label": manifest.get("run_label"),
+            "inventory_profile_name": manifest.get("profile_name"),
+            "output_file": str(output_path),
+        },
+        "criteria": {
+            "base": [
+                "group_ids=3",
+            ],
+            "gcn_derived_id_rules": GCN_DERIVED_RULES,
+        },
+        "sources": gcn_sources,
+        "summary": {
+            "input_counts": {
+                "total_sources": len(sources),
+                "gcn_derived_sources": len(gcn_sources),
+                "by_type": {
+                    "gcn": subtype_counts.get("gcn", 0),
+                    "grb": subtype_counts.get("grb", 0),
+                    "gw": subtype_counts.get("gw", 0),
+                    "ep": subtype_counts.get("ep", 0),
+                },
+            }
+        },
+    }
+
+
+def build_gcn_bundle_selection_reasons(event: dict[str, Any]) -> list[str]:
+    """Build the explicit list of reasons for one final GCN-derived candidate."""
+    reasons = ["in_gcn_grandma_base"]
+
+    redshift = event.get("redshift")
+    if isinstance(redshift, (int, float)):
+        reasons.append("has_redshift")
+        if redshift < 1 or redshift > 4:
+            reasons.append("redshift_extreme")
+
+    if event.get("comment_exists"):
+        reasons.append("has_comments")
+
+    num_det_global = event.get("num_det_global")
+    if isinstance(num_det_global, int):
+        if num_det_global >= 2:
+            reasons.append("num_det_global_gte_2")
+        if num_det_global >= 5:
+            reasons.append("num_det_global_gte_5")
+
+    if event.get("has_host"):
+        reasons.append("has_host")
+
+    labels = event.get("classification_labels", [])
+    if isinstance(labels, list):
+        if "GRB" in labels:
+            reasons.append("classified_as_grb")
+        if "GO GRANDMA" in labels:
+            reasons.append("go_grandma")
+        if "GO GRANDMA (HIGH PRIORITY)" in labels:
+            reasons.append("go_grandma_high_priority")
+        if "STOP GRANDMA" in labels:
+            reasons.append("stop_grandma")
+
+    return reasons
+
+
+def assign_gcn_bundle_priority(event: dict[str, Any]) -> tuple[str, int]:
+    """Assign a simple priority and ordering score from one GCN-derived event."""
+    redshift = event.get("redshift")
+    comment_exists = bool(event.get("comment_exists"))
+    num_det_global = event.get("num_det_global")
+    if not isinstance(num_det_global, int):
+        num_det_global = 0
+    labels = event.get("classification_labels", [])
+    if not isinstance(labels, list):
+        labels = []
+
+    score = 0
+
+    if isinstance(redshift, (int, float)):
+        score += 2
+        if redshift < 1 or redshift > 4:
+            score += 4
+
+    if comment_exists:
+        score += 1
+
+    if num_det_global >= 2:
+        score += 1
+    if num_det_global >= 5:
+        score += 2
+
+    if "GRB" in labels:
+        score += 2
+    if "GO GRANDMA" in labels:
+        score += 1
+    if "GO GRANDMA (HIGH PRIORITY)" in labels:
+        score += 3
+
+    if "GO GRANDMA (HIGH PRIORITY)" in labels:
+        return "high", score
+    if isinstance(redshift, (int, float)) and (redshift < 1 or redshift > 4):
+        return "high", score
+    if isinstance(redshift, (int, float)) and comment_exists and num_det_global >= 5:
+        return "high", score
+    if (
+        isinstance(redshift, (int, float))
+        or (comment_exists and num_det_global >= 5)
+        or "GRB" in labels
+        or "GO GRANDMA" in labels
+    ):
+        return "medium", score
+    return "low", score
+
+
+def build_gcn_bundle_candidate(event: dict[str, Any]) -> dict[str, Any]:
+    """Build one final bundle candidate from the GCN-derived GRANDMA base list."""
+    priority, score = assign_gcn_bundle_priority(event)
+    return {
+        "id": event.get("id"),
+        "gcn_source_type": event.get("gcn_source_type"),
+        "priority": priority,
+        "selection_score": score,
+        "selection_reasons": build_gcn_bundle_selection_reasons(event),
+        "selection_context": {
+            "redshift": event.get("redshift"),
+            "comment_exists": event.get("comment_exists"),
+            "num_det_global": event.get("num_det_global"),
+            "has_host": event.get("has_host"),
+            "groups": event.get("groups"),
+            "classification_labels": event.get("classification_labels"),
+        },
+        "source_summary": event.get("source_summary"),
+    }
+
+
+def gcn_bundle_candidate_sort_key(candidate: dict[str, Any]) -> tuple[int, int, int, str]:
+    """Sort final bundle candidates deterministically."""
     context = candidate.get("selection_context", {})
-    comment_exists = bool(context.get("comment_exists"))
     num_det_global = context.get("num_det_global")
     if not isinstance(num_det_global, int):
         num_det_global = 0
 
     return (
         PRIORITY_RANK[candidate["priority"]],
-        0 if comment_exists else 1,
+        -candidate["selection_score"],
         -num_det_global,
         candidate["id"],
     )
 
 
-def split_candidates_by_family(sources: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Build selected-event candidates and split them into the kept families."""
-    grb_like: list[dict[str, Any]] = []
-    non_grb: list[dict[str, Any]] = []
-
-    for source in sources:
-        candidate = build_selected_event(source)
-
-        if candidate["source_family"] == "grb_like":
-            grb_like.append(candidate)
-        elif candidate["source_family"] == "non_grb":
-            non_grb.append(candidate)
-
-    grb_like.sort(key=candidate_sort_key)
-    non_grb.sort(key=candidate_sort_key)
-
-    return grb_like, non_grb
-
-
-def summarize_priorities(candidates: list[dict[str, Any]]) -> dict[str, int]:
-    """Count candidates by priority bucket."""
-    counts = Counter(candidate["priority"] for candidate in candidates)
-    return {
-        "high": counts.get("high", 0),
-        "medium": counts.get("medium", 0),
-        "low": counts.get("low", 0),
-    }
-
-
-def default_selection_output_path(manifest: dict[str, Any]) -> Path:
-    """Build the default JSON output path for one selection run."""
-    run_label = manifest.get("run_label")
-    if isinstance(run_label, str) and run_label.strip():
-        filename = f"selected_sources_for_bundles_{run_label.strip()}.json"
-    else:
-        filename = Path(DEFAULT_SELECTION_OUTPUT).name
-
-    return resolve_project_path(Path(DEFAULT_SELECTION_OUTPUT).parent / filename)
-
-
-def build_selection_contract(
-    inventory_dir: Path,
+def build_gcn_bundle_selection_contract(
+    gcn_grandma_path: Path,
     output_path: Path,
-    manifest: dict[str, Any],
-    sources: list[dict[str, Any]],
-    target_grb_like: int,
-    target_non_grb: int,
+    payload: dict[str, Any],
 ) -> dict[str, Any]:
-    """Build the initial JSON contract for the later selection step."""
-    family_counts = Counter(
-        classify_source_family(str(source.get("id", ""))) for source in sources
-    )
-    grb_like_candidates, non_grb_candidates = split_candidates_by_family(sources)
-    selected_grb_like = grb_like_candidates[:target_grb_like]
-    selected_non_grb = non_grb_candidates[:target_non_grb]
+    """Build the final prioritized bundle-selection file from the GCN-derived base list."""
+    gcn_sources = payload.get("sources", [])
+    if not isinstance(gcn_sources, list):
+        raise ValueError(f"Expected 'sources' list in {gcn_grandma_path}")
+
+    candidates = [
+        build_gcn_bundle_candidate(event)
+        for event in gcn_sources
+        if isinstance(event, dict)
+    ]
+    candidates.sort(key=gcn_bundle_candidate_sort_key)
+    priority_counts = Counter(candidate["priority"] for candidate in candidates)
+    type_counts = Counter(candidate["gcn_source_type"] for candidate in candidates)
 
     return {
         "selection_run": {
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "inventory_dir": str(inventory_dir),
-            "inventory_run_label": manifest.get("run_label"),
-            "inventory_profile_name": manifest.get("profile_name"),
+            "input_file": str(gcn_grandma_path),
+            "input_run_label": payload.get("gcn_grandma_run", {}).get("inventory_run_label"),
             "output_file": str(output_path),
-            "target_counts": {
-                "grb_like": target_grb_like,
-                "non_grb": target_non_grb,
-            },
         },
         "criteria": {
-            "base": BASE_CRITERIA,
-            "family_rules": FAMILY_RULES,
-            "priority_rules": PRIORITY_RULES,
+            "base": [
+                "GCN-derived source in GRANDMA",
+            ],
+            "priority_rules": GCN_BUNDLE_PRIORITY_RULES,
         },
-        "selected": {
-            "grb_like": selected_grb_like,
-            "non_grb": selected_non_grb,
-        },
+        "selected_sources": candidates,
         "summary": {
             "input_counts": {
-                "total_sources": len(sources),
-                "grb_like_candidates": family_counts.get("grb_like", 0),
-                "non_grb_candidates": family_counts.get("non_grb", 0),
-                "excluded_ep_candidates": family_counts.get("ep", 0),
+                "gcn_derived_sources": len(candidates),
+                "by_type": {
+                    "gcn": type_counts.get("gcn", 0),
+                    "grb": type_counts.get("grb", 0),
+                    "gw": type_counts.get("gw", 0),
+                    "ep": type_counts.get("ep", 0),
+                },
             },
-            "candidate_priority_counts": {
-                "grb_like": summarize_priorities(grb_like_candidates),
-                "non_grb": summarize_priorities(non_grb_candidates),
-            },
-            "selected_counts": {
-                "grb_like": len(selected_grb_like),
-                "non_grb": len(selected_non_grb),
+            "priority_counts": {
+                "high": priority_counts.get("high", 0),
+                "medium": priority_counts.get("medium", 0),
+                "low": priority_counts.get("low", 0),
             },
         },
     }
 
 
-def run_source_selection(args: argparse.Namespace) -> None:
-    """Create the initial source-selection contract for one saved inventory."""
-    inventory_dir = resolve_project_path(args.inventory_dir)
-    manifest = load_inventory_manifest(inventory_dir)
-    sources = load_inventory_sources(inventory_dir)
+def default_selection_output_path() -> Path:
+    """Build the default JSON output path for the final bundle selection."""
+    return resolve_project_path(DEFAULT_SELECTION_OUTPUT)
 
-    if args.output:
-        output_path = resolve_project_path(args.output)
+
+def default_gcn_grandma_output_path(manifest: dict[str, Any]) -> Path:
+    """Build the default JSON output path for one GCN-derived GRANDMA list."""
+    run_label = manifest.get("run_label")
+    if isinstance(run_label, str) and run_label.strip():
+        filename = f"gcn_grandma_{run_label.strip()}.json"
     else:
-        output_path = default_selection_output_path(manifest)
+        filename = Path(DEFAULT_GCN_GRANDMA_OUTPUT).name
 
-    payload = build_selection_contract(
-        inventory_dir=inventory_dir,
-        output_path=output_path,
-        manifest=manifest,
-        sources=sources,
-        target_grb_like=args.target_grb_like,
-        target_non_grb=args.target_non_grb,
-    )
+    return resolve_project_path(Path(DEFAULT_GCN_GRANDMA_OUTPUT).parent / filename)
 
+
+def default_gcn_grandma_input_path() -> Path:
+    """Return the default path to the current GCN-derived GRANDMA base list."""
+    return resolve_project_path(DEFAULT_GCN_GRANDMA_INPUT)
+
+
+def write_payload(output_path: Path, payload: dict[str, Any]) -> None:
+    """Persist one built selection payload to disk."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     save_json(output_path, payload)
 
-    print(f"Wrote selection contract: {output_path}")
-    print(
-        "Input counts:",
-        payload["summary"]["input_counts"],
+
+def run_gcn_grandma_build(
+    inventory_dir: str | Path,
+    output: str | Path | None = None,
+) -> Path:
+    """Build the enriched GCN-derived GRANDMA base list from one inventory run."""
+    resolved_inventory_dir = resolve_project_path(inventory_dir)
+    manifest = load_inventory_manifest(resolved_inventory_dir)
+    sources = load_inventory_sources(resolved_inventory_dir)
+    output_path = (
+        resolve_project_path(output)
+        if output is not None
+        else default_gcn_grandma_output_path(manifest)
     )
+    payload = build_gcn_grandma_contract(
+        inventory_dir=resolved_inventory_dir,
+        output_path=output_path,
+        manifest=manifest,
+        sources=sources,
+    )
+    write_payload(output_path, payload)
+    print(f"Wrote GCN-derived GRANDMA list: {output_path}")
+    print("Input counts:", payload["summary"]["input_counts"])
+    return output_path
+
+
+def run_selected_sources_build(
+    gcn_grandma_path: str | Path | None = None,
+    output: str | Path | None = None,
+) -> Path:
+    """Build the final selected-sources file from the GCN-derived GRANDMA base list."""
+    resolved_gcn_grandma_path = (
+        resolve_project_path(gcn_grandma_path)
+        if gcn_grandma_path is not None
+        else default_gcn_grandma_input_path()
+    )
+    output_path = (
+        resolve_project_path(output)
+        if output is not None
+        else default_selection_output_path()
+    )
+    payload = build_gcn_bundle_selection_contract(
+        gcn_grandma_path=resolved_gcn_grandma_path,
+        output_path=output_path,
+        payload=load_json_object(resolved_gcn_grandma_path),
+    )
+    write_payload(output_path, payload)
+    print(f"Wrote final bundle selection: {output_path}")
+    print("Input counts:", payload["summary"]["input_counts"])
+    print("Priority counts:", payload["summary"]["priority_counts"])
+    return output_path
