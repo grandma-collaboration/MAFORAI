@@ -17,8 +17,10 @@ The important distinction is simple:
 |---|---|---|---|
 | `recent_500` | Bounded recent slice | `sortBy=saved_at`, `sortOrder=desc`, `max_pages=5` | Quick overview of recently saved sources |
 | `has_spectrum` | Complete filtered subset | `hasSpectrum=true` | Sources with at least one spectrum |
-| `has_followup` | Complete filtered subset | `hasFollowupRequest=true` | Sources with at least one follow-up request |
-| `grandma_followup_det2_base` | Complete filtered subset | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2` | GRANDMA sources with follow-up activity and at least two detections |
+| `has_robotic_followup` | Complete filtered subset | `hasFollowupRequest=true` | Sources carrying the explicit robotic/request-based follow-up flag |
+| `grandma_has_robotic_followup_det2_base` | Complete filtered subset | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2` | GRANDMA sources with the robotic follow-up request flag and at least two detections |
+| `grandma_base` | Complete filtered subset | `group_ids=3` | Enriched GRANDMA inventory without follow-up or detection filters |
+| `grandma_det2_base` | Complete filtered subset | `group_ids=3`, `numberDetections=2` | GRANDMA sources with at least two detections, without a follow-up filter |
 | `classified` | Complete filtered subset | `classified=true` | Sources with at least one classification |
 | `redshift` | Complete filtered subset | `minRedshift=0.0001` | Sources with positive redshift |
 | `many_detections` | Complete filtered subset | `numberDetections=5` | Sources with at least five detections |
@@ -46,8 +48,10 @@ The normal way to run these inventories is now by profile name:
 ```bash
 python scripts/02_fetch_source_inventory.py --profile recent_500
 python scripts/02_fetch_source_inventory.py --profile has_spectrum
-python scripts/02_fetch_source_inventory.py --profile has_followup
-python scripts/02_fetch_source_inventory.py --profile grandma_followup_det2_base
+python scripts/02_fetch_source_inventory.py --profile has_robotic_followup
+python scripts/02_fetch_source_inventory.py --profile grandma_has_robotic_followup_det2_base
+python scripts/02_fetch_source_inventory.py --profile grandma_base
+python scripts/02_fetch_source_inventory.py --profile grandma_det2_base
 python scripts/02_fetch_source_inventory.py --profile classified
 python scripts/02_fetch_source_inventory.py --profile redshift
 python scripts/02_fetch_source_inventory.py --profile many_detections
@@ -73,8 +77,10 @@ The table below records the runs used while writing this documentation.
 |---|---|---:|---:|---:|---|
 | `recent_500` | `sortBy=saved_at`, `sortOrder=desc` | 50,618 | 5 | 500 | `max_pages_reached` |
 | `has_spectrum` | `hasSpectrum=true` | 60 | 1 | 60 | `api_total_matches_reached` |
-| `has_followup` | `hasFollowupRequest=true` | 370 | 4 | 370 | `api_total_matches_reached` |
-| `grandma_followup_det2_base` | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2`, `includeHosts=true` | 82 | 1 | 82 | `api_total_matches_reached` |
+| `has_robotic_followup` | `hasFollowupRequest=true` | 370 | 4 | 370 | `api_total_matches_reached` |
+| `grandma_has_robotic_followup_det2_base` | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2`, `includeHosts=true` | 82 | 1 | 82 | `api_total_matches_reached` |
+| `grandma_base` | `group_ids=3`, `includeHosts=true` | 382 | 4 | 382 | `api_total_matches_reached` |
+| `grandma_det2_base` | `group_ids=3`, `numberDetections=2`, `includeHosts=true` | 95 | 1 | 95 | `api_total_matches_reached` |
 | `classified` | `classified=true` | 834 | 9 | 834 | `api_total_matches_reached` |
 | `redshift` | `minRedshift=0.0001` | 51 | 1 | 51 | `api_total_matches_reached` |
 | `many_detections` | `numberDetections=5` | 71 | 1 | 71 | `api_total_matches_reached` |

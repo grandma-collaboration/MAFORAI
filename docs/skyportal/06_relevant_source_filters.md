@@ -14,8 +14,9 @@ The following filters are already part of the documented inventory profiles.
 | Profile | Main filter | Why it is useful | Observed result |
 |---|---|---|---:|
 | `has_spectrum` | `hasSpectrum=true` | Select sources with at least one spectrum | 60 |
-| `has_followup` | `hasFollowupRequest=true` | Select sources with at least one follow-up request | 370 |
-| `grandma_followup_det2_base` | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2` | Select GRANDMA follow-up sources with at least two detections | 82 |
+| `has_robotic_followup` | `hasFollowupRequest=true` | Select sources with the explicit robotic/request-based follow-up flag | 370 |
+| `grandma_has_robotic_followup_det2_base` | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2` | Select GRANDMA sources with the robotic follow-up request flag and at least two detections | 82 |
+| `grandma_det2_base` | `group_ids=3`, `numberDetections=2` | Select GRANDMA sources with at least two detections, without depending on the follow-up request flag | 95 |
 | `classified` | `classified=true` | Select classified sources | 834 |
 | `redshift` | `minRedshift=0.0001` | Select sources with positive redshift | 51 |
 | `many_detections` | `numberDetections=5` | Select sources with broader photometric coverage | 71 |
@@ -103,7 +104,7 @@ in an inventory.
 | Parameter | Why it is useful |
 |---|---|
 | `hasSpectrum=true` | Builds multimodal subsets with spectroscopy |
-| `hasFollowupRequest=true` | Selects sources with explicit follow-up activity |
+| `hasFollowupRequest=true` | Selects sources with the explicit SkyPortal follow-up request flag; this should not be read as "all possible follow-up activity" |
 | `classified=true` | Builds labelled subsets |
 | `unclassified=true` | Builds unlabeled subsets |
 | `minRedshift` / `maxRedshift` | Selects astrophysically meaningful distance ranges |
@@ -205,6 +206,10 @@ Examples:
 
 The exact allowed values for `followupRequestStatus` should be verified from
 the instance data before turning that into a shared profile.
+
+At the moment, this project treats `hasFollowupRequest=true` as a useful
+robotic/request-based proxy only. Other follow-up channels may exist in the
+instance and will need a separate detection strategy.
 
 ## 9. Practical rule
 

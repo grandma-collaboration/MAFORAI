@@ -59,7 +59,7 @@ That file is already used by the current scripts. It centralizes:
 | Shared HTTP defaults | Timeouts and retries |
 | Audit defaults | Timeout, inter-request sleep, and sample context |
 | Inventory defaults | Page size, retries, sleep, and start page |
-| Named inventory profiles | `recent_500`, `has_spectrum`, `has_followup`, `grandma_followup_det2_base`, `classified`, `redshift`, `many_detections`, `gcn`, `ep` |
+| Named inventory profiles | `recent_500`, `has_spectrum`, `has_robotic_followup`, `grandma_has_robotic_followup_det2_base`, `grandma_base`, `grandma_det2_base`, `classified`, `redshift`, `many_detections`, `gcn`, `ep` |
 
 Secrets still belong in `.env`, not in YAML.
 
@@ -71,9 +71,11 @@ The current implementation is intentionally small:
 |---|---|
 | `scripts/01_audit_endpoint_availability.py` | CLI wrapper for the endpoint audit |
 | `scripts/02_fetch_source_inventory.py` | CLI wrapper for the source inventory |
+| `scripts/03_build_gcn_grandma.py` | CLI wrapper for the enriched GCN-derived GRANDMA base list |
+| `scripts/04_build_selected_sources.py` | CLI wrapper for the final selected source list |
 | `src/skyportal_corpus/core/` | Shared config and path helpers |
-| `src/skyportal_corpus/extraction/` | Shared audit, client, and inventory logic |
-| `tests/` | Small tests for config loading and inventory profiles |
+| `src/skyportal_corpus/extraction/` | Shared audit, client, inventory, and GCN-derived selection logic |
+| `tests/` | Small tests for config loading, inventory profiles, and source selection |
 
 ## Output layout
 
@@ -90,6 +92,8 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 ```bash
 python scripts/01_audit_endpoint_availability.py --help
 python scripts/02_fetch_source_inventory.py --help
+python scripts/03_build_gcn_grandma.py --help
+python scripts/04_build_selected_sources.py --help
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 

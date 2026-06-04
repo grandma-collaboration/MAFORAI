@@ -73,43 +73,54 @@ Current consequence:
 - the scripts no longer need to repeat the same defaults;
 - inventory recipes can be run by profile name;
 
-## 6. Select source bundles from one clear operational baseline
+## 6. Build the current selection from one enriched GRANDMA inventory
 
-The current source-selection step starts from one saved inventory:
-`grandma_followup_det2_base`.
+The current selection workflow now starts from the enriched
+`grandma_base` inventory.
 
-That baseline was chosen because it already combines the practical conditions
-we wanted to preserve for the next stage:
+That inventory keeps the scope broad:
 
 - membership in the `GRANDMA` group;
-- at least one follow-up request;
-- at least two detections.
+- comment enrichment;
+- compact detection statistics;
+- host enrichment when available.
 
 Current consequence:
 
-- bundle selection is based on one explicit and reproducible inventory, not on
-  a mix of ad hoc subsets;
-- the first curated sample favors `GCN*` and `GRB*` sources as `grb_like`
-  candidates;
-- `EP*` sources are excluded from the initial `non_grb` set to avoid mixing
-  ambiguous cases too early.
+- the workflow no longer depends on the robotic follow-up request flag to
+  define the base universe;
+- the current base list is broad enough to keep GCN-derived events even when
+  they do not pass a follow-up or detection-count filter.
 
-## 7. Keep the first selection compact and explainable
+## 7. Treat all GCN-derived IDs as one source family
 
-The first curated selection is intentionally small and easy to review:
+For the current workflow, `GCN-*`, `GRB-*`, `GW-*`, and `EP-*` are treated as
+coming from the same GCN ingestion path.
 
-- 20 `grb_like` sources;
-- 10 `non_grb` sources.
+Current consequence:
 
-Priority is assigned with simple rules rather than a complex score:
+- the first derived list is `gcn_grandma`;
+- the final `selected_sources_for_bundles.json` keeps all GCN-derived subtypes
+  in the same prioritized pool instead of splitting them into separate
+  selection families.
 
-- `high` for extreme redshift cases (`z < 1` or `z > 4`);
-- `medium` when redshift is present, or when comments and stronger detection
-  coverage suggest a better-documented source;
-- `low` for the remaining valid candidates.
+## 8. Keep the first prioritized list explainable
+
+The current prioritized list uses simple signals that are already available in
+the enriched inventory:
+
+- redshift;
+- comments;
+- compact detection counts;
+- compact classification labels.
+
+Priority is still assigned with explicit rules rather than a complex model:
+
+- `high` for extreme redshift cases, or strong combined evidence;
+- `medium` for events with useful scientific or operational support;
+- `low` for the remaining GCN-derived events.
 
 Current consequence:
 
 - the selection JSON stays readable and reproducible;
-- every chosen source can be justified with explicit criteria instead of opaque
-  ranking logic.
+- every event can be traced back to a small set of explicit reasons.

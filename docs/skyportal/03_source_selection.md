@@ -2,131 +2,148 @@
 
 ## Goal
 
-This step turns one saved inventory into a smaller, explicit list of source IDs
-to inspect in more detail during the later bundle-extraction stage.
+This step turns the enriched `GRANDMA` inventory into a compact list of
+GCN-derived events to inspect in more detail before downloading per-source
+bundles.
 
-The point is not to build the final dataset yet. The point is to keep a short,
-reproducible candidate list with clear reasons for why each source was kept.
+The current workflow uses two stages:
+
+1. build the enriched `gcn_grandma` base list;
+2. build the final prioritized `selected_sources_for_bundles.json`.
+
+## Current source model
+
+For this workflow, the following IDs are treated as coming from the same GCN
+ingestion path:
+
+- `GCN-*`
+- `GRB-*`
+- `GW-*`
+- `EP-*`
+
+They stay in the same selection pool. We do not split them into separate
+families at this stage.
 
 ## Entry points
 
 | File | Role |
 |---|---|
-| `scripts/03_select_sources_for_bundles.py` | Thin CLI wrapper |
-| `src/skyportal_corpus/extraction/source_selection.py` | Selection logic and JSON builder |
+| `scripts/03_build_gcn_grandma.py` | Thin CLI wrapper for the GCN-derived GRANDMA base list |
+| `scripts/04_build_selected_sources.py` | Thin CLI wrapper for the final selected source list |
+| `src/skyportal_corpus/extraction/source_selection.py` | Selection logic and JSON builders |
 
-## Input
+## Step 1. Build `gcn_grandma`
 
-The current selection step uses one saved inventory as its only input:
+Input:
 
-- `grandma_followup_det2_base`
+- enriched `grandma_base` inventory
 
-This inventory was chosen because it already encodes the operational baseline
-we wanted to preserve:
-
-- source belongs to `GRANDMA` (`group_ids=3`);
-- source has at least one follow-up request;
-- source has at least two detections.
-
-## Why this baseline was chosen
-
-The goal of this first selection pass is to stay close to the events that are
-already active and informative inside SkyPortal.
-
-In practice, this baseline gives us:
-
-- sources that already triggered follow-up interest;
-- enough detections to avoid obviously empty or too-thin cases;
-- a subset tied to the `GRANDMA` workflow rather than the full catalog.
-
-It is a practical starting point for later per-source extraction.
-
-## Family rules
-
-The current selection uses three source families:
-
-| Family | Rule | Outcome |
-|---|---|---|
-| `grb_like` | Source ID starts with `GCN` or `GRB` | Kept |
-| `non_grb` | Source ID does not start with `GCN`, `GRB`, or `EP` | Kept |
-| `ep` | Source ID starts with `EP` | Excluded |
-
-`EP` sources are excluded on purpose in this first pass. Some of them are
-GRB-like, but others are FXTs or less clear cases. Keeping them out of the
-initial `non_grb` sample avoids mixing categories too early.
-
-## Priority rules
-
-Each selected candidate is assigned one simple priority level.
-
-| Priority | Rule |
-|---|---|
-| `high` | `redshift < 1` or `redshift > 4` |
-| `medium` | redshift is present, or `comment_exists=true` and `num_det_global >= 5` |
-| `low` | all other sources in the base inventory |
-
-The reasoning is straightforward:
-
-- extreme redshifts are scientifically interesting enough to deserve the top
-  bucket;
-- comments and a higher detection count are used as signs that the source has
-  more context and better observational support;
-- the remaining sources are still valid candidates, just less urgent.
-
-## Selection quotas
-
-The current target sample is:
-
-| Family | Target count |
-|---|---:|
-| `grb_like` | 20 |
-| `non_grb` | 10 |
-
-This keeps the sample small enough to inspect manually while still preserving a
-clear GRB-heavy subset and a smaller comparison set.
-
-## Fields kept in the output JSON
-
-Each selected source record contains:
-
-| Field | Purpose |
-|---|---|
-| `id` | Source identifier |
-| `source_family` | `grb_like` or `non_grb` |
-| `priority` | `high`, `medium`, or `low` |
-| `selection_reasons` | Explicit list of criteria the source passed |
-| `selection_context.redshift` | Compact redshift context |
-| `selection_context.num_det_global` | Compact detection-count context |
-| `selection_context.comment_exists` | Whether comments exist |
-| `selection_context.groups` | Relevant group names kept for review |
-| `source_summary` | Short human-readable context from the inventory |
-
-The JSON intentionally stays compact. It does not include fields like
-`host_id`, `spectrum_exists`, or internal provenance fields that would make the
-file noisier without helping the first manual review.
-
-## Typical command
+Typical command:
 
 ```bash
-python scripts/03_select_sources_for_bundles.py \
-  --inventory-dir data/raw/skyportal/inventory/source_inventory_grandma_followup_det2_base_<timestamp>
+python scripts/03_build_gcn_grandma.py \
+  --inventory-dir data/raw/skyportal/inventory/source_inventory_grandma_base_<timestamp>
 ```
 
-By default, the output is written under `data/samples/`:
+Default output:
 
 ```text
-data/samples/selected_sources_for_bundles_<run_label>.json
+data/samples/gcn_grandma_<run_label>.json
 ```
 
-## Current observed run
+Fields kept per event:
 
-The current documented run based on `grandma_followup_det2_base` produced:
+- `id`
+- `gcn_source_type`
+- `redshift`
+- `comment_exists`
+- `num_det_global`
+- `has_host`
+- `groups`
+- `classification_labels`
+- `source_summary`
+
+Current observed run:
 
 | Metric | Value |
 |---|---:|
-| Total input sources | 82 |
-| `grb_like` candidates | 36 |
-| `non_grb` candidates | 39 |
-| Excluded `EP` candidates | 7 |
-| Selected `grb_like` sources | 20 |
-| Selected `non_grb` sources | 10 |
+| Total input sources | 382 |
+| GCN-derived sources | 156 |
+| `GCN-*` | 35 |
+| `GRB-*` | 95 |
+| `GW-*` | 0 |
+| `EP-*` | 26 |
+
+## Step 2. Build `selected_sources_for_bundles.json`
+
+Input:
+
+- `data/samples/gcn_grandma_grandma_base.json`
+
+Typical command:
+
+```bash
+python scripts/04_build_selected_sources.py
+```
+
+You can also run it explicitly:
+
+```bash
+python scripts/04_build_selected_sources.py \
+  --gcn-grandma-path data/samples/gcn_grandma_grandma_base.json
+```
+
+Default output:
+
+```text
+data/samples/selected_sources_for_bundles.json
+```
+
+## Priority rules
+
+The final file assigns one priority bucket to every GCN-derived event.
+
+| Priority | Rule |
+|---|---|
+| `high` | extreme redshift, or redshift + comments + `num_det_global >= 5`, or `GO GRANDMA (HIGH PRIORITY)` |
+| `medium` | redshift known, or comments + `num_det_global >= 5`, or supportive `GRB` / `GO GRANDMA` classification |
+| `low` | remaining GCN-derived events |
+
+Signals currently used:
+
+- `redshift`
+- `comment_exists`
+- `num_det_global`
+- `classification_labels`
+
+`has_host` is kept in the JSON for reference, but it is not a strong ranking
+signal yet.
+
+## Fields kept in the final JSON
+
+Each selected record contains:
+
+- `id`
+- `gcn_source_type`
+- `priority`
+- `selection_score`
+- `selection_reasons`
+- `selection_context`
+- `source_summary`
+
+The file stays compact on purpose. It is meant to guide manual review and the
+next bundle-download step, not to store every source field.
+
+## Current observed final run
+
+Based on `gcn_grandma_grandma_base.json`, the current output contains:
+
+| Metric | Value |
+|---|---:|
+| Total selected-source records | 156 |
+| `high` priority | 31 |
+| `medium` priority | 38 |
+| `low` priority | 87 |
+
+This file is the current starting point for deciding which events should be
+evaluated in depth first.
