@@ -1,6 +1,7 @@
 """Shared extraction clients and helpers."""
 
 from .endpoint_audit import run_endpoint_audit
+from .high_priority_samples import run_high_priority_sample_export
 from .skyportal_client import (
     JsonRequestMetadata,
     SkyPortalClient,
@@ -12,6 +13,7 @@ from .skyportal_client import (
     parse_json_response,
 )
 from .source_selection import run_gcn_grandma_build, run_selected_sources_build
+from .source_bundles import run_source_bundles
 from .source_inventory import run_source_inventory
 
 __all__ = [
@@ -23,8 +25,10 @@ __all__ = [
     "get_json_with_retries",
     "load_dotenv_if_available",
     "parse_json_response",
+    "run_high_priority_sample_export",
     "run_endpoint_audit",
     "run_gcn_grandma_build",
+    "run_source_bundles",
     "run_selected_sources_build",
     "run_source_inventory",
 ]

@@ -223,6 +223,7 @@ __marimo__/
 !/data/**/
 !/data/**/.gitkeep
 *.csv
+!/data/samples/*csv
 
 # SkyPortal local raw outputs
 /data/raw/skyportal/endpoint_audit/**
@@ -234,3 +235,4 @@ __marimo__/
 /data/raw/skyportal/source_bundles/**
 !/data/raw/skyportal/source_bundles/
 !/data/raw/skyportal/source_bundles/.gitkeep
+
