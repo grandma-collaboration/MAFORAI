@@ -28,6 +28,9 @@ source.
 | `GET /api/sources/{source_id}/spectra` | Spectra associated with the source. Important for multimodal examples. |
 | `GET /api/sources/{source_id}/annotations` | Source annotations, potentially useful for automatic scores, broker metadata, and derived values. |
 | `GET /api/associated_gcns/{source_id}` | GCN associations for GCN-like, EP-like, GRB-like, or multimessenger candidates. |
+| `GET /api/sources/{source_id}/position` | Per-source positional context, useful when checking localization quality or derived position products. |
+| `GET /api/sources/{source_id}/offsets` | Offset-star and nearby-offset context. Useful to inspect whether the instance exposes a structured proximity signal around the source. |
+| `GET /api/sources/{source_id}/color_mag` | Gaia-linked color-magnitude context when available. |
 
 The important point is that `GET /api/sources/{source_id}` is a strong hub, but
 it is not a full replacement for the specialized endpoints above.
@@ -73,7 +76,16 @@ GET /api/sources/{source_id}/classifications
 GET /api/sources/{source_id}/spectra
 GET /api/sources/{source_id}/annotations
 GET /api/associated_gcns/{source_id}
+GET /api/sources/{source_id}/position
+GET /api/sources/{source_id}/offsets
+GET /api/sources/{source_id}/color_mag
 ```
 
 That bundle is small enough to be practical and rich enough to tell us what a
 useful event-level extraction really looks like.
+
+In the current high-priority extraction run, `offsets` does return useful
+context, but it looks more like offset-star observing support than a direct
+"host galaxy proximity" measurement. For host proximity itself, the more
+relevant structured fields remain `host_id` and any populated `galaxies`
+information in the root source object.

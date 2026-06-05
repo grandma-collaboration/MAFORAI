@@ -73,9 +73,10 @@ The current implementation is intentionally small:
 | `scripts/02_fetch_source_inventory.py` | CLI wrapper for the source inventory |
 | `scripts/03_build_gcn_grandma.py` | CLI wrapper for the enriched GCN-derived GRANDMA base list |
 | `scripts/04_build_selected_sources.py` | CLI wrapper for the final selected source list |
+| `scripts/05_fetch_source_bundles.py` | CLI wrapper for per-source bundle extraction |
 | `src/skyportal_corpus/core/` | Shared config and path helpers |
 | `src/skyportal_corpus/extraction/` | Shared audit, client, inventory, and GCN-derived selection logic |
-| `tests/` | Small tests for config loading, inventory profiles, and source selection |
+| `tests/` | Small tests for config loading, inventory profiles, source selection, and source bundles |
 
 ## Output layout
 
@@ -85,7 +86,7 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 |---|---|---|
 | `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/` | `scripts/01_audit_endpoint_availability.py` | `endpoint_status.csv`, `endpoint_status.json`, `summary.json`, `endpoint_audit.log` |
 | `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/` | `scripts/02_fetch_source_inventory.py` | `manifest.json`, `source_inventory.log`, `sources_page_XXX.json` |
-| `data/raw/skyportal/source_bundles/` | Not used yet by the current scripts | Reserved for a later extraction stage |
+| `data/raw/skyportal/source_bundles/source_bundle_run_<timestamp>/` | `scripts/05_fetch_source_bundles.py` | `manifest.json`, `source_bundles.log`, one subdirectory per `source_id` |
 
 ## Basic verification
 
@@ -94,6 +95,7 @@ python scripts/01_audit_endpoint_availability.py --help
 python scripts/02_fetch_source_inventory.py --help
 python scripts/03_build_gcn_grandma.py --help
 python scripts/04_build_selected_sources.py --help
+python scripts/05_fetch_source_bundles.py --help
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 

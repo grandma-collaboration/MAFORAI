@@ -58,4 +58,4 @@ The workflow writes raw outputs under `data/raw/skyportal/`:
 |---|---|
 | `data/raw/skyportal/endpoint_audit/` | One directory per endpoint-audit run |
 | `data/raw/skyportal/inventory/` | One directory per `/api/sources` inventory run |
-| `data/raw/skyportal/source_bundles/` | Reserved for a later source-bundle stage |
+| `data/raw/skyportal/source_bundles/` | One directory per source-bundle extraction run |
