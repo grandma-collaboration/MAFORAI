@@ -89,3 +89,22 @@ context, but it looks more like offset-star observing support than a direct
 "host galaxy proximity" measurement. For host proximity itself, the more
 relevant structured fields remain `host_id` and any populated `galaxies`
 information in the root source object.
+
+## 6. Current operational use
+
+This endpoint bundle is no longer only a proposal. It is the current first
+bundle recipe used by the workflow.
+
+Current usage:
+
+- input file: `data/samples/selected_sources_for_bundles.json`
+- priority filter: `high`
+- current kept events: `31`
+- run directory pattern:
+  `data/raw/skyportal/source_bundles/source_bundle_run_<timestamp>/`
+
+The current workflow then exports two shared sample artifacts from that bundle
+run:
+
+- `data/samples/selected_sources_high.json`
+- `data/samples/selected_sources_high_bundle_summary.csv`

@@ -26,7 +26,7 @@ python -m pip install --no-build-isolation -e .
 ```
 ## Authentication
 
-Both scripts read the API token from `SKYPORTAL_API_TOKEN`.
+The current SkyPortal scripts read the API token from `SKYPORTAL_API_TOKEN`.
 
 Recommended option:
 
@@ -74,9 +74,10 @@ The current implementation is intentionally small:
 | `scripts/03_build_gcn_grandma.py` | CLI wrapper for the enriched GCN-derived GRANDMA base list |
 | `scripts/04_build_selected_sources.py` | CLI wrapper for the final selected source list |
 | `scripts/05_fetch_source_bundles.py` | CLI wrapper for per-source bundle extraction |
+| `scripts/06_export_high_priority_samples.py` | CLI wrapper for compact shared exports of the current `high` subset |
 | `src/skyportal_corpus/core/` | Shared config and path helpers |
-| `src/skyportal_corpus/extraction/` | Shared audit, client, inventory, and GCN-derived selection logic |
-| `tests/` | Small tests for config loading, inventory profiles, source selection, and source bundles |
+| `src/skyportal_corpus/extraction/` | Shared audit, client, inventory, selection, bundle, and sample-export logic |
+| `tests/` | Small tests for config loading, inventory profiles, source selection, source bundles, and shared high-priority samples |
 
 ## Output layout
 
@@ -88,6 +89,15 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 | `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/` | `scripts/02_fetch_source_inventory.py` | `manifest.json`, `source_inventory.log`, `sources_page_XXX.json` |
 | `data/raw/skyportal/source_bundles/source_bundle_run_<timestamp>/` | `scripts/05_fetch_source_bundles.py` | `manifest.json`, `source_bundles.log`, one subdirectory per `source_id` |
 
+The workflow also writes compact shared review artifacts under `data/samples/`:
+
+| Path | Produced by | Purpose |
+|---|---|---|
+| `data/samples/gcn_grandma_<run_label>.json` | `scripts/03_build_gcn_grandma.py` | Compact GCN-derived base list inside `GRANDMA` |
+| `data/samples/selected_sources_for_bundles.json` | `scripts/04_build_selected_sources.py` | Prioritized event list used to drive bundle extraction |
+| `data/samples/selected_sources_high.json` | `scripts/06_export_high_priority_samples.py` | Shared JSON subset containing only the current `high` events |
+| `data/samples/selected_sources_high_bundle_summary.csv` | `scripts/06_export_high_priority_samples.py` | Compact per-source availability table for the current `high` bundles |
+
 ## Basic verification
 
 ```bash
@@ -96,6 +106,7 @@ python scripts/02_fetch_source_inventory.py --help
 python scripts/03_build_gcn_grandma.py --help
 python scripts/04_build_selected_sources.py --help
 python scripts/05_fetch_source_bundles.py --help
+python scripts/06_export_high_priority_samples.py --help
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
