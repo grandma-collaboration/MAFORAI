@@ -5,8 +5,7 @@
 The source inventory workflow downloads raw paginated responses from
 `GET /api/sources` and saves each page as JSON.
 
-It does not normalize fields or build the final dataset. Its role is to create
-reproducible source subsets that can later feed deeper extraction.
+Its role is to create reproducible source subsets that can later feed deeper extraction.
 
 ## Entry points
 
@@ -133,11 +132,3 @@ Unless you override them, the inventory workflow uses the shared defaults from
 
 The main named profiles are documented in
 [04_filtered_inventories.md](./04_filtered_inventories.md).
-
-## Next step: source selection
-
-Once a filtered inventory looks good, the next step is to derive a smaller,
-explicit list of bundle candidates from that saved run.
-
-That workflow is documented separately in
-[03_source_selection.md](./03_source_selection.md).

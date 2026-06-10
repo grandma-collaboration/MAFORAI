@@ -9,9 +9,7 @@ This document explains the current event-selection workflow end to end:
 3. fetch per-source bundles for the current `high` subset;
 4. export compact shared sample files so the team can review the same events.
 
-The important point is that the current workflow is intentionally simple and
-explainable. It does not try to infer a final scientific truth. It creates a
-reproducible shortlist for deeper manual evaluation.
+It creates a reproducible shortlist for deeper manual evaluation.
 
 ## Entry points
 
@@ -41,30 +39,8 @@ Why:
 
 - the source naming logic in SkyPortal uses these prefixes as variants of the
   same GCN-ingested channel;
-- filtering only `GCN-*` would drop scientifically relevant events already
-  identified upstream as `GRB-*`, `GW-*`, or `EP-*`;
 - the first selection goal is to keep the whole GCN-derived universe visible
   inside `GRANDMA`, then prioritize inside that universe.
-
-## Why the workflow starts from `grandma_base`
-
-The current selection does not start from a follow-up-specific inventory or a
-minimum-detections-only inventory. It starts from the enriched `grandma_base`
-inventory because that keeps the universe broad while still adding compact
-signals useful for ranking.
-
-What `grandma_base` guarantees:
-
-- the event belongs to `GRANDMA` via `group_ids=3`;
-- `comment_exists` is available through `includeCommentExists=true`;
-- `num_det_global` is available through `includeDetectionStats=true`;
-- host information is preserved when available through `includeHosts=true`.
-
-Why this matters:
-
-- we do not want to lose GCN-derived events just because they do not already
-  pass a narrow photometry or follow-up filter;
-- but we do want enough enrichment to rank events with simple, explicit rules.
 
 ## Step 1. Build `gcn_grandma`
 
@@ -295,7 +271,6 @@ The final list is sorted deterministically by:
 3. descending `num_det_global`
 4. ascending `id`
 
-This keeps the JSON reproducible and avoids manual reordering.
 
 ### What `selection_reasons` means
 
@@ -433,16 +408,3 @@ What the shared files contain:
   - per-source availability summary for photometry, comments,
     classifications, spectra, follow-up requests, associated GCNs,
     annotations, `phot_stat`, `summary`, and `tns_info`
-
-## Current operational interpretation
-
-At this stage, the workflow should be read as:
-
-1. start broad inside `GRANDMA`;
-2. keep the whole GCN-derived universe visible;
-3. rank events with compact, explicit signals;
-4. fetch only the current `high` subset for deeper inspection;
-5. share a compact common sample for collaborative review.
-
-That is the current purpose of the score and of the bundle pipeline. It is a
-first-pass triage system, not the final corpus definition.

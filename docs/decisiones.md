@@ -87,8 +87,6 @@ That inventory keeps the scope broad:
 
 Current consequence:
 
-- the workflow no longer depends on the robotic follow-up request flag to
-  define the base universe;
 - the current base list is broad enough to keep GCN-derived events even when
   they do not pass a follow-up or detection-count filter.
 
@@ -122,15 +120,11 @@ Priority is still assigned with explicit rules rather than a complex model:
 
 Current consequence:
 
-- the selection JSON stays readable and reproducible;
 - every event can be traced back to a small set of explicit reasons.
 
 ## 9. Use a small set of ranking signals, and keep each one interpretable
 
-The first prioritized list does not try to solve event relevance with a large
-feature set.
-
-Instead, it uses a compact set of signals already available in the enriched
+The first prioritized list uses a compact set of signals already available in the enriched
 inventory:
 
 - `redshift`;
@@ -153,40 +147,3 @@ Current consequence:
 - the ranking can be explained field by field;
 - changing the ranking later is straightforward because every signal has an
   explicit role.
-
-## 10. Separate priority buckets from the ordering score
-
-The current workflow uses both:
-
-- a priority bucket: `high`, `medium`, `low`;
-- an additive `selection_score`.
-
-This separation is deliberate.
-
-Why:
-
-- the bucket expresses the main triage decision;
-- the score only refines ordering within comparable cases;
-- that keeps the workflow deterministic without pretending that the score is a
-  final scientific metric.
-
-Current consequence:
-
-- the selected-source file can be sorted reproducibly;
-- the score stays small and auditable;
-- manual review can still focus on the bucket and the explicit reasons, not
-  only on the number.
-
-## 11. Keep host context visible, but do not rank strongly on it yet
-
-Host proximity matters scientifically, but the current structured host signals
-are still weak in the data we have extracted so far.
-
-For that reason, `has_host` is preserved in the compact JSON records, but it is
-not used as a strong ranking signal in the current first pass.
-
-Current consequence:
-
-- host-related context is not lost;
-- the ranking does not overstate information that is still sparse or
-  inconsistently populated.

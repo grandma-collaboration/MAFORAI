@@ -110,6 +110,3 @@ Two points matter when interpreting the audit:
 |---|---|
 | Missing IDs | Many routes need identifiers such as `spectrum_id`, `classification_id`, `followup_request_id`, or `taxonomy_id` |
 | Non-JSON resources | Some endpoints naturally behave like downloads or assets rather than JSON APIs |
-
-So the audit is best used as a map of reachable endpoint families and response
-shapes before building a deeper extractor.
