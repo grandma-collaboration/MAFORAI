@@ -235,4 +235,6 @@ __marimo__/
 /data/raw/skyportal/source_bundles/**
 !/data/raw/skyportal/source_bundles/
 !/data/raw/skyportal/source_bundles/.gitkeep
+/data/interim
+/data/raw/gcn
 
