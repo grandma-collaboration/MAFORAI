@@ -26,6 +26,10 @@ from .gcn_event_enrichment import (
     run_gcn_event_best_claims_build,
     run_gcn_event_enrichment_comparison,
 )
+from .gcn_event_review import (
+    DEFAULT_GCN_EVENT_REVIEW_OUTPUT_DIR,
+    run_gcn_event_review_table_build,
+)
 from .gcn_event_matching import (
     DEFAULT_GCN_CIRCULARS_ROOT_DIR,
     DEFAULT_GCN_EVENT_INPUT_PATH,
@@ -67,6 +71,7 @@ __all__ = [
     "DEFAULT_GCN_EVENT_ENRICHMENT_COMPARISON_PATH",
     "DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH",
     "DEFAULT_GCN_EVENT_ENRICHMENT_OUTPUT_DIR",
+    "DEFAULT_GCN_EVENT_REVIEW_OUTPUT_DIR",
     "DEFAULT_GCN_EVENT_EXTRACTION_OUTPUT_DIR",
     "DEFAULT_GCN_EVENT_INPUT_PATH",
     "DEFAULT_GCN_EVENT_MATCHING_ASSOCIATIONS_PATH",
@@ -92,6 +97,7 @@ __all__ = [
     "run_gcn_core_claims_extract",
     "run_gcn_event_best_claims_build",
     "run_gcn_event_enrichment_comparison",
+    "run_gcn_event_review_table_build",
     "run_gcn_event_match_build",
     "run_gcn_event_match_summary_build",
     "run_gcn_event_search_terms_build",

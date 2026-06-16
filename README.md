@@ -10,7 +10,8 @@ The repository currently has two connected workflows:
    the compact `gcn_grandma.json` event universe;
 2. a GCN workflow to download Circulars, build a searchable index, match
    events against Circulars, extract structured claims from matched bodies, and
-   compare those claims against the compact SkyPortal metadata.
+   compare those claims against the compact SkyPortal metadata before building
+   a final review table for astronomer validation.
 
 The active handoff between both sides is:
 
@@ -26,6 +27,7 @@ The documentation is intentionally split by workflow.
 |---|---|---|
 | SkyPortal | [docs/skyportal/README.md](docs/skyportal/README.md) | Setup, endpoint audit, source inventories, and construction of `gcn_grandma.json` |
 | GCN | [docs/gcn/README.md](docs/gcn/README.md) | Circular archive download, yearly indexing, event matching, claim extraction, and enrichment comparison |
+| GCN review table | [docs/gcn/05_event_review.md](docs/gcn/05_event_review.md) | Final field-by-field table for astronomer validation |
 
 Supporting documents:
 
@@ -65,6 +67,7 @@ GCN:
 - `scripts/gcn/04b_build_claim_summary.py`
 - `scripts/gcn/05a_build_event_enrichment_candidates.py`
 - `scripts/gcn/05b_compare_gcn_enrichment_with_skyportal.py`
+- `scripts/gcn/05c_build_event_review_table.py`
 
 ## Data layout
 
@@ -80,6 +83,7 @@ The repository writes generated data under the project `data/` directory.
 | `data/interim/gcn/event_matching/` | Step-A matching outputs |
 | `data/interim/gcn/event_extraction/` | Step-B claim extraction outputs |
 | `data/interim/gcn/event_enrichment/` | Step-C event-level enrichment outputs |
+| `data/interim/gcn/event_validation/` | Final review table for astronomer validation |
 
 ## Minimal starting points
 

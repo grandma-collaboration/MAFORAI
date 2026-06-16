@@ -15,7 +15,8 @@ and covers the full GCN side:
 2. normalized yearly indexing;
 3. event-to-Circular matching;
 4. claim extraction from matched Circular bodies;
-5. event-level enrichment comparison against the compact SkyPortal metadata.
+5. event-level enrichment comparison against the compact SkyPortal metadata;
+6. final event-review table for astronomer validation.
 
 ## How this fits with the rest of the project
 
@@ -44,6 +45,7 @@ Included here:
 | Event matching against Circulars | [02_event_matching.md](./02_event_matching.md) |
 | Claim extraction from matched Circular bodies | [03_claim_extraction.md](./03_claim_extraction.md) |
 | Event-level enrichment candidates and SkyPortal comparison | [04_event_enrichment.md](./04_event_enrichment.md) |
+| Final validation table for manual review | [05_event_review.md](./05_event_review.md) |
 
 ## Suggested reading order
 
@@ -51,6 +53,7 @@ Included here:
 2. [02_event_matching.md](./02_event_matching.md)
 3. [03_claim_extraction.md](./03_claim_extraction.md)
 4. [04_event_enrichment.md](./04_event_enrichment.md)
+5. [05_event_review.md](./05_event_review.md)
 
 ## Code layout
 
@@ -62,6 +65,7 @@ Included here:
 | `src/skyportal_corpus/extraction/gcn_event_matching.py` | Step-A matching and summary logic |
 | `src/skyportal_corpus/extraction/gcn_core_claims.py` | Step-B body-claim extraction and claim summary logic |
 | `src/skyportal_corpus/extraction/gcn_event_enrichment.py` | Step-C event-level best-claims and comparison logic |
+| `src/skyportal_corpus/extraction/gcn_event_review.py` | Final field-by-field review table for astronomer validation |
 
 ## Local output roots
 
@@ -74,6 +78,7 @@ The GCN workflow writes to these main roots:
 | `data/interim/gcn/event_matching/` | Step-A matching outputs |
 | `data/interim/gcn/event_extraction/` | Step-B claim extraction outputs |
 | `data/interim/gcn/event_enrichment/` | Step-C event-level enrichment outputs |
+| `data/interim/gcn/event_validation/` | Final review table for manual scientific validation |
 
 ## Current default assumptions
 
