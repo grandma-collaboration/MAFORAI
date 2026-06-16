@@ -108,6 +108,38 @@ class GcnEventEnrichmentTests(unittest.TestCase):
         self.assertEqual(float(best_claims.iloc[0]["best_t90_seconds"]), 19.0)
         self.assertEqual(best_claims.iloc[0]["best_t90_unit"], "sec")
 
+    def test_best_trigger_time_prefers_full_timestamp_over_less_complete_values(self) -> None:
+        claims = pd.DataFrame(
+            [
+                make_claim(
+                    source_id="GRB250106A",
+                    circular_id="1",
+                    claim_type="trigger_time_t0",
+                    normalized_value="09:31:21.198",
+                    extraction_rule="trigger_t0_explicit",
+                    claim_confidence="high",
+                ),
+                make_claim(
+                    source_id="GRB250106A",
+                    circular_id="2",
+                    claim_type="trigger_time_t0",
+                    normalized_value="2026-05-04T09:31:19",
+                    extraction_rule="trigger_iso_timestamp",
+                    claim_confidence="high",
+                ),
+            ]
+        )
+        match_summary = pd.DataFrame(
+            [{"source_id": "GRB250106A", "status": "matched", "n_matched_circulars": 2}]
+        )
+
+        best_claims = build_event_best_claims_dataframe(claims, match_summary)
+
+        self.assertEqual(
+            best_claims.iloc[0]["best_trigger_time"],
+            "2026-05-04T09:31:19",
+        )
+
     def test_instruments_found_are_unique(self) -> None:
         claims = pd.DataFrame(
             [

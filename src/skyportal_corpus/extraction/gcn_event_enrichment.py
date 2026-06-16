@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+import re
 from typing import Any
 
 import pandas as pd
@@ -111,7 +112,6 @@ TRIGGER_TIME_RULE_PRIORITY = {
     "trigger_iso_timestamp": 1,
     "trigger_ut_context": 2,
     "trigger_mjd": 3,
-    "trigger_relative_t": 4,
     "trigger_tb_explicit": 5,
 }
 T90_RULE_PRIORITY = {
@@ -151,6 +151,20 @@ def unique_join(values: list[object]) -> str:
         if text not in ordered:
             ordered.append(text)
     return ";".join(ordered)
+
+
+def trigger_time_value_rank(value: object) -> int:
+    """Rank trigger-time values so more complete timestamps win when possible."""
+    text = str(value).strip()
+    if not text:
+        return 9
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?", text):
+        return 0
+    if re.fullmatch(r"\d{1,2}:\d{2}:\d{2}(?:\.\d+)?", text):
+        return 1
+    if re.fullmatch(r"\d{5}(?:\.\d+)?", text):
+        return 2
+    return 9
 
 
 def load_skyportal_event_rows(path: str | Path) -> list[dict[str, Any]]:
@@ -287,9 +301,12 @@ def pick_best_trigger_time_claim(claims_dataframe: pd.DataFrame) -> dict[str, An
     sortable = add_claim_sort_columns(
         trigger_time_claims,
         rule_priority=TRIGGER_TIME_RULE_PRIORITY,
-    ).sort_values(
+    ).copy()
+    sortable["_trigger_value_rank"] = sortable["normalized_value"].map(trigger_time_value_rank)
+    sortable = sortable.sort_values(
         by=[
             "_confidence_rank",
+            "_trigger_value_rank",
             "_rule_rank",
             "_source_field_rank",
             "_match_rank",

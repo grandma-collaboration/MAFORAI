@@ -70,7 +70,9 @@ The selection rules are intentionally simple:
 - prefer stronger claim methods when relevant, such as spectroscopic redshift
   over photometric redshift;
 - prefer higher claim confidence;
-- prefer explicit numeric values when choosing T90-like candidates.
+- prefer explicit numeric values when choosing T90-like candidates;
+- for trigger time, prefer cleaner absolute timestamps and more complete values
+  such as full ISO datetimes over less complete time-only representations.
 
 ## Step 05b. Compare GCN enrichment against SkyPortal
 

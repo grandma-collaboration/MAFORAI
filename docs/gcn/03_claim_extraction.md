@@ -74,7 +74,7 @@ Current active claim types:
 | `claim_type` | What it stores | Main notes |
 |---|---|---|
 | `instrument_mention` | Mention of a known mission, telescope, or instrument | Uses a fixed instrument catalog |
-| `trigger_time_t0` | Trigger time, T0-like timestamp, MJD, or relative trigger time | Comes from explicit timing phrases |
+| `trigger_time_t0` | Absolute trigger time or T0-like timestamp | Keeps only absolute times, not relative offsets such as `T+...` or `t - t0` |
 | `duration_t90` | Numeric burst duration / T90 value | Keeps the parsed numeric value in `normalized_value` |
 | `duration_class` | Long/short duration label | Keeps normalized value such as `long` or `short` |
 | `redshift` | Redshift value with context | Only extracted when redshift context is strong |
@@ -105,24 +105,24 @@ small line-level keyword checks.
 ### `trigger_time_t0`
 
 - `trigger_t0_explicit`
-  Looks for explicit `T0 = ...` or `T0: ...` patterns.
+  Looks for explicit `T0 = ...`, `T0: ...`, or `T0(...)~...` patterns and normalizes the absolute time.
 - `trigger_tb_explicit`
-  Looks for `Tb = ...` or `TimeTb = ...`.
+  Looks for `Tb = ...` or `TimeTb = ...` when they behave as an absolute trigger marker.
 - `trigger_iso_timestamp`
   Looks for ISO-like timestamps such as `2025-01-03T09:56:33.551 UTC`, and keeps
-  them only when the surrounding text looks trigger-related.
+  them only when the local surrounding text clearly ties that timestamp to
+  `T0`, `trigger time`, or a trigger phrase. Observation-start times are rejected.
 - `trigger_mjd`
-  Looks for `MJD = ...`.
+  Looks for `MJD = ...` only when the local context is trigger-related.
 - `trigger_ut_context`
-  Looks for phrases like `At 13:22:50 UT` and keeps them only when nearby text
-  suggests trigger context.
-- `trigger_relative_t`
-  Looks for relative timing like `T+120 s`, `T+3 hr`, or `T+1 day`.
+  Looks for phrases like `At 13:22:50 UT` and keeps them only when the nearby
+  text clearly indicates a trigger rather than a later observation.
 
 ### `duration_t90`
 
 - `duration_t90_explicit`
-  Looks for explicit `T90 ... 19 s` style expressions.
+  Looks for explicit `T90 ... 19 s` style expressions and targets the main
+  duration value rather than uncertainty tails or `T0` offsets.
 - `duration_t90_about`
   Looks for looser phrases such as `duration of about 40 sec`.
 

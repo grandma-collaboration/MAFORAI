@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import logging
 import re
@@ -131,20 +132,77 @@ INSTRUMENT_PATTERNS = [
     ("OHP/T193", re.compile(r"\bOHP/T193\b", re.IGNORECASE)),
 ]
 TRIGGER_CONTEXT_PATTERN = re.compile(
-    r"\b(trigger|triggered|detected|located|t0|burst)\b",
+    r"\b(trigger|triggered|trigger time|t0|tb)\b",
     re.IGNORECASE,
 )
-EXPLICIT_T0_PATTERN = re.compile(r"\bT0\s*[:=]\s*([^\n.;]+)", re.IGNORECASE)
-TIME_TB_PATTERN = re.compile(r"\b(?:TimeTb|Tb)\s*[:=]\s*([^\n.;]+)")
+TRIGGER_OBSERVATION_CONTEXT_PATTERN = re.compile(
+    r"\b("
+    r"we observed|observed the field|observation began|observations started|"
+    r"began observing|starting at|starting on|started at|started on|started observing|"
+    r"mid-time|midtime|post-burst|post t0|"
+    r"post trigger|stared at"
+    r")\b",
+    re.IGNORECASE,
+)
+TRIGGER_RELATIVE_CONTEXT_PATTERN = re.compile(
+    r"(?:\bt\s*[-−]?\s*t0\b|\bt_mid\s*-\s*t0\b|\bT\+\s*[0-9]|"
+    r"trigger time minus image center time|tc-t0|t-t0|post-burst)",
+    re.IGNORECASE,
+)
+EXPLICIT_T0_PATTERN = re.compile(r"\bT0(?:\([^)]*\))?\s*(?:[:=~])\s*([^\n;]+)", re.IGNORECASE)
+TIME_TB_PATTERN = re.compile(r"\b(?:TimeTb|Tb)\s*[:=~]\s*([^\n;]+)", re.IGNORECASE)
 ISO_TIME_PATTERN = re.compile(r"\b(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s*(UTC|UT)?\b")
 TRIGGER_UT_PATTERN = re.compile(
-    r"\bAt\s+(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\s*UT(?:\s+on\s+[0-9]{1,2}\s+\w+\s+[0-9]{4})?",
+    r"\bAt\s+(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\s*UT(?:\s+on\s+([0-9]{1,2}\s+\w+\s+[0-9]{4}))?",
     re.IGNORECASE,
 )
 MJD_PATTERN = re.compile(r"\bMJD\s*[:=]?\s*(\d{5}(?:\.\d+)?)", re.IGNORECASE)
-RELATIVE_T_PATTERN = re.compile(r"\bT\+\s*([0-9]+(?:\.\d+)?)\s*(s|sec|min|hr|day)s?\b", re.IGNORECASE)
+TRIGGER_DATETIME_VALUE_PATTERN = re.compile(
+    r"(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s*(?:UTC|UT)?",
+    re.IGNORECASE,
+)
+TRIGGER_TIME_ONLY_PATTERN = re.compile(
+    r"\b(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\s*UT\b",
+    re.IGNORECASE,
+)
+TRIGGER_SECONDS_OF_DAY_PATTERN = re.compile(
+    r"\b\d+(?:\.\d+)?\s*s\s*UT\s*\((\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\)",
+    re.IGNORECASE,
+)
 T90_PATTERNS = [
-    ("duration_t90_explicit", re.compile(r"\bT90\b[^.\n;]{0,120}?([0-9]+(?:\.\d+)?)\s*(s|sec|seconds)\b", re.IGNORECASE), "high"),
+    (
+        "duration_t90_explicit",
+        re.compile(
+            r"\bT90\b(?:\s*\([^)]+\))?\s*(?:is|=|of)\s*(?:about\s*)?"
+            r"([0-9]+(?:\.\d+)?)"
+            r"(?:\s*(?:\+/-|\+-)\s*[0-9]+(?:\.\d+)?|\s*\+\s*[0-9]+(?:\.\d+)?\s*/-\s*[0-9]+(?:\.\d+)?)?"
+            r"\s*(s|sec|seconds)\b",
+            re.IGNORECASE,
+        ),
+        "high",
+    ),
+    (
+        "duration_t90_explicit",
+        re.compile(
+            r"\bduration\s*\(T90\)\s*(?:is|=|of)\s*(?:about\s*)?"
+            r"([0-9]+(?:\.\d+)?)"
+            r"(?:\s*(?:\+/-|\+-)\s*[0-9]+(?:\.\d+)?|\s*\+\s*[0-9]+(?:\.\d+)?\s*/-\s*[0-9]+(?:\.\d+)?)?"
+            r"\s*(s|sec|seconds)\b",
+            re.IGNORECASE,
+        ),
+        "high",
+    ),
+    (
+        "duration_t90_explicit",
+        re.compile(
+            r"\bT90 duration(?:\s+measured\s+by\s+[^.,;\n]+)?\s*(?:is|=|of)\s*(?:about\s*)?"
+            r"([0-9]+(?:\.\d+)?)"
+            r"(?:\s*(?:\+/-|\+-)\s*[0-9]+(?:\.\d+)?|\s*\+\s*[0-9]+(?:\.\d+)?\s*/-\s*[0-9]+(?:\.\d+)?)?"
+            r"\s*(s|sec|seconds)\b",
+            re.IGNORECASE,
+        ),
+        "high",
+    ),
     ("duration_t90_about", re.compile(r"\bduration of about\s*([0-9]+(?:\.\d+)?)\s*(s|sec|seconds)\b", re.IGNORECASE), "medium"),
 ]
 DURATION_CLASS_PATTERNS = [
@@ -259,6 +317,111 @@ def normalize_decimal_string(value: str) -> str:
     return f"{numeric:.6f}".rstrip("0").rstrip(".")
 
 
+def normalize_trigger_datetime_string(value: str) -> str:
+    """Normalize one explicit trigger datetime into a compact ISO-like string."""
+    return normalize_whitespace(value).replace(" ", "T")
+
+
+def parse_trigger_ut_date(raw_date: str | None) -> str:
+    """Normalize a day-month-year fragment from a trigger line."""
+    if raw_date is None:
+        return ""
+
+    normalized = normalize_whitespace(raw_date)
+    for fmt in ("%d %b %Y", "%d %B %Y"):
+        try:
+            parsed = dt.datetime.strptime(normalized, fmt)
+        except ValueError:
+            continue
+        return parsed.strftime("%Y-%m-%d")
+    return ""
+
+
+def is_relative_trigger_text(text: str) -> bool:
+    """Return whether a trigger-like fragment is clearly relative, not absolute."""
+    return bool(TRIGGER_RELATIVE_CONTEXT_PATTERN.search(text))
+
+
+def normalize_trigger_candidate_value(raw_value: str, evidence_text: str) -> str:
+    """Normalize one trigger-like raw value, or return an empty string when invalid."""
+    normalized_raw = normalize_whitespace(raw_value)
+    if not normalized_raw:
+        return ""
+
+    seconds_match = TRIGGER_SECONDS_OF_DAY_PATTERN.search(normalized_raw)
+    if seconds_match is not None:
+        return seconds_match.group(1)
+
+    datetime_match = TRIGGER_DATETIME_VALUE_PATTERN.search(normalized_raw)
+    if datetime_match is not None:
+        return normalize_trigger_datetime_string(datetime_match.group(1))
+
+    time_match = TRIGGER_TIME_ONLY_PATTERN.search(normalized_raw)
+    if time_match is not None:
+        return time_match.group(1)
+
+    bare_time_match = re.search(r"\b(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\b", normalized_raw)
+    if bare_time_match is not None and (
+        "ut" in normalized_raw.lower() or "t0" in normalized_raw.lower() or "tb" in normalized_raw.lower()
+    ):
+        return bare_time_match.group(1)
+
+    mjd_match = MJD_PATTERN.search(normalized_raw)
+    if mjd_match is not None:
+        return mjd_match.group(1)
+
+    if is_relative_trigger_text(normalized_raw) or is_relative_trigger_text(evidence_text):
+        return ""
+
+    return ""
+
+
+def build_local_context(text: str, span: tuple[int, int], *, radius: int = 80) -> str:
+    """Build a compact local fragment around one regex match."""
+    start = max(0, span[0] - radius)
+    end = min(len(text), span[1] + radius)
+    return normalize_whitespace(text[start:end])
+
+
+def has_direct_trigger_binding(local_text: str, raw_value: str) -> bool:
+    """Return whether one matched value is directly tied to a trigger marker."""
+    escaped_value = re.escape(normalize_whitespace(raw_value))
+    patterns = [
+        rf"\b(?:T0|Tb|trigger(?:ed| time)?)\b(?:[^.\n]{{0,40}}){escaped_value}",
+        rf"{escaped_value}(?:[^.\n]{{0,40}})(?:\(T0\)|\btriggered\b|\btrigger time\b|\bT0\b|\bTb\b)",
+    ]
+    return any(re.search(pattern, local_text, re.IGNORECASE) for pattern in patterns)
+
+
+def should_keep_trigger_context(local_text: str, raw_value: str) -> bool:
+    """Return whether one evidence line is strong enough for absolute trigger time extraction."""
+    if not TRIGGER_CONTEXT_PATTERN.search(local_text):
+        return False
+
+    lowered = local_text.lower()
+    if TRIGGER_RELATIVE_CONTEXT_PATTERN.search(local_text):
+        return False
+
+    direct_binding = has_direct_trigger_binding(local_text, raw_value)
+
+    if (
+        (
+            TRIGGER_OBSERVATION_CONTEXT_PATTERN.search(local_text)
+            or re.search(r"\b(after the trigger|after trigger)\b", local_text, re.IGNORECASE)
+        )
+        and not direct_binding
+    ):
+        return False
+
+    if direct_binding:
+        return True
+
+    if "t0" in lowered or "tb" in lowered or "triggered" in lowered or "trigger time" in lowered:
+        return True
+
+    return "trigger" in lowered
+
+
 def claim_confidence_rank(value: str) -> int:
     """Return a small ranking number for one claim confidence label."""
     return {"high": 0, "medium": 1, "low": 2}.get(value, 9)
@@ -328,7 +491,6 @@ def deduplicate_claim_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             row["normalized_value"] or row["raw_value"],
             row["instrument_if_any"],
             row["source_field"],
-            row["extraction_rule"],
         )
         existing = deduplicated.get(key)
         if existing is None:
@@ -386,15 +548,19 @@ def extract_trigger_time_claims(
     rows: list[dict[str, Any]] = []
 
     for match in EXPLICIT_T0_PATTERN.finditer(text):
+        evidence_text = build_evidence_text(text, match.span())
         raw_value = normalize_whitespace(match.group(1))
+        normalized_value = normalize_trigger_candidate_value(raw_value, evidence_text)
+        if not normalized_value:
+            continue
         rows.append(
             build_claim_record(
                 association=association,
                 claim_type="trigger_time_t0",
                 raw_value=raw_value,
-                normalized_value=raw_value,
-                instrument_if_any=detect_first_instrument(build_evidence_text(text, match.span())),
-                evidence_text=build_evidence_text(text, match.span()),
+                normalized_value=normalized_value,
+                instrument_if_any=detect_first_instrument(evidence_text),
+                evidence_text=evidence_text,
                 extraction_rule="trigger_t0_explicit",
                 claim_confidence="high",
                 source_field=source_field,
@@ -402,15 +568,19 @@ def extract_trigger_time_claims(
         )
 
     for match in TIME_TB_PATTERN.finditer(text):
+        evidence_text = build_evidence_text(text, match.span())
         raw_value = normalize_whitespace(match.group(1))
+        normalized_value = normalize_trigger_candidate_value(raw_value, evidence_text)
+        if not normalized_value:
+            continue
         rows.append(
             build_claim_record(
                 association=association,
                 claim_type="trigger_time_t0",
                 raw_value=raw_value,
-                normalized_value=raw_value,
-                instrument_if_any=detect_first_instrument(build_evidence_text(text, match.span())),
-                evidence_text=build_evidence_text(text, match.span()),
+                normalized_value=normalized_value,
+                instrument_if_any=detect_first_instrument(evidence_text),
+                evidence_text=evidence_text,
                 extraction_rule="trigger_tb_explicit",
                 claim_confidence="medium",
                 source_field=source_field,
@@ -419,31 +589,42 @@ def extract_trigger_time_claims(
 
     for match in ISO_TIME_PATTERN.finditer(text):
         evidence_text = build_evidence_text(text, match.span())
-        if not TRIGGER_CONTEXT_PATTERN.search(evidence_text) and source_field != "subject":
-            continue
+        local_text = build_local_context(text, match.span())
         raw_value = normalize_whitespace(match.group(0))
+        if not should_keep_trigger_context(local_text, raw_value):
+            continue
+        normalized_value = normalize_trigger_candidate_value(raw_value, evidence_text)
+        if not normalized_value:
+            continue
         rows.append(
             build_claim_record(
                 association=association,
                 claim_type="trigger_time_t0",
                 raw_value=raw_value,
-                normalized_value=match.group(1),
+                normalized_value=normalized_value,
                 instrument_if_any=detect_first_instrument(evidence_text),
                 evidence_text=evidence_text,
                 extraction_rule="trigger_iso_timestamp",
-                claim_confidence="high" if TRIGGER_CONTEXT_PATTERN.search(evidence_text) else "medium",
+                claim_confidence="high",
                 source_field=source_field,
             )
         )
 
     for match in MJD_PATTERN.finditer(text):
         evidence_text = build_evidence_text(text, match.span())
+        local_text = build_local_context(text, match.span())
+        raw_value = normalize_whitespace(match.group(0))
+        if not should_keep_trigger_context(local_text, raw_value):
+            continue
+        normalized_value = normalize_trigger_candidate_value(raw_value, evidence_text)
+        if not normalized_value:
+            continue
         rows.append(
             build_claim_record(
                 association=association,
                 claim_type="trigger_time_t0",
-                raw_value=normalize_whitespace(match.group(0)),
-                normalized_value=match.group(1),
+                raw_value=raw_value,
+                normalized_value=normalized_value,
                 instrument_if_any=detect_first_instrument(evidence_text),
                 evidence_text=evidence_text,
                 extraction_rule="trigger_mjd",
@@ -454,35 +635,24 @@ def extract_trigger_time_claims(
 
     for match in TRIGGER_UT_PATTERN.finditer(text):
         evidence_text = build_evidence_text(text, match.span())
-        if not TRIGGER_CONTEXT_PATTERN.search(evidence_text):
-            continue
+        local_text = build_local_context(text, match.span())
         raw_value = normalize_whitespace(match.group(0))
+        if not should_keep_trigger_context(local_text, raw_value):
+            continue
+        raw_date = parse_trigger_ut_date(match.group(2))
+        normalized_value = match.group(1)
+        if raw_date:
+            normalized_value = f"{raw_date}T{normalized_value}"
         rows.append(
             build_claim_record(
                 association=association,
                 claim_type="trigger_time_t0",
                 raw_value=raw_value,
-                normalized_value=match.group(1),
+                normalized_value=normalized_value,
                 instrument_if_any=detect_first_instrument(evidence_text),
                 evidence_text=evidence_text,
                 extraction_rule="trigger_ut_context",
                 claim_confidence="high",
-                source_field=source_field,
-            )
-        )
-
-    for match in RELATIVE_T_PATTERN.finditer(text):
-        evidence_text = build_evidence_text(text, match.span())
-        rows.append(
-            build_claim_record(
-                association=association,
-                claim_type="trigger_time_t0",
-                raw_value=normalize_whitespace(match.group(0)),
-                normalized_value=normalize_whitespace(match.group(0)),
-                instrument_if_any=detect_first_instrument(evidence_text),
-                evidence_text=evidence_text,
-                extraction_rule="trigger_relative_t",
-                claim_confidence="medium",
                 source_field=source_field,
             )
         )
@@ -877,7 +1047,7 @@ def extract_claims_from_text(
     rows.extend(extract_spectroscopy_claims(association, text, source_field=source_field))
     rows.extend(extract_host_candidate_claims(association, text, source_field=source_field))
     rows.extend(extract_classification_claims(association, text, source_field=source_field))
-    return rows
+    return deduplicate_claim_rows(rows)
 
 
 def load_raw_circular_payload(raw_file_path: str, cache: dict[str, dict[str, Any]]) -> dict[str, Any]:
