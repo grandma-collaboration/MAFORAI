@@ -73,22 +73,27 @@ Current consequence:
 - the scripts no longer need to repeat the same defaults;
 - inventory recipes can be run by profile name;
 
-## 6. Build the current selection from one enriched GRANDMA inventory
+## 6. Build the current selection from a small inventory union
 
-The current selection workflow now starts from the enriched
-`grandma_base` inventory.
+The current selection workflow now starts from the union of:
 
-That inventory keeps the scope broad:
+- `gcn`
+- `grb`
+- `ep`
+- `grandma_base`
 
-- membership in the `GRANDMA` group;
-- comment enrichment;
-- compact detection statistics;
-- host enrichment when available.
+Why this union:
+
+- `gcn`, `grb`, and `ep` are the direct source-ID filtered subsets we want to
+  preserve end to end;
+- `grandma_base` keeps the broad GRANDMA context and also catches cases where
+  the main `id` does not start with `GCN`, `GRB`, `GW`, or `EP`, but one alias
+  does.
 
 Current consequence:
 
-- the current base list is broad enough to keep GCN-derived events even when
-  they do not pass a follow-up or detection-count filter.
+- the current base list is no longer tied to one inventory only;
+- alias-based GCN-derived events can still enter the selection.
 
 ## 7. Treat all GCN-derived IDs as one source family
 
@@ -98,52 +103,24 @@ coming from the same GCN ingestion path.
 Current consequence:
 
 - the first derived list is `gcn_grandma`;
-- the final `selected_sources_for_bundles.json` keeps all GCN-derived subtypes
-  in the same prioritized pool instead of splitting them into separate
-  selection families.
+- the current workflow treats all those subtypes as one shared event universe
+  before any later filtering or ranking step.
 
-## 8. Keep the first prioritized list explainable
+## 8. Keep the pre-GCN event layer compact but informative
 
-The current prioritized list uses simple signals that are already available in
-the enriched inventory:
+The current `gcn_grandma.json` base keeps a small set of fields that are
+already available in the inventory and are useful later when comparing
+SkyPortal against GCN:
 
 - redshift;
+- trigger time when exposed as inventory `t0`;
+- compact spectrum flag;
 - comments;
 - compact detection counts;
 - compact classification labels.
 
-Priority is still assigned with explicit rules rather than a complex model:
-
-- `high` for extreme redshift cases, or strong combined evidence;
-- `medium` for events with useful scientific or operational support;
-- `low` for the remaining GCN-derived events.
-
 Current consequence:
 
-- every event can be traced back to a small set of explicit reasons.
+- the base list stays easy to inspect by eye;
 
-## 9. Use a small set of ranking signals, and keep each one interpretable
 
-The first prioritized list uses a compact set of signals already available in the enriched
-inventory:
-
-- `redshift`;
-- `comment_exists`;
-- `num_det_global`;
-- selected `classification_labels`.
-
-Each signal was kept for a specific reason:
-
-- `redshift` is the strongest compact science signal currently available at
-  inventory level;
-- `comment_exists` is a cheap proxy for human attention and discussion;
-- `num_det_global` is a cheap proxy for photometric richness;
-- selected labels such as `GRB`, `GO GRANDMA`, and
-  `GO GRANDMA (HIGH PRIORITY)` preserve compact operational or scientific
-  support without forcing full downstream parsing.
-
-Current consequence:
-
-- the ranking can be explained field by field;
-- changing the ranking later is straightforward because every signal has an
-  explicit role.

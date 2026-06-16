@@ -59,7 +59,7 @@ That file is already used by the current scripts. It centralizes:
 | Shared HTTP defaults | Timeouts and retries |
 | Audit defaults | Timeout, inter-request sleep, and sample context |
 | Inventory defaults | Page size, retries, sleep, and start page |
-| Named inventory profiles | `recent_500`, `has_spectrum`, `has_robotic_followup`, `grandma_has_robotic_followup_det2_base`, `grandma_base`, `grandma_det2_base`, `classified`, `redshift`, `many_detections`, `gcn`, `ep` |
+| Named inventory profiles | `recent_500`, `has_spectrum`, `has_robotic_followup`, `grandma_has_robotic_followup_det2_base`, `grandma_base`, `grandma_det2_base`, `classified`, `redshift`, `many_detections`, `gcn`, `ep`, `grb` |
 
 Secrets still belong in `.env`, not in YAML.
 
@@ -71,13 +71,10 @@ The current implementation is intentionally small:
 |---|---|
 | `scripts/01_audit_endpoint_availability.py` | CLI wrapper for the endpoint audit |
 | `scripts/02_fetch_source_inventory.py` | CLI wrapper for the source inventory |
-| `scripts/03_build_gcn_grandma.py` | CLI wrapper for the enriched GCN-derived GRANDMA base list |
-| `scripts/04_build_selected_sources.py` | CLI wrapper for the final selected source list |
-| `scripts/05_fetch_source_bundles.py` | CLI wrapper for per-source bundle extraction |
-| `scripts/06_export_high_priority_samples.py` | CLI wrapper for compact shared exports of the current `high` subset |
+| `scripts/03_build_gcn_grandma.py` | CLI wrapper for the enriched GCN-derived base list built from several inventories |
 | `src/skyportal_corpus/core/` | Shared config and path helpers |
-| `src/skyportal_corpus/extraction/` | Shared audit, client, inventory, selection, bundle, and sample-export logic |
-| `tests/` | Small tests for config loading, inventory profiles, source selection, source bundles, and shared high-priority samples |
+| `src/skyportal_corpus/extraction/` | Shared audit, client, inventory, selection, and GCN workflow logic |
+| `tests/` | Small tests for config loading, inventory profiles, and source selection |
 
 ## Output layout
 
@@ -87,16 +84,12 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 |---|---|---|
 | `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/` | `scripts/01_audit_endpoint_availability.py` | `endpoint_status.csv`, `endpoint_status.json`, `summary.json`, `endpoint_audit.log` |
 | `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/` | `scripts/02_fetch_source_inventory.py` | `manifest.json`, `source_inventory.log`, `sources_page_XXX.json` |
-| `data/raw/skyportal/source_bundles/source_bundle_run_<timestamp>/` | `scripts/05_fetch_source_bundles.py` | `manifest.json`, `source_bundles.log`, one subdirectory per `source_id` |
 
 The workflow also writes compact shared review artifacts under `data/samples/`:
 
 | Path | Produced by | Purpose |
 |---|---|---|
-| `data/samples/gcn_grandma_<run_label>.json` | `scripts/03_build_gcn_grandma.py` | Compact GCN-derived base list inside `GRANDMA` |
-| `data/samples/selected_sources_for_bundles.json` | `scripts/04_build_selected_sources.py` | Prioritized event list used to drive bundle extraction |
-| `data/samples/selected_sources_high.json` | `scripts/06_export_high_priority_samples.py` | Shared JSON subset containing only the current `high` events |
-| `data/samples/selected_sources_high_bundle_summary.csv` | `scripts/06_export_high_priority_samples.py` | Compact per-source availability table for the current `high` bundles |
+| `data/samples/gcn_grandma.json` | `scripts/03_build_gcn_grandma.py` | Compact GCN-derived base list built from the `gcn`, `grb`, `ep`, and `grandma_base` inventory union; this is the current default input for the GCN matching pipeline |
 
 ## Basic verification
 
@@ -104,9 +97,6 @@ The workflow also writes compact shared review artifacts under `data/samples/`:
 python scripts/01_audit_endpoint_availability.py --help
 python scripts/02_fetch_source_inventory.py --help
 python scripts/03_build_gcn_grandma.py --help
-python scripts/04_build_selected_sources.py --help
-python scripts/05_fetch_source_bundles.py --help
-python scripts/06_export_high_priority_samples.py --help
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 

@@ -16,7 +16,6 @@ from .paths import (
     project_root,
     raw_root_dir,
     resolve_project_path,
-    source_bundles_output_dir,
 )
 
 __all__ = [
@@ -33,5 +32,4 @@ __all__ = [
     "raw_root_dir",
     "resolve_project_path",
     "resolve_inventory_profile",
-    "source_bundles_output_dir",
 ]

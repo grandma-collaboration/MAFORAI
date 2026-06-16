@@ -1,4 +1,4 @@
-"""Helpers for selecting GCN-derived GRANDMA events from saved inventories."""
+"""Helpers for building the compact GCN-derived base from saved inventories."""
 
 from __future__ import annotations
 
@@ -10,27 +10,19 @@ from typing import Any
 
 from ..core import resolve_project_path
 
-DEFAULT_SELECTION_OUTPUT = "data/samples/selected_sources_for_bundles.json"
 DEFAULT_GCN_GRANDMA_OUTPUT = "data/samples/gcn_grandma.json"
-DEFAULT_GCN_GRANDMA_INPUT = "data/samples/gcn_grandma_grandma_base.json"
 GRANDMA_GROUP_ID = 3
 KNC_GROUP_ID = 38
-PRIORITY_RANK = {
-    "high": 0,
-    "medium": 1,
-    "low": 2,
-}
 GCN_DERIVED_RULES = {
     "grb": "id starts with GRB",
     "gw": "id starts with GW",
     "ep": "id starts with EP",
     "gcn": "id starts with GCN",
 }
-GCN_BUNDLE_PRIORITY_RULES = {
-    "high": "extreme redshift, or redshift+comments+num_det_global>=5, or GO GRANDMA (HIGH PRIORITY)",
-    "medium": "known redshift, or comments+num_det_global>=5, or GRB/GO GRANDMA classification support",
-    "low": "remaining GCN-derived events",
-}
+GCN_DERIVED_MATCH_FIELDS = [
+    "source id starts with GCN, GRB, GW, or EP",
+    "or one alias starts with GCN, GRB, GW, or EP",
+]
 
 
 def save_json(path: Path, data: Any) -> None:
@@ -82,6 +74,7 @@ def load_inventory_sources(inventory_dir: Path) -> list[dict[str, Any]]:
 
 def classify_gcn_derived_type(source_id: str) -> str:
     """Classify a GCN-derived source ID into its subtype."""
+    source_id = source_id.strip()
     if source_id.startswith("GRB"):
         return "grb"
     if source_id.startswith("GW"):
@@ -93,9 +86,46 @@ def classify_gcn_derived_type(source_id: str) -> str:
     return "other"
 
 
-def is_gcn_derived_source(source_id: str) -> bool:
-    """Return whether the source ID follows the GCN-derived naming scheme."""
-    return classify_gcn_derived_type(source_id) != "other"
+def extract_aliases(source: dict[str, Any]) -> list[str]:
+    """Extract the compact alias list for one source row."""
+    raw_aliases = source.get("alias")
+    if isinstance(raw_aliases, str):
+        raw_items = [raw_aliases]
+    elif isinstance(raw_aliases, list):
+        raw_items = raw_aliases
+    else:
+        return []
+
+    aliases: list[str] = []
+    for raw_item in raw_items:
+        if not isinstance(raw_item, str):
+            continue
+
+        alias = raw_item.strip()
+        if alias and alias not in aliases:
+            aliases.append(alias)
+
+    return aliases
+
+
+def classify_gcn_derived_source(source: dict[str, Any]) -> str:
+    """Classify one source row using both the main ID and its aliases."""
+    source_id = str(source.get("id", "")).strip()
+    source_type = classify_gcn_derived_type(source_id)
+    if source_type != "other":
+        return source_type
+
+    for alias in extract_aliases(source):
+        alias_type = classify_gcn_derived_type(alias)
+        if alias_type != "other":
+            return alias_type
+
+    return "other"
+
+
+def is_gcn_derived_source(source: dict[str, Any]) -> bool:
+    """Return whether the source row follows the GCN-derived naming scheme."""
+    return classify_gcn_derived_source(source) != "other"
 
 
 def extract_num_det_global(source: dict[str, Any]) -> int:
@@ -113,6 +143,14 @@ def extract_num_det_global(source: dict[str, Any]) -> int:
         return 0
 
     return num_det_global
+
+
+def extract_trigger_time(source: dict[str, Any]) -> float | None:
+    """Extract the inventory-level trigger time (`t0`) when present."""
+    trigger_time = source.get("t0")
+    if not isinstance(trigger_time, (int, float)):
+        return None
+    return float(trigger_time)
 
 
 def extract_relevant_groups(source: dict[str, Any]) -> list[str]:
@@ -152,18 +190,30 @@ def extract_has_host(source: dict[str, Any]) -> bool:
     return isinstance(host_id, int)
 
 
-def build_gcn_grandma_event(source: dict[str, Any]) -> dict[str, Any]:
+def extract_spectrum_exists(source: dict[str, Any]) -> bool:
+    """Return whether the source row exposes the compact spectrum flag."""
+    return bool(source.get("spectrum_exists"))
+
+
+def build_gcn_grandma_event(source: dict[str, Any]) -> dict[str, Any] | None:
     """Build one compact GCN-derived source record."""
-    source_id = str(source.get("id", ""))
+    source_id = str(source.get("id", "")).strip()
+    source_type = classify_gcn_derived_source(source)
+    if source_type == "other":
+        return None
+
     redshift = source.get("redshift")
     if not isinstance(redshift, (int, float)):
         redshift = None
 
     return {
         "id": source_id,
-        "gcn_source_type": classify_gcn_derived_type(source_id),
+        "gcn_source_type": source_type,
+        "aliases": extract_aliases(source),
         "redshift": redshift,
+        "trigger_time": extract_trigger_time(source),
         "comment_exists": bool(source.get("comment_exists")),
+        "spectrum_exists": extract_spectrum_exists(source),
         "num_det_global": extract_num_det_global(source),
         "has_host": extract_has_host(source),
         "groups": extract_relevant_groups(source),
@@ -172,39 +222,164 @@ def build_gcn_grandma_event(source: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_gcn_grandma_contract(
+def merge_unique_strings(existing: Any, incoming: Any) -> list[str]:
+    """Merge two compact string lists while preserving order."""
+    merged: list[str] = []
+
+    if not isinstance(existing, list):
+        existing = []
+    if not isinstance(incoming, list):
+        incoming = []
+
+    for item in existing + incoming:
+        if item not in merged:
+            merged.append(item)
+
+    return merged
+
+
+def merge_gcn_grandma_event(
+    existing: dict[str, Any],
+    incoming: dict[str, Any],
+) -> dict[str, Any]:
+    """Merge two compact GCN-derived event records for the same source ID."""
+    merged = dict(existing)
+    merged["aliases"] = merge_unique_strings(
+        existing.get("aliases", []),
+        incoming.get("aliases", []),
+    )
+    merged["comment_exists"] = bool(existing.get("comment_exists")) or bool(
+        incoming.get("comment_exists")
+    )
+    merged["spectrum_exists"] = bool(existing.get("spectrum_exists")) or bool(
+        incoming.get("spectrum_exists")
+    )
+
+    existing_num_det_global = existing.get("num_det_global")
+    if not isinstance(existing_num_det_global, int):
+        existing_num_det_global = 0
+    incoming_num_det_global = incoming.get("num_det_global")
+    if not isinstance(incoming_num_det_global, int):
+        incoming_num_det_global = 0
+    merged["num_det_global"] = max(existing_num_det_global, incoming_num_det_global)
+
+    merged["has_host"] = bool(existing.get("has_host")) or bool(incoming.get("has_host"))
+    merged["groups"] = merge_unique_strings(
+        existing.get("groups", []),
+        incoming.get("groups", []),
+    )
+    merged["classification_labels"] = merge_unique_strings(
+        existing.get("classification_labels", []),
+        incoming.get("classification_labels", []),
+    )
+
+    if not isinstance(merged.get("redshift"), (int, float)) and isinstance(
+        incoming.get("redshift"), (int, float)
+    ):
+        merged["redshift"] = incoming["redshift"]
+
+    if not isinstance(merged.get("trigger_time"), (int, float)) and isinstance(
+        incoming.get("trigger_time"), (int, float)
+    ):
+        merged["trigger_time"] = incoming["trigger_time"]
+
+    existing_summary = existing.get("source_summary")
+    incoming_summary = incoming.get("source_summary")
+    if (
+        not isinstance(existing_summary, str)
+        or not existing_summary.strip()
+    ) and isinstance(incoming_summary, str):
+        merged["source_summary"] = incoming_summary
+
+    return merged
+
+
+def merge_gcn_grandma_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge duplicate compact records coming from multiple inventory runs."""
+    merged_by_id: dict[str, dict[str, Any]] = {}
+
+    for event in events:
+        source_id = str(event.get("id", ""))
+        if source_id not in merged_by_id:
+            merged_by_id[source_id] = event
+            continue
+
+        merged_by_id[source_id] = merge_gcn_grandma_event(merged_by_id[source_id], event)
+
+    return list(merged_by_id.values())
+
+
+def build_inventory_run(
     inventory_dir: Path,
-    output_path: Path,
     manifest: dict[str, Any],
     sources: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Build the base list of all GCN-derived GRANDMA sources."""
-    gcn_sources = [
-        build_gcn_grandma_event(source)
-        for source in sources
-        if is_gcn_derived_source(str(source.get("id", "")))
-    ]
+    """Build one in-memory inventory-run descriptor for the selection workflow."""
+    return {
+        "inventory_dir": inventory_dir,
+        "manifest": manifest,
+        "sources": sources,
+    }
+
+
+def build_gcn_grandma_contract(
+    inventory_runs: list[dict[str, Any]],
+    output_path: Path,
+) -> dict[str, Any]:
+    """Build the base list of all GCN-derived sources from several inventories."""
+    raw_gcn_sources: list[dict[str, Any]] = []
+    raw_source_count = 0
+    inventory_dirs: list[str] = []
+    inventory_run_labels: list[str] = []
+    inventory_profile_names: list[str] = []
+
+    for inventory_run in inventory_runs:
+        inventory_dir = inventory_run["inventory_dir"]
+        manifest = inventory_run["manifest"]
+        sources = inventory_run["sources"]
+
+        inventory_dirs.append(str(inventory_dir))
+        run_label = manifest.get("run_label")
+        if isinstance(run_label, str) and run_label not in inventory_run_labels:
+            inventory_run_labels.append(run_label)
+
+        profile_name = manifest.get("profile_name")
+        if isinstance(profile_name, str) and profile_name not in inventory_profile_names:
+            inventory_profile_names.append(profile_name)
+
+        raw_source_count += len(sources)
+
+        for source in sources:
+            event = build_gcn_grandma_event(source)
+            if event is not None:
+                raw_gcn_sources.append(event)
+
+    gcn_sources = merge_gcn_grandma_events(raw_gcn_sources)
     gcn_sources.sort(key=lambda item: (item["gcn_source_type"], item["id"]))
     subtype_counts = Counter(item["gcn_source_type"] for item in gcn_sources)
+    inventory_run_label = "_".join(inventory_run_labels) if inventory_run_labels else "gcn_union"
 
     return {
         "gcn_grandma_run": {
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "inventory_dir": str(inventory_dir),
-            "inventory_run_label": manifest.get("run_label"),
-            "inventory_profile_name": manifest.get("profile_name"),
+            "inventory_dirs": inventory_dirs,
+            "inventory_run_label": inventory_run_label,
+            "inventory_run_labels": inventory_run_labels,
+            "inventory_profile_names": inventory_profile_names,
             "output_file": str(output_path),
         },
         "criteria": {
             "base": [
-                "group_ids=3",
+                "union of inventory profiles gcn, grb, ep, and grandma_base",
             ],
             "gcn_derived_id_rules": GCN_DERIVED_RULES,
+            "gcn_derived_match_fields": GCN_DERIVED_MATCH_FIELDS,
         },
         "sources": gcn_sources,
         "summary": {
             "input_counts": {
-                "total_sources": len(sources),
+                "inventory_runs": len(inventory_runs),
+                "total_inventory_rows": raw_source_count,
                 "gcn_derived_sources": len(gcn_sources),
                 "by_type": {
                     "gcn": subtype_counts.get("gcn", 0),
@@ -217,199 +392,9 @@ def build_gcn_grandma_contract(
     }
 
 
-def build_gcn_bundle_selection_reasons(event: dict[str, Any]) -> list[str]:
-    """Build the explicit list of reasons for one final GCN-derived candidate."""
-    reasons = ["in_gcn_grandma_base"]
-
-    redshift = event.get("redshift")
-    if isinstance(redshift, (int, float)):
-        reasons.append("has_redshift")
-        if redshift < 1 or redshift > 4:
-            reasons.append("redshift_extreme")
-
-    if event.get("comment_exists"):
-        reasons.append("has_comments")
-
-    num_det_global = event.get("num_det_global")
-    if isinstance(num_det_global, int):
-        if num_det_global >= 2:
-            reasons.append("num_det_global_gte_2")
-        if num_det_global >= 5:
-            reasons.append("num_det_global_gte_5")
-
-    if event.get("has_host"):
-        reasons.append("has_host")
-
-    labels = event.get("classification_labels", [])
-    if isinstance(labels, list):
-        if "GRB" in labels:
-            reasons.append("classified_as_grb")
-        if "GO GRANDMA" in labels:
-            reasons.append("go_grandma")
-        if "GO GRANDMA (HIGH PRIORITY)" in labels:
-            reasons.append("go_grandma_high_priority")
-        if "STOP GRANDMA" in labels:
-            reasons.append("stop_grandma")
-
-    return reasons
-
-
-def assign_gcn_bundle_priority(event: dict[str, Any]) -> tuple[str, int]:
-    """Assign a simple priority and ordering score from one GCN-derived event."""
-    redshift = event.get("redshift")
-    comment_exists = bool(event.get("comment_exists"))
-    num_det_global = event.get("num_det_global")
-    if not isinstance(num_det_global, int):
-        num_det_global = 0
-    labels = event.get("classification_labels", [])
-    if not isinstance(labels, list):
-        labels = []
-
-    score = 0
-
-    if isinstance(redshift, (int, float)):
-        score += 2
-        if redshift < 1 or redshift > 4:
-            score += 4
-
-    if comment_exists:
-        score += 1
-
-    if num_det_global >= 2:
-        score += 1
-    if num_det_global >= 5:
-        score += 2
-
-    if "GRB" in labels:
-        score += 2
-    if "GO GRANDMA" in labels:
-        score += 1
-    if "GO GRANDMA (HIGH PRIORITY)" in labels:
-        score += 3
-
-    if "GO GRANDMA (HIGH PRIORITY)" in labels:
-        return "high", score
-    if isinstance(redshift, (int, float)) and (redshift < 1 or redshift > 4):
-        return "high", score
-    if isinstance(redshift, (int, float)) and comment_exists and num_det_global >= 5:
-        return "high", score
-    if (
-        isinstance(redshift, (int, float))
-        or (comment_exists and num_det_global >= 5)
-        or "GRB" in labels
-        or "GO GRANDMA" in labels
-    ):
-        return "medium", score
-    return "low", score
-
-
-def build_gcn_bundle_candidate(event: dict[str, Any]) -> dict[str, Any]:
-    """Build one final bundle candidate from the GCN-derived GRANDMA base list."""
-    priority, score = assign_gcn_bundle_priority(event)
-    return {
-        "id": event.get("id"),
-        "gcn_source_type": event.get("gcn_source_type"),
-        "priority": priority,
-        "selection_score": score,
-        "selection_reasons": build_gcn_bundle_selection_reasons(event),
-        "selection_context": {
-            "redshift": event.get("redshift"),
-            "comment_exists": event.get("comment_exists"),
-            "num_det_global": event.get("num_det_global"),
-            "has_host": event.get("has_host"),
-            "groups": event.get("groups"),
-            "classification_labels": event.get("classification_labels"),
-        },
-        "source_summary": event.get("source_summary"),
-    }
-
-
-def gcn_bundle_candidate_sort_key(candidate: dict[str, Any]) -> tuple[int, int, int, str]:
-    """Sort final bundle candidates deterministically."""
-    context = candidate.get("selection_context", {})
-    num_det_global = context.get("num_det_global")
-    if not isinstance(num_det_global, int):
-        num_det_global = 0
-
-    return (
-        PRIORITY_RANK[candidate["priority"]],
-        -candidate["selection_score"],
-        -num_det_global,
-        candidate["id"],
-    )
-
-
-def build_gcn_bundle_selection_contract(
-    gcn_grandma_path: Path,
-    output_path: Path,
-    payload: dict[str, Any],
-) -> dict[str, Any]:
-    """Build the final prioritized bundle-selection file from the GCN-derived base list."""
-    gcn_sources = payload.get("sources", [])
-    if not isinstance(gcn_sources, list):
-        raise ValueError(f"Expected 'sources' list in {gcn_grandma_path}")
-
-    candidates = [
-        build_gcn_bundle_candidate(event)
-        for event in gcn_sources
-        if isinstance(event, dict)
-    ]
-    candidates.sort(key=gcn_bundle_candidate_sort_key)
-    priority_counts = Counter(candidate["priority"] for candidate in candidates)
-    type_counts = Counter(candidate["gcn_source_type"] for candidate in candidates)
-
-    return {
-        "selection_run": {
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "input_file": str(gcn_grandma_path),
-            "input_run_label": payload.get("gcn_grandma_run", {}).get("inventory_run_label"),
-            "output_file": str(output_path),
-        },
-        "criteria": {
-            "base": [
-                "GCN-derived source in GRANDMA",
-            ],
-            "priority_rules": GCN_BUNDLE_PRIORITY_RULES,
-        },
-        "selected_sources": candidates,
-        "summary": {
-            "input_counts": {
-                "gcn_derived_sources": len(candidates),
-                "by_type": {
-                    "gcn": type_counts.get("gcn", 0),
-                    "grb": type_counts.get("grb", 0),
-                    "gw": type_counts.get("gw", 0),
-                    "ep": type_counts.get("ep", 0),
-                },
-            },
-            "priority_counts": {
-                "high": priority_counts.get("high", 0),
-                "medium": priority_counts.get("medium", 0),
-                "low": priority_counts.get("low", 0),
-            },
-        },
-    }
-
-
-def default_selection_output_path() -> Path:
-    """Build the default JSON output path for the final bundle selection."""
-    return resolve_project_path(DEFAULT_SELECTION_OUTPUT)
-
-
-def default_gcn_grandma_output_path(manifest: dict[str, Any]) -> Path:
-    """Build the default JSON output path for one GCN-derived GRANDMA list."""
-    run_label = manifest.get("run_label")
-    if isinstance(run_label, str) and run_label.strip():
-        filename = f"gcn_grandma_{run_label.strip()}.json"
-    else:
-        filename = Path(DEFAULT_GCN_GRANDMA_OUTPUT).name
-
-    return resolve_project_path(Path(DEFAULT_GCN_GRANDMA_OUTPUT).parent / filename)
-
-
-def default_gcn_grandma_input_path() -> Path:
-    """Return the default path to the current GCN-derived GRANDMA base list."""
-    return resolve_project_path(DEFAULT_GCN_GRANDMA_INPUT)
+def default_gcn_grandma_output_path() -> Path:
+    """Build the default JSON output path for the GCN-derived base list."""
+    return resolve_project_path(DEFAULT_GCN_GRANDMA_OUTPUT)
 
 
 def write_payload(output_path: Path, payload: dict[str, Any]) -> None:
@@ -419,52 +404,34 @@ def write_payload(output_path: Path, payload: dict[str, Any]) -> None:
 
 
 def run_gcn_grandma_build(
-    inventory_dir: str | Path,
+    inventory_dirs: list[str | Path],
     output: str | Path | None = None,
 ) -> Path:
-    """Build the enriched GCN-derived GRANDMA base list from one inventory run."""
-    resolved_inventory_dir = resolve_project_path(inventory_dir)
-    manifest = load_inventory_manifest(resolved_inventory_dir)
-    sources = load_inventory_sources(resolved_inventory_dir)
+    """Build the enriched GCN-derived base list from several inventory runs."""
+    inventory_runs: list[dict[str, Any]] = []
+
+    for inventory_dir in inventory_dirs:
+        resolved_inventory_dir = resolve_project_path(inventory_dir)
+        manifest = load_inventory_manifest(resolved_inventory_dir)
+        sources = load_inventory_sources(resolved_inventory_dir)
+        inventory_runs.append(
+            build_inventory_run(
+                inventory_dir=resolved_inventory_dir,
+                manifest=manifest,
+                sources=sources,
+            )
+        )
+
     output_path = (
         resolve_project_path(output)
         if output is not None
-        else default_gcn_grandma_output_path(manifest)
+        else default_gcn_grandma_output_path()
     )
     payload = build_gcn_grandma_contract(
-        inventory_dir=resolved_inventory_dir,
+        inventory_runs=inventory_runs,
         output_path=output_path,
-        manifest=manifest,
-        sources=sources,
     )
     write_payload(output_path, payload)
-    print(f"Wrote GCN-derived GRANDMA list: {output_path}")
+    print(f"Wrote GCN-derived base list: {output_path}")
     print("Input counts:", payload["summary"]["input_counts"])
-    return output_path
-
-
-def run_selected_sources_build(
-    gcn_grandma_path: str | Path | None = None,
-    output: str | Path | None = None,
-) -> Path:
-    """Build the final selected-sources file from the GCN-derived GRANDMA base list."""
-    resolved_gcn_grandma_path = (
-        resolve_project_path(gcn_grandma_path)
-        if gcn_grandma_path is not None
-        else default_gcn_grandma_input_path()
-    )
-    output_path = (
-        resolve_project_path(output)
-        if output is not None
-        else default_selection_output_path()
-    )
-    payload = build_gcn_bundle_selection_contract(
-        gcn_grandma_path=resolved_gcn_grandma_path,
-        output_path=output_path,
-        payload=load_json_object(resolved_gcn_grandma_path),
-    )
-    write_payload(output_path, payload)
-    print(f"Wrote final bundle selection: {output_path}")
-    print("Input counts:", payload["summary"]["input_counts"])
-    print("Priority counts:", payload["summary"]["priority_counts"])
     return output_path

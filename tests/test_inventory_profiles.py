@@ -21,6 +21,9 @@ class InventoryProfileTests(unittest.TestCase):
         self.assertIn("has_robotic_followup", self.config.inventory.profiles)
         self.assertIn("grandma_det2_base", self.config.inventory.profiles)
         self.assertIn("grandma_base", self.config.inventory.profiles)
+        self.assertIn("gcn", self.config.inventory.profiles)
+        self.assertIn("ep", self.config.inventory.profiles)
+        self.assertIn("grb", self.config.inventory.profiles)
 
     def test_profile_resolution_applies_defaults_and_template(self) -> None:
         profile = resolve_inventory_profile(self.config, "recent_500")

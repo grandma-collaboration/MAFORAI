@@ -26,6 +26,7 @@ The important distinction is simple:
 | `many_detections` | Complete filtered subset | `numberDetections=5` | Sources with at least five detections |
 | `gcn` | Complete filtered subset | `sourceID=GCN` | GCN-like sources |
 | `ep` | Complete filtered subset | `sourceID=EP` | EP-like sources |
+| `grb` | Complete filtered subset | `sourceID=GRB` | GRB-like sources |
 
 ## Shared query templates
 
@@ -57,6 +58,7 @@ python scripts/02_fetch_source_inventory.py --profile redshift
 python scripts/02_fetch_source_inventory.py --profile many_detections
 python scripts/02_fetch_source_inventory.py --profile gcn
 python scripts/02_fetch_source_inventory.py --profile ep
+python scripts/02_fetch_source_inventory.py --profile grb
 ```
 
 If you need a quick variation, use CLI overrides instead of editing the profile
@@ -79,10 +81,11 @@ The table below records the runs used while writing this documentation.
 | `has_spectrum` | `hasSpectrum=true` | 60 | 1 | 60 | `api_total_matches_reached` |
 | `has_robotic_followup` | `hasFollowupRequest=true` | 370 | 4 | 370 | `api_total_matches_reached` |
 | `grandma_has_robotic_followup_det2_base` | `hasFollowupRequest=true`, `group_ids=3`, `numberDetections=2`, `includeHosts=true` | 82 | 1 | 82 | `api_total_matches_reached` |
-| `grandma_base` | `group_ids=3`, `includeHosts=true` | 382 | 4 | 382 | `api_total_matches_reached` |
+| `grandma_base` | `group_ids=3`, `includeHosts=true` | 385 | 4 | 385 | `api_total_matches_reached` |
 | `grandma_det2_base` | `group_ids=3`, `numberDetections=2`, `includeHosts=true` | 95 | 1 | 95 | `api_total_matches_reached` |
 | `classified` | `classified=true` | 834 | 9 | 834 | `api_total_matches_reached` |
 | `redshift` | `minRedshift=0.0001` | 51 | 1 | 51 | `api_total_matches_reached` |
 | `many_detections` | `numberDetections=5` | 71 | 1 | 71 | `api_total_matches_reached` |
-| `gcn` | `sourceID=GCN` | 144 | 2 | 144 | `api_total_matches_reached` |
-| `ep` | `sourceID=EP` | 193 | 2 | 193 | `api_total_matches_reached` |
+| `gcn` | `sourceID=GCN` | 147 | 2 | 147 | `api_total_matches_reached` |
+| `ep` | `sourceID=EP` | 204 | 3 | 204 | `api_total_matches_reached` |
+| `grb` | `sourceID=GRB` | 190 | 2 | 190 | `api_total_matches_reached` |

@@ -1,7 +1,8 @@
 # Relevant SkyPortal Endpoints
 
 This document is the short operational shortlist of endpoints that matter most
-for the first source-bundle extraction stage.
+for the current inventory-first workflow and for any future deeper extraction
+stage.
 
 The broader catalog still lives in `docs/endpoints.md`. Here the goal is simply
 to keep the useful subset easy to read.
@@ -84,27 +85,20 @@ GET /api/sources/{source_id}/color_mag
 That bundle is small enough to be practical and rich enough to tell us what a
 useful event-level extraction really looks like.
 
-In the current high-priority extraction run, `offsets` does return useful
-context, but it looks more like offset-star observing support than a direct
-"host galaxy proximity" measurement. For host proximity itself, the more
-relevant structured fields remain `host_id` and any populated `galaxies`
-information in the root source object.
+In the current extraction workflow, `offsets` does return useful context, but
+it looks more like offset-star observing support than a direct "host galaxy
+proximity" measurement. For host proximity itself, the more relevant
+structured fields remain `host_id` and any populated `galaxies` information
+in the root source object.
 
-## 6. Current operational use
+## 6. Current status
 
-This endpoint bundle is no longer only a proposal. It is the current first
-bundle recipe used by the workflow.
+This endpoint bundle is still useful as a reference for future deeper
+extractions, but it is not part of the active operational workflow anymore.
 
-Current usage:
+Current consequence:
 
-- input file: `data/samples/selected_sources_for_bundles.json`
-- priority filter: `high`
-- current kept events: `31`
-- run directory pattern:
-  `data/raw/skyportal/source_bundles/source_bundle_run_<timestamp>/`
-
-The current workflow then exports two shared sample artifacts from that bundle
-run:
-
-- `data/samples/selected_sources_high.json`
-- `data/samples/selected_sources_high_bundle_summary.csv`
+- the SkyPortal workflow currently stops at `data/samples/gcn_grandma.json`;
+- GCN matching now starts directly from that compact inventory-derived base;
+- deeper per-source endpoint downloads are postponed until they are clearly
+  needed again.
