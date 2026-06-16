@@ -2,84 +2,93 @@
 
 Repository for the MAFORAI internship work.
 
-## Current focus
+## Current scope
 
-The current phase is a study of the SkyPortal API. The goal is to understand
-what we can actually extract, which endpoint families are usable, and how to
-build representative source subsets before committing to a final corpus design.
+The repository currently has two connected workflows:
 
-Right now the work is centered on five things:
+1. a SkyPortal workflow to audit the API, build source inventories, and prepare
+   the compact `gcn_grandma.json` event universe;
+2. a GCN workflow to download Circulars, build a searchable index, match
+   events against Circulars, extract structured claims from matched bodies, and
+   compare those claims against the compact SkyPortal metadata.
 
-- auditing endpoint availability and response shape;
-- downloading raw source inventories from `GET /api/sources`;
-- building a GCN-derived subset inside `GRANDMA`;
-- assigning a compact, explainable priority to those events;
-- downloading per-source bundles for the current `high` subset and exporting a
-  shared sample for review.
+The active handoff between both sides is:
 
-## Where to start
+```text
+SkyPortal inventories -> data/samples/gcn_grandma.json -> GCN pipeline
+```
 
-The main operational guide lives in:
+## Documentation map
 
-- `docs/skyportal/README.md`
+The documentation is intentionally split by workflow.
 
-That folder covers setup, audit runs, source inventories, GCN-derived
-selection, source-bundle extraction, shared samples, and the current findings.
+| Area | Entry point | Purpose |
+|---|---|---|
+| SkyPortal | [docs/skyportal/README.md](docs/skyportal/README.md) | Setup, endpoint audit, source inventories, and construction of `gcn_grandma.json` |
+| GCN | [docs/gcn/README.md](docs/gcn/README.md) | Circular archive download, yearly indexing, event matching, claim extraction, and enrichment comparison |
 
-The broader context stays in:
+Supporting documents:
 
-- `docs/decisiones.md`: design decisions taken so far;
-- `docs/endpoints.md`: broad endpoint catalog for the next extraction steps;
-- `docs/questions_for_team.md`: place to record open questions when they appear.
+| File | Purpose |
+|---|---|
+| [docs/decisiones.md](docs/decisiones.md) | Design and workflow decisions |
+| [docs/endpoints.md](docs/endpoints.md) | Broad endpoint catalog and notes |
+| [docs/questions_for_team.md](docs/questions_for_team.md) | Open questions to discuss with the team |
 
-## Current code layout
-
-The current SkyPortal workflow is split into a few small layers:
+## Repository layout
 
 | Path | Role |
 |---|---|
-| `scripts/` | Thin CLI entrypoints |
+| `scripts/` | Thin CLI entrypoints for the SkyPortal workflow |
+| `scripts/gcn/` | Thin CLI entrypoints for the GCN workflow |
 | `src/skyportal_corpus/core/` | Shared config and path helpers |
-| `src/skyportal_corpus/extraction/` | Reusable audit and extraction logic |
-| `pyproject.toml` | Project metadata and package/dependency definition |
-| `configs/extraction/skyportal.yaml` | Shared runtime configuration |
-| `tests/` | Small tests for config loading, inventory profiles, selection, bundles, and shared sample exports |
+| `src/skyportal_corpus/extraction/` | Reusable SkyPortal and GCN workflow logic |
+| `configs/extraction/skyportal.yaml` | Shared runtime configuration for SkyPortal extraction |
+| `tests/` | Small tests for config loading and reusable workflow helpers |
 
-The main entrypoints used today are:
+## Main entrypoints
+
+SkyPortal:
 
 - `scripts/01_audit_endpoint_availability.py`
 - `scripts/02_fetch_source_inventory.py`
 - `scripts/03_build_gcn_grandma.py`
-- `scripts/04_build_selected_sources.py`
-- `scripts/05_fetch_source_bundles.py`
-- `scripts/06_export_high_priority_samples.py`
 
-## Raw outputs
+GCN:
 
-Generated files are written locally under `data/raw/skyportal/`, one folder per
-run:
+- `scripts/gcn/01_download_circulars_archive.py`
+- `scripts/gcn/02_build_circulars_index.py`
+- `scripts/gcn/03a_build_event_search_terms.py`
+- `scripts/gcn/03b_match_events_to_circulars.py`
+- `scripts/gcn/03c_build_event_match_summary.py`
+- `scripts/gcn/04a_extract_core_claims.py`
+- `scripts/gcn/04b_build_claim_summary.py`
+- `scripts/gcn/05a_build_event_enrichment_candidates.py`
+- `scripts/gcn/05b_compare_gcn_enrichment_with_skyportal.py`
 
-- `endpoint_audit/endpoint_audit_<label>_<timestamp>/`
-- `inventory/source_inventory_<run_label>_<timestamp>/`
-- `source_bundles/source_bundle_run_<timestamp>/`
+## Data layout
 
-Those folders are working artifacts. The repository keeps the directory
-structure and the documentation, but not the generated run folders themselves.
+The repository writes generated data under the project `data/` directory.
 
-Compact shared review artifacts are written under `data/samples/`, including:
+| Path | Purpose |
+|---|---|
+| `data/raw/skyportal/endpoint_audit/` | One directory per SkyPortal endpoint-audit run |
+| `data/raw/skyportal/inventory/` | One directory per SkyPortal source-inventory run |
+| `data/samples/gcn_grandma.json` | Compact event universe handed from SkyPortal to the GCN workflow |
+| `data/raw/gcn/circulars/archive_json/` | One directory per raw GCN Circular archive download |
+| `data/interim/gcn/circulars/` | Year-partitioned normalized GCN Circular indexes |
+| `data/interim/gcn/event_matching/` | Step-A matching outputs |
+| `data/interim/gcn/event_extraction/` | Step-B claim extraction outputs |
+| `data/interim/gcn/event_enrichment/` | Step-C event-level enrichment outputs |
 
-- `gcn_grandma_grandma_base.json`
-- `selected_sources_for_bundles.json`
-- `selected_sources_high.json`
-- `selected_sources_high_bundle_summary.csv`
+## Minimal starting points
 
-## Current takeaways
+If you want to reproduce the current workflow, start here:
 
-- `/api/sources` is a practical inventory layer and already supports useful
-  filters for targeted subsets.
-- `GET /api/sources/{source_id}` is a strong root object, but it is not enough
-  on its own for full photometry, comments, or spectra.
-- the current first-pass event ranking is intentionally explicit and
-  reproducible: it uses redshift, comments, compact detection counts, and a
-  small set of classification labels to prioritize GCN-derived `GRANDMA`
-  events before deeper review.
+1. read [docs/skyportal/README.md](docs/skyportal/README.md);
+2. build or refresh `data/samples/gcn_grandma.json`;
+3. read [docs/gcn/README.md](docs/gcn/README.md) to continue with the GCN side.
+
+This root `README.md` is intentionally kept as a general map. The operational
+commands, outputs, and step-by-step details live in the workflow-specific
+documentation folders.
