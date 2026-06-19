@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         default=None,
-        help="Optional output JSON path. Defaults to data/samples/gcn_grandma.json.",
+        help="Optional output JSON path. Defaults to data/interim/skyportal/gcn_grandma.json.",
     )
     return parser.parse_args()
 

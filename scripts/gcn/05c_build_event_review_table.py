@@ -9,8 +9,8 @@ import argparse
 from skyportal_corpus.extraction import (
     DEFAULT_GCN_CORE_CLAIMS_PATH,
     DEFAULT_GCN_EVENT_BEST_CLAIMS_PATH,
-    DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH,
     DEFAULT_GCN_EVENT_REVIEW_OUTPUT_DIR,
+    DEFAULT_SKYPORTAL_EVENT_BASELINE_PARQUET_PATH,
     run_gcn_event_review_table_build,
 )
 
@@ -20,11 +20,11 @@ def parse_args() -> argparse.Namespace:
         description="Build the final event-level review table for astronomer validation."
     )
     parser.add_argument(
-        "--selected-sources",
-        default=DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH,
+        "--skyportal-baseline-path",
+        default=DEFAULT_SKYPORTAL_EVENT_BASELINE_PARQUET_PATH,
         help=(
-            "Path to the compact SkyPortal event base. "
-            f"Default: {DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH}"
+            "Path to the prebuilt SkyPortal baseline. "
+            f"Default: {DEFAULT_SKYPORTAL_EVENT_BASELINE_PARQUET_PATH}"
         ),
     )
     parser.add_argument(

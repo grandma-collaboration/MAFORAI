@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_GCN_EVENT_INPUT_PATH,
         help=(
             "Path to the event-universe input used for matching. "
-            "Defaults to data/samples/gcn_grandma.json. "
+            "Defaults to data/interim/skyportal/gcn_grandma.json. "
             f"Default: {DEFAULT_GCN_EVENT_INPUT_PATH}"
         ),
     )

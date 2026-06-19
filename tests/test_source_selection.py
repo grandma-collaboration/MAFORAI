@@ -13,6 +13,7 @@ def make_source(
     source_id: str,
     *,
     alias: list[str] | None = None,
+    tags: list[str] | None = None,
     redshift: float | None = None,
     t0: float | None = None,
     num_det_global: int = 2,
@@ -32,6 +33,7 @@ def make_source(
         "summary": f"Summary for {source_id}",
         "groups": [{"id": 3, "name": "GRANDMA"}],
         "photstats": [{"num_det_global": num_det_global}],
+        "tags": [{"name": tag} for tag in (tags or [])],
         "classifications": [
             {"classification": label} for label in (classifications or [])
         ],
@@ -54,6 +56,7 @@ class SourceSelectionTests(unittest.TestCase):
                 t0=61200.1,
                 num_det_global=12,
                 comment_exists=True,
+                tags=["LongGRB", "Swift"],
             ),
             make_source(
                 "GRB-1",
@@ -62,6 +65,7 @@ class SourceSelectionTests(unittest.TestCase):
                 num_det_global=8,
                 comment_exists=True,
                 spectrum_exists=True,
+                tags=["ShortGRB"],
             ),
             make_source("GW-1", redshift=None, num_det_global=1, comment_exists=False),
             make_source("EP-1", redshift=0.5, num_det_global=9, comment_exists=True, host_id=123),
@@ -98,6 +102,7 @@ class SourceSelectionTests(unittest.TestCase):
         self.assertTrue(payload["sources"][0]["has_host"])
         self.assertEqual(payload["sources"][1]["trigger_time"], 61200.1)
         self.assertTrue(payload["sources"][2]["spectrum_exists"])
+        self.assertEqual(payload["sources"][1]["tags"], ["LongGRB", "Swift"])
 
     def test_gcn_grandma_contract_keeps_alias_prefix_matches(self) -> None:
         inventory_runs = [
@@ -160,6 +165,40 @@ class SourceSelectionTests(unittest.TestCase):
 
         self.assertEqual(payload["sources"][0]["trigger_time"], 61205.5)
         self.assertTrue(payload["sources"][0]["spectrum_exists"])
+
+    def test_gcn_grandma_contract_merges_tags_without_duplicates(self) -> None:
+        inventory_runs = [
+            {
+                "inventory_dir": Path("data/raw/skyportal/inventory/source_inventory_gcn_example"),
+                "manifest": {
+                    "run_label": "gcn",
+                    "profile_name": "gcn",
+                },
+                "sources": [
+                    make_source("GRB-1", tags=["LongGRB", "Swift"]),
+                ],
+            },
+            {
+                "inventory_dir": Path("data/raw/skyportal/inventory/source_inventory_grandma_base_example"),
+                "manifest": {
+                    "run_label": "grandma_base",
+                    "profile_name": "grandma_base",
+                },
+                "sources": [
+                    make_source("GRB-1", tags=["Swift", "Optical"]),
+                ],
+            },
+        ]
+
+        payload = build_gcn_grandma_contract(
+            inventory_runs=inventory_runs,
+            output_path=Path("data/samples/gcn_grandma_example.json"),
+        )
+
+        self.assertEqual(
+            payload["sources"][0]["tags"],
+            ["LongGRB", "Swift", "Optical"],
+        )
 
 if __name__ == "__main__":
     unittest.main()

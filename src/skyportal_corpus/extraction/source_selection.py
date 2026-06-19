@@ -10,7 +10,7 @@ from typing import Any
 
 from ..core import resolve_project_path
 
-DEFAULT_GCN_GRANDMA_OUTPUT = "data/samples/gcn_grandma.json"
+DEFAULT_GCN_GRANDMA_OUTPUT = "data/interim/skyportal/gcn_grandma.json"
 GRANDMA_GROUP_ID = 3
 KNC_GROUP_ID = 38
 GCN_DERIVED_RULES = {
@@ -184,6 +184,28 @@ def extract_classification_labels(source: dict[str, Any]) -> list[str]:
     return labels
 
 
+def extract_tags(source: dict[str, Any]) -> list[str]:
+    """Extract the compact list of raw SkyPortal tag names from one source row."""
+    raw_tags = source.get("tags")
+    if not isinstance(raw_tags, list):
+        return []
+
+    tags: list[str] = []
+    for raw_tag in raw_tags:
+        if not isinstance(raw_tag, dict):
+            continue
+
+        tag_name = raw_tag.get("name")
+        if not isinstance(tag_name, str):
+            continue
+
+        tag_name = tag_name.strip()
+        if tag_name and tag_name not in tags:
+            tags.append(tag_name)
+
+    return tags
+
+
 def extract_has_host(source: dict[str, Any]) -> bool:
     """Return whether the source row exposes a host association."""
     host_id = source.get("host_id")
@@ -218,6 +240,7 @@ def build_gcn_grandma_event(source: dict[str, Any]) -> dict[str, Any] | None:
         "has_host": extract_has_host(source),
         "groups": extract_relevant_groups(source),
         "classification_labels": extract_classification_labels(source),
+        "tags": extract_tags(source),
         "source_summary": source.get("summary"),
     }
 
@@ -271,6 +294,10 @@ def merge_gcn_grandma_event(
     merged["classification_labels"] = merge_unique_strings(
         existing.get("classification_labels", []),
         incoming.get("classification_labels", []),
+    )
+    merged["tags"] = merge_unique_strings(
+        existing.get("tags", []),
+        incoming.get("tags", []),
     )
 
     if not isinstance(merged.get("redshift"), (int, float)) and isinstance(

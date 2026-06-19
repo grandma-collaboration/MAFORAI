@@ -9,7 +9,7 @@ import argparse
 from skyportal_corpus.extraction import (
     DEFAULT_GCN_EVENT_BEST_CLAIMS_PATH,
     DEFAULT_GCN_EVENT_ENRICHMENT_OUTPUT_DIR,
-    DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH,
+    DEFAULT_SKYPORTAL_EVENT_BASELINE_PARQUET_PATH,
     run_gcn_event_enrichment_comparison,
 )
 
@@ -19,12 +19,11 @@ def parse_args() -> argparse.Namespace:
         description="Compare GCN enrichment candidates against selected SkyPortal metadata."
     )
     parser.add_argument(
-        "--selected-sources",
-        default=DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH,
+        "--skyportal-baseline-path",
+        default=DEFAULT_SKYPORTAL_EVENT_BASELINE_PARQUET_PATH,
         help=(
-            "Path to the SkyPortal event base used for comparison. "
-            "Defaults to data/samples/gcn_grandma.json. "
-            f"Default: {DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH}"
+            "Path to the prebuilt SkyPortal baseline used for comparison. "
+            f"Default: {DEFAULT_SKYPORTAL_EVENT_BASELINE_PARQUET_PATH}"
         ),
     )
     parser.add_argument(
