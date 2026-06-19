@@ -165,6 +165,10 @@ TRIGGER_TIME_ONLY_PATTERN = re.compile(
     r"\b(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\s*UT\b",
     re.IGNORECASE,
 )
+TRIGGER_TIME_WITH_OPTIONAL_DATE_PATTERN = re.compile(
+    r"\b(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\s*UT(?:\s+on\s+([0-9]{1,2}\s+\w+\s+[0-9]{4}))?\b",
+    re.IGNORECASE,
+)
 TRIGGER_SECONDS_OF_DAY_PATTERN = re.compile(
     r"\b\d+(?:\.\d+)?\s*s\s*UT\s*\((\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\)",
     re.IGNORECASE,
@@ -219,6 +223,10 @@ RED_SHIFT_PATTERNS = [
     ("redshift_z_equals", re.compile(r"\bz\s*([=~])\s*([0-9]+(?:\.\d+)?)", re.IGNORECASE)),
     ("redshift_photoz", re.compile(r"\bphoto-z\b[^0-9]{0,20}([0-9]+(?:\.\d+)?)", re.IGNORECASE)),
 ]
+PHOTOMETRY_BAND_ASSIGNMENT_PATTERN = re.compile(
+    r"\b([ugrizyjhk])\s*=\s*([0-9]+(?:\.\d+)?)",
+    re.IGNORECASE,
+)
 COUNTERPART_PATTERNS = [
     ("optical", re.compile(r"\boptical counterpart\b", re.IGNORECASE), "counterpart", "high"),
     ("xray", re.compile(r"\bX-ray counterpart\b", re.IGNORECASE), "counterpart", "high"),
@@ -229,6 +237,29 @@ COUNTERPART_PATTERNS = [
     ("xray", re.compile(r"\bX-ray afterglow\b", re.IGNORECASE), "afterglow", "high"),
     ("nir", re.compile(r"\bNIR afterglow\b", re.IGNORECASE), "afterglow", "high"),
     ("candidate_counterpart", re.compile(r"\bcandidate counterpart\b", re.IGNORECASE), "candidate", "medium"),
+]
+NEGATIVE_COUNTERPART_CONTEXT_PATTERNS = [
+    re.compile(
+        r"\bno\s+(?:new\s+|credible\s+|possible\s+|significant\s+)?"
+        r"(?:optical|x-ray|nir|radio|uv)?\s*(?:counterpart|afterglow)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:do|does|did)\s+not\s+(?:detect|find|reveal)\b[^.\n]{0,120}\b(?:counterpart|afterglow)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:counterpart|afterglow)\b[^.\n]{0,120}\b(?:is\s+not\s+detected|was\s+not\s+detected|not\s+detected|not\s+found)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:upper limit|limiting magnitude|non-detection|retraction|spurious)\b[^.\n]{0,120}\b(?:counterpart|afterglow)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:counterpart|afterglow)\b[^.\n]{0,120}\b(?:upper limit|limiting magnitude|non-detection|retraction|spurious)\b",
+        re.IGNORECASE,
+    ),
 ]
 UPPER_LIMIT_BAND_PATTERN = re.compile(
     r"\b([ugrizYJHKRIVB])['’]?\s*>\s*([0-9]+(?:\.\d+)?)",
@@ -350,21 +381,28 @@ def normalize_trigger_candidate_value(raw_value: str, evidence_text: str) -> str
 
     seconds_match = TRIGGER_SECONDS_OF_DAY_PATTERN.search(normalized_raw)
     if seconds_match is not None:
-        return seconds_match.group(1)
+        return ""
 
     datetime_match = TRIGGER_DATETIME_VALUE_PATTERN.search(normalized_raw)
     if datetime_match is not None:
         return normalize_trigger_datetime_string(datetime_match.group(1))
 
+    ut_datetime_match = TRIGGER_TIME_WITH_OPTIONAL_DATE_PATTERN.search(normalized_raw)
+    if ut_datetime_match is not None:
+        raw_date = parse_trigger_ut_date(ut_datetime_match.group(2))
+        if raw_date:
+            return f"{raw_date}T{ut_datetime_match.group(1)}"
+        return ""
+
     time_match = TRIGGER_TIME_ONLY_PATTERN.search(normalized_raw)
     if time_match is not None:
-        return time_match.group(1)
+        return ""
 
     bare_time_match = re.search(r"\b(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)\b", normalized_raw)
     if bare_time_match is not None and (
         "ut" in normalized_raw.lower() or "t0" in normalized_raw.lower() or "tb" in normalized_raw.lower()
     ):
-        return bare_time_match.group(1)
+        return ""
 
     mjd_match = MJD_PATTERN.search(normalized_raw)
     if mjd_match is not None:
@@ -639,10 +677,9 @@ def extract_trigger_time_claims(
         raw_value = normalize_whitespace(match.group(0))
         if not should_keep_trigger_context(local_text, raw_value):
             continue
-        raw_date = parse_trigger_ut_date(match.group(2))
-        normalized_value = match.group(1)
-        if raw_date:
-            normalized_value = f"{raw_date}T{normalized_value}"
+        normalized_value = normalize_trigger_candidate_value(raw_value, evidence_text)
+        if not normalized_value:
+            continue
         rows.append(
             build_claim_record(
                 association=association,
@@ -745,6 +782,35 @@ def infer_redshift_confidence(evidence_text: str, method: str) -> str:
     return "medium"
 
 
+def redshift_selection_rank(evidence_text: str, extraction_rule: str) -> int:
+    """Rank redshift claims so stronger methods and more specific rules win."""
+    method_rank = {
+        "spectroscopic": 0,
+        "host": 1,
+        "photometric": 2,
+        "tentative": 3,
+        "unknown": 4,
+    }.get(infer_redshift_method(evidence_text), 99)
+    rule_rank = {
+        "redshift_photoz": 0,
+        "redshift_z_equals": 1,
+    }.get(extraction_rule, 99)
+    return (method_rank * 10) + rule_rank
+
+
+def is_multiband_photometry_redshift_false_positive(
+    local_text: str,
+    matched_text: str,
+) -> bool:
+    """Return whether one generic z-value looks like z-band photometry."""
+    if not re.search(r"\bz\s*[=~]\s*[0-9]+(?:\.\d+)?", matched_text, re.IGNORECASE):
+        return False
+
+    band_matches = PHOTOMETRY_BAND_ASSIGNMENT_PATTERN.findall(local_text)
+    distinct_bands = {band.lower() for band, _ in band_matches}
+    return "z" in distinct_bands and len(distinct_bands) >= 2
+
+
 def extract_redshift_claims(
     association: dict[str, Any],
     text: str,
@@ -756,9 +822,18 @@ def extract_redshift_claims(
     for extraction_rule, pattern in RED_SHIFT_PATTERNS:
         for match in pattern.finditer(text):
             evidence_text = build_evidence_text(text, match.span())
+            local_text = build_local_context(text, match.span())
             if not RED_SHIFT_CONTEXT_PATTERN.search(evidence_text):
                 continue
             if re.search(r"\bmag z\b|\bz-band\b|\bfilter z\b", evidence_text, re.IGNORECASE):
+                continue
+            if (
+                extraction_rule == "redshift_z_equals"
+                and is_multiband_photometry_redshift_false_positive(
+                    local_text,
+                    normalize_whitespace(match.group(0)),
+                )
+            ):
                 continue
 
             numeric_match = re.search(r"([0-9]+(?:\.\d+)?)", normalize_whitespace(match.group(0)))
@@ -793,6 +868,12 @@ def extract_counterpart_claims(
     for normalized_value, pattern, method, confidence in COUNTERPART_PATTERNS:
         for match in pattern.finditer(text):
             evidence_text = build_evidence_text(text, match.span())
+            local_text = build_local_context(text, match.span(), radius=120)
+            if any(
+                negative_pattern.search(local_text)
+                for negative_pattern in NEGATIVE_COUNTERPART_CONTEXT_PATTERNS
+            ):
+                continue
             rows.append(
                 build_claim_record(
                     association=association,
@@ -1245,13 +1326,10 @@ def build_event_claim_summary_dataframe(
 
         redshift_claim = pick_best_claim(
             source_claims[source_claims["claim_type"] == "redshift"],
-            extra_rank_builder=lambda row: {
-                "spectroscopic": 0,
-                "host": 1,
-                "photometric": 2,
-                "tentative": 3,
-                "unknown": 4,
-            }.get(infer_redshift_method(str(row.get("evidence_text", ""))), 99),
+            extra_rank_builder=lambda row: redshift_selection_rank(
+                str(row.get("evidence_text", "")),
+                str(row.get("extraction_rule", "")),
+            ),
         )
         t90_claim = pick_best_claim(
             source_claims[

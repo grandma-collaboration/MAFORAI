@@ -90,7 +90,7 @@ class GcnCoreClaimsTests(unittest.TestCase):
         self.assertEqual(len(trigger_claims), 1)
         self.assertEqual(trigger_claims[0]["normalized_value"], "2025-02-07T21:47:56")
 
-    def test_trigger_time_converts_konus_seconds_of_day_to_clock_time(self) -> None:
+    def test_trigger_time_discards_konus_seconds_of_day_when_only_clock_time_exists(self) -> None:
         claims = extract_claims_from_text(
             self.association,
             "Konus-Wind triggered at T0=34281.198 s UT (09:31:21.198).",
@@ -98,8 +98,29 @@ class GcnCoreClaimsTests(unittest.TestCase):
         )
         trigger_claims = [claim for claim in claims if claim["claim_type"] == "trigger_time_t0"]
 
+        self.assertEqual(trigger_claims, [])
+
+    def test_trigger_time_keeps_ut_time_when_explicit_date_is_present(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            "The burst trigger time was T0 = 13:22:50 UT on 1 Jan 2025.",
+            source_field="body",
+        )
+        trigger_claims = [claim for claim in claims if claim["claim_type"] == "trigger_time_t0"]
+
         self.assertEqual(len(trigger_claims), 1)
-        self.assertEqual(trigger_claims[0]["normalized_value"], "09:31:21.198")
+        self.assertEqual(trigger_claims[0]["normalized_value"], "2025-01-01T13:22:50")
+
+    def test_trigger_time_keeps_mjd_when_trigger_context_is_explicit(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            "The trigger time was MJD = 60727.14903935 according to the alert.",
+            source_field="body",
+        )
+        trigger_claims = [claim for claim in claims if claim["claim_type"] == "trigger_time_t0"]
+
+        self.assertEqual(len(trigger_claims), 1)
+        self.assertEqual(trigger_claims[0]["normalized_value"], "60727.14903935")
 
     def test_trigger_time_rejects_followup_observation_start(self) -> None:
         claims = extract_claims_from_text(
@@ -205,6 +226,62 @@ class GcnCoreClaimsTests(unittest.TestCase):
 
         self.assertEqual(len(redshift_claims), 1)
         self.assertEqual(redshift_claims[0]["claim_confidence"], "high")
+
+    def test_redshift_rejects_z_band_value_inside_multiband_photometry(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            (
+                "The counterpart is close to a red galaxy with g = 21.69, r = 20.15, "
+                "z = 19.10 and a photo-z = 0.343."
+            ),
+            source_field="body",
+        )
+        redshift_claims = [claim for claim in claims if claim["claim_type"] == "redshift"]
+
+        self.assertEqual(len(redshift_claims), 1)
+        self.assertEqual(redshift_claims[0]["normalized_value"], "0.343")
+        self.assertEqual(redshift_claims[0]["extraction_rule"], "redshift_photoz")
+
+    def test_counterpart_type_is_not_emitted_for_negative_counterpart_line(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            "No optical counterpart is detected down to the following 3-sigma upper limit.",
+            source_field="body",
+        )
+        counterpart_claims = [claim for claim in claims if claim["claim_type"] == "counterpart_type"]
+
+        self.assertEqual(counterpart_claims, [])
+
+    def test_counterpart_type_is_not_emitted_for_negative_afterglow_line(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            "We do not detect any optical afterglow at the reported position.",
+            source_field="body",
+        )
+        counterpart_claims = [claim for claim in claims if claim["claim_type"] == "counterpart_type"]
+
+        self.assertEqual(counterpart_claims, [])
+
+    def test_counterpart_type_is_not_emitted_for_spurious_afterglow_line(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            "Further analysis shows that the optical afterglow is spurious.",
+            source_field="body",
+        )
+        counterpart_claims = [claim for claim in claims if claim["claim_type"] == "counterpart_type"]
+
+        self.assertEqual(counterpart_claims, [])
+
+    def test_counterpart_type_is_emitted_for_positive_detection_line(self) -> None:
+        claims = extract_claims_from_text(
+            self.association,
+            "The optical counterpart is clearly detected in our stacked image.",
+            source_field="body",
+        )
+        counterpart_claims = [claim for claim in claims if claim["claim_type"] == "counterpart_type"]
+
+        self.assertEqual(len(counterpart_claims), 1)
+        self.assertEqual(counterpart_claims[0]["normalized_value"], "optical")
 
     def test_removed_false_trigger_detection_rule_is_not_emitted(self) -> None:
         claims = extract_claims_from_text(

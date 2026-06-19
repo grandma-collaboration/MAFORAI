@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from pathlib import Path
 import re
@@ -19,18 +18,22 @@ from .gcn_core_claims import (
     claim_confidence_rank,
     infer_redshift_method,
     parse_float_or_none,
+    redshift_selection_rank,
 )
 from .gcn_event_matching import (
     DEFAULT_GCN_EVENT_MATCHING_SUMMARY_PATH,
     ensure_output_dir,
     filter_match_summary_to_matched,
-    parse_list_like,
     save_json,
 )
-from .source_selection import DEFAULT_GCN_GRANDMA_OUTPUT
+from .skyportal_event_baseline import (
+    collect_unique_values,
+    is_missing_value,
+    load_skyportal_event_rows,
+    unique_join,
+)
 
 DEFAULT_GCN_EVENT_ENRICHMENT_OUTPUT_DIR = "data/interim/gcn/event_enrichment"
-DEFAULT_GCN_EVENT_ENRICHMENT_INPUT_PATH = DEFAULT_GCN_GRANDMA_OUTPUT
 DEFAULT_GCN_EVENT_BEST_CLAIMS_PATH = (
     f"{DEFAULT_GCN_EVENT_ENRICHMENT_OUTPUT_DIR}/gcn_event_best_claims.parquet"
 )
@@ -84,25 +87,51 @@ ENRICHMENT_COMPARISON_COLUMNS = [
     "n_matched_circulars",
     "n_claims",
     "skyportal_has_redshift",
+    "baseline_redshift_values",
+    "baseline_has_redshift",
     "gcn_has_redshift",
     "gcn_adds_redshift",
+    "baseline_classification_flags",
+    "baseline_has_classification",
     "skyportal_has_classification",
     "gcn_has_classification",
     "gcn_adds_classification",
+    "baseline_instrument_contexts",
     "skyportal_has_spectroscopy",
+    "baseline_has_spectroscopy",
     "gcn_has_spectroscopy",
     "gcn_adds_spectroscopy",
     "skyportal_has_host",
+    "baseline_has_host_candidate",
     "gcn_has_host_candidate",
     "gcn_adds_host_candidate",
+    "baseline_t90_values",
+    "baseline_has_t90",
     "gcn_has_t90",
+    "gcn_adds_t90",
+    "baseline_duration_classes",
+    "baseline_has_duration_class",
+    "gcn_has_duration_class",
+    "gcn_adds_duration_class",
     "skyportal_has_trigger_time",
+    "baseline_trigger_time_values",
+    "baseline_has_trigger_time",
     "gcn_has_trigger_time",
     "gcn_adds_trigger_time",
+    "baseline_counterpart_contexts",
+    "baseline_has_counterpart",
     "gcn_has_counterpart",
+    "gcn_adds_counterpart",
+    "baseline_has_detection",
     "gcn_has_detection",
+    "gcn_adds_detection",
+    "baseline_has_non_detection",
     "gcn_has_non_detection",
+    "gcn_adds_non_detection",
+    "baseline_has_upper_limit",
     "gcn_has_upper_limit",
+    "gcn_adds_upper_limit",
+    "baseline_followup_contexts",
     "n_enrichment_fields",
     "enrichment_priority",
 ]
@@ -132,27 +161,6 @@ def setup_console_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s", force=True)
 
 
-def is_missing_value(value: object) -> bool:
-    """Return whether one value should be treated as missing."""
-    if value is None:
-        return True
-    if isinstance(value, str):
-        return not value.strip()
-    return bool(pd.isna(value))
-
-
-def unique_join(values: list[object]) -> str:
-    """Join unique present values into one compact semicolon-separated string."""
-    ordered: list[str] = []
-    for value in values:
-        if is_missing_value(value):
-            continue
-        text = str(value).strip()
-        if text not in ordered:
-            ordered.append(text)
-    return ";".join(ordered)
-
-
 def trigger_time_value_rank(value: object) -> int:
     """Rank trigger-time values so more complete timestamps win when possible."""
     text = str(value).strip()
@@ -165,29 +173,6 @@ def trigger_time_value_rank(value: object) -> int:
     if re.fullmatch(r"\d{5}(?:\.\d+)?", text):
         return 2
     return 9
-
-
-def load_skyportal_event_rows(path: str | Path) -> list[dict[str, Any]]:
-    """Load one supported SkyPortal event input file."""
-    events_path = resolve_project_path(path)
-    if events_path.suffix == ".json":
-        with events_path.open("r", encoding="utf-8") as handle:
-            payload = json.load(handle)
-
-        if not isinstance(payload, dict):
-            raise ValueError("JSON event input must be a JSON object")
-        if isinstance(payload.get("sources"), list):
-            return [item for item in payload["sources"] if isinstance(item, dict)]
-        raise ValueError("JSON event input must contain 'sources'")
-
-    if events_path.suffix == ".parquet":
-        dataframe = pd.read_parquet(events_path)
-    elif events_path.suffix == ".csv":
-        dataframe = pd.read_csv(events_path)
-    else:
-        raise ValueError(f"Unsupported event input path: {events_path}")
-
-    return [row for row in dataframe.to_dict(orient="records") if isinstance(row, dict)]
 
 
 def add_claim_sort_columns(
@@ -224,15 +209,16 @@ def pick_best_redshift_claim(claims_dataframe: pd.DataFrame) -> dict[str, Any] |
         return None
 
     sortable = add_claim_sort_columns(redshift_claims).copy()
-    sortable["_method_rank"] = sortable["evidence_text"].map(
-        lambda value: REDSHIFT_METHOD_PRIORITY.get(
-            infer_redshift_method(str(value)),
-            99,
-        )
+    sortable["_redshift_rank"] = sortable.apply(
+        lambda row: redshift_selection_rank(
+            str(row.get("evidence_text", "")),
+            str(row.get("extraction_rule", "")),
+        ),
+        axis=1,
     )
     sortable = sortable.sort_values(
         by=[
-            "_method_rank",
+            "_redshift_rank",
             "_confidence_rank",
             "_source_field_rank",
             "_match_rank",
@@ -484,42 +470,6 @@ def build_event_best_claims_report(
     }
 
 
-def extract_selected_source_base_row(event: dict[str, Any]) -> dict[str, Any]:
-    """Extract the pragmatic base SkyPortal fields from gcn_grandma.json."""
-    source_id = str(event.get("source_id") or event.get("id") or "")
-    classification_labels = parse_list_like(event.get("classification_labels"))
-    has_redshift = not is_missing_value(event.get("redshift"))
-
-    has_spectroscopy = False
-    if "has_spectra" in event:
-        has_spectroscopy = bool(event.get("has_spectra", False))
-    elif "spectrum_exists" in event:
-        has_spectroscopy = bool(event.get("spectrum_exists", False))
-    elif "skyportal_has_spectroscopy" in event:
-        has_spectroscopy = bool(event.get("skyportal_has_spectroscopy", False))
-
-    has_host = False
-    if "has_host" in event:
-        has_host = bool(event.get("has_host", False))
-
-    has_trigger_time = not is_missing_value(event.get("trigger_time"))
-
-    has_classification = False
-    if "has_classification" in event:
-        has_classification = bool(event.get("has_classification", False))
-    else:
-        has_classification = len(classification_labels) > 0
-
-    return {
-        "source_id": source_id,
-        "skyportal_has_redshift": has_redshift,
-        "skyportal_has_classification": has_classification,
-        "skyportal_has_spectroscopy": has_spectroscopy,
-        "skyportal_has_host": has_host,
-        "skyportal_has_trigger_time": has_trigger_time,
-    }
-
-
 def compute_enrichment_priority(row: dict[str, Any]) -> str:
     """Compute one compact enrichment-priority label."""
     if not bool(row.get("has_gcn_match", False)) or int(row.get("n_claims", 0) or 0) == 0:
@@ -527,9 +477,9 @@ def compute_enrichment_priority(row: dict[str, Any]) -> str:
 
     if (
         bool(row.get("gcn_adds_redshift", False))
-        or bool(row.get("gcn_has_t90", False))
+        or bool(row.get("gcn_adds_t90", False))
         or (
-            bool(row.get("gcn_has_counterpart", False))
+            bool(row.get("gcn_adds_counterpart", False))
             and bool(row.get("gcn_adds_spectroscopy", False))
         )
     ):
@@ -538,8 +488,8 @@ def compute_enrichment_priority(row: dict[str, Any]) -> str:
     if (
         bool(row.get("gcn_adds_trigger_time", False))
         or bool(row.get("gcn_adds_host_candidate", False))
-        or bool(row.get("gcn_has_upper_limit", False))
-        or bool(row.get("gcn_has_non_detection", False))
+        or bool(row.get("gcn_adds_upper_limit", False))
+        or bool(row.get("gcn_adds_non_detection", False))
     ):
         return "medium"
 
@@ -556,27 +506,32 @@ def count_enrichment_fields(row: dict[str, Any]) -> int:
         row.get("gcn_adds_classification", False),
         row.get("gcn_adds_spectroscopy", False),
         row.get("gcn_adds_host_candidate", False),
-        row.get("gcn_has_t90", False),
+        row.get("gcn_adds_t90", False),
+        row.get("gcn_adds_duration_class", False),
         row.get("gcn_adds_trigger_time", False),
-        row.get("gcn_has_counterpart", False),
-        row.get("gcn_has_detection", False),
-        row.get("gcn_has_non_detection", False),
-        row.get("gcn_has_upper_limit", False),
+        row.get("gcn_adds_counterpart", False),
+        row.get("gcn_adds_detection", False),
+        row.get("gcn_adds_non_detection", False),
+        row.get("gcn_adds_upper_limit", False),
     ]
     return int(sum(bool(flag) for flag in enrichment_flags))
 
 
 def build_event_enrichment_comparison_dataframe(
-    selected_sources_rows: list[dict[str, Any]],
+    skyportal_baseline_rows: list[dict[str, Any]] | pd.DataFrame,
     best_claims_dataframe: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Compare compact GCN enrichment candidates against fuller SkyPortal metadata."""
-    selected_sources_lookup = {}
-    for event in selected_sources_rows:
-        if not isinstance(event, dict):
-            continue
-        base_row = extract_selected_source_base_row(event)
-        selected_sources_lookup[base_row["source_id"]] = base_row
+    """Compare compact GCN enrichment candidates against the prebuilt SkyPortal baseline."""
+    if isinstance(skyportal_baseline_rows, pd.DataFrame):
+        baseline_dataframe = skyportal_baseline_rows.copy()
+    else:
+        baseline_dataframe = pd.DataFrame(skyportal_baseline_rows)
+
+    selected_sources_lookup = {
+        str(row["source_id"]): row
+        for row in baseline_dataframe.to_dict(orient="records")
+        if not is_missing_value(row.get("source_id"))
+    }
 
     rows: list[dict[str, Any]] = []
     matched_best_claims = best_claims_dataframe[
@@ -595,6 +550,9 @@ def build_event_enrichment_comparison_dataframe(
         gcn_has_spectroscopy = bool(best_claims_row.get("has_spectroscopy", False))
         gcn_has_host_candidate = bool(best_claims_row.get("has_host_candidate", False))
         gcn_has_t90 = not is_missing_value(best_claims_row.get("best_t90_seconds"))
+        gcn_has_duration_class = not is_missing_value(
+            best_claims_row.get("best_duration_class")
+        )
         gcn_has_trigger_time = not is_missing_value(
             best_claims_row.get("best_trigger_time")
         )
@@ -609,28 +567,121 @@ def build_event_enrichment_comparison_dataframe(
             "match_status": str(best_claims_row.get("match_status", "")),
             "n_matched_circulars": int(best_claims_row.get("n_matched_circulars", 0) or 0),
             "n_claims": int(best_claims_row.get("n_claims", 0) or 0),
-            "skyportal_has_redshift": base_row["skyportal_has_redshift"],
+            "skyportal_has_redshift": bool(not is_missing_value(base_row.get("native_redshift"))),
+            "baseline_redshift_values": str(base_row.get("baseline_redshift_values") or ""),
+            "baseline_has_redshift": bool(base_row.get("baseline_has_redshift", False)),
             "gcn_has_redshift": gcn_has_redshift,
-            "gcn_adds_redshift": (not base_row["skyportal_has_redshift"]) and gcn_has_redshift,
-            "skyportal_has_classification": base_row["skyportal_has_classification"],
+            "gcn_adds_redshift": (
+                (not bool(base_row.get("baseline_has_redshift", False)))
+                and gcn_has_redshift
+            ),
+            "baseline_classification_flags": str(
+                base_row.get("baseline_classification_flags") or ""
+            ),
+            "baseline_has_classification": bool(
+                base_row.get("baseline_has_classification", False)
+            ),
+            "skyportal_has_classification": bool(
+                collect_unique_values(base_row.get("native_classification_labels"))
+            ),
             "gcn_has_classification": gcn_has_classification,
-            "gcn_adds_classification": (not base_row["skyportal_has_classification"]) and gcn_has_classification,
-            "skyportal_has_spectroscopy": base_row["skyportal_has_spectroscopy"],
+            "gcn_adds_classification": (
+                (not bool(base_row.get("baseline_has_classification", False)))
+                and gcn_has_classification
+            ),
+            "baseline_instrument_contexts": str(
+                base_row.get("baseline_instrument_contexts") or ""
+            ),
+            "skyportal_has_spectroscopy": bool(
+                base_row.get("native_spectrum_exists", False)
+            ),
+            "baseline_has_spectroscopy": bool(
+                base_row.get("baseline_has_spectroscopy", False)
+            ),
             "gcn_has_spectroscopy": gcn_has_spectroscopy,
-            "gcn_adds_spectroscopy": (not base_row["skyportal_has_spectroscopy"]) and gcn_has_spectroscopy,
-            "skyportal_has_host": base_row["skyportal_has_host"],
+            "gcn_adds_spectroscopy": (
+                (not bool(base_row.get("baseline_has_spectroscopy", False)))
+                and gcn_has_spectroscopy
+            ),
+            "skyportal_has_host": bool(base_row.get("native_has_host", False)),
+            "baseline_has_host_candidate": bool(
+                base_row.get("baseline_has_host_candidate", False)
+            ),
             "gcn_has_host_candidate": gcn_has_host_candidate,
-            "gcn_adds_host_candidate": (not base_row["skyportal_has_host"]) and gcn_has_host_candidate,
+            "gcn_adds_host_candidate": (
+                (not bool(base_row.get("baseline_has_host_candidate", False)))
+                and gcn_has_host_candidate
+            ),
+            "baseline_t90_values": str(base_row.get("baseline_t90_values") or ""),
+            "baseline_has_t90": bool(base_row.get("baseline_has_t90", False)),
             "gcn_has_t90": gcn_has_t90,
-            "skyportal_has_trigger_time": base_row["skyportal_has_trigger_time"],
+            "gcn_adds_t90": (
+                (not bool(base_row.get("baseline_has_t90", False)))
+                and gcn_has_t90
+            ),
+            "baseline_duration_classes": str(
+                base_row.get("baseline_duration_classes") or ""
+            ),
+            "baseline_has_duration_class": bool(
+                base_row.get("baseline_has_duration_class", False)
+            ),
+            "gcn_has_duration_class": gcn_has_duration_class,
+            "gcn_adds_duration_class": (
+                (not bool(base_row.get("baseline_has_duration_class", False)))
+                and gcn_has_duration_class
+            ),
+            "skyportal_has_trigger_time": bool(
+                not is_missing_value(base_row.get("native_trigger_time"))
+            ),
+            "baseline_trigger_time_values": str(
+                base_row.get("baseline_trigger_time_values") or ""
+            ),
+            "baseline_has_trigger_time": bool(
+                base_row.get("baseline_has_trigger_time", False)
+            ),
             "gcn_has_trigger_time": gcn_has_trigger_time,
             "gcn_adds_trigger_time": (
-                (not base_row["skyportal_has_trigger_time"]) and gcn_has_trigger_time
+                (not bool(base_row.get("baseline_has_trigger_time", False)))
+                and gcn_has_trigger_time
+            ),
+            "baseline_counterpart_contexts": str(
+                base_row.get("baseline_counterpart_contexts") or ""
+            ),
+            "baseline_has_counterpart": bool(
+                base_row.get("baseline_has_counterpart", False)
             ),
             "gcn_has_counterpart": gcn_has_counterpart,
+            "gcn_adds_counterpart": (
+                (not bool(base_row.get("baseline_has_counterpart", False)))
+                and gcn_has_counterpart
+            ),
+            "baseline_has_detection": bool(
+                base_row.get("baseline_has_detection", False)
+            ),
             "gcn_has_detection": gcn_has_detection,
+            "gcn_adds_detection": (
+                (not bool(base_row.get("baseline_has_detection", False)))
+                and gcn_has_detection
+            ),
+            "baseline_has_non_detection": bool(
+                base_row.get("baseline_has_non_detection", False)
+            ),
             "gcn_has_non_detection": gcn_has_non_detection,
+            "gcn_adds_non_detection": (
+                (not bool(base_row.get("baseline_has_non_detection", False)))
+                and gcn_has_non_detection
+            ),
+            "baseline_has_upper_limit": bool(
+                base_row.get("baseline_has_upper_limit", False)
+            ),
             "gcn_has_upper_limit": gcn_has_upper_limit,
+            "gcn_adds_upper_limit": (
+                (not bool(base_row.get("baseline_has_upper_limit", False)))
+                and gcn_has_upper_limit
+            ),
+            "baseline_followup_contexts": str(
+                base_row.get("baseline_followup_contexts") or ""
+            ),
         }
 
         row["n_enrichment_fields"] = count_enrichment_fields(row)
@@ -661,9 +712,19 @@ def build_event_enrichment_report(
         "n_gcn_adds_spectroscopy": int(comparison_dataframe["gcn_adds_spectroscopy"].sum()),
         "n_gcn_adds_host_candidate": int(comparison_dataframe["gcn_adds_host_candidate"].sum()),
         "n_gcn_has_t90": int(comparison_dataframe["gcn_has_t90"].sum()),
+        "n_gcn_adds_t90": int(comparison_dataframe["gcn_adds_t90"].sum()),
+        "n_gcn_has_duration_class": int(comparison_dataframe["gcn_has_duration_class"].sum()),
+        "n_gcn_adds_duration_class": int(comparison_dataframe["gcn_adds_duration_class"].sum()),
         "n_gcn_has_trigger_time": int(comparison_dataframe["gcn_has_trigger_time"].sum()),
         "n_gcn_adds_trigger_time": int(comparison_dataframe["gcn_adds_trigger_time"].sum()),
         "n_gcn_has_counterpart": int(comparison_dataframe["gcn_has_counterpart"].sum()),
+        "n_gcn_adds_counterpart": int(comparison_dataframe["gcn_adds_counterpart"].sum()),
+        "n_gcn_has_detection": int(comparison_dataframe["gcn_has_detection"].sum()),
+        "n_gcn_adds_detection": int(comparison_dataframe["gcn_adds_detection"].sum()),
+        "n_gcn_has_non_detection": int(comparison_dataframe["gcn_has_non_detection"].sum()),
+        "n_gcn_adds_non_detection": int(comparison_dataframe["gcn_adds_non_detection"].sum()),
+        "n_gcn_has_upper_limit": int(comparison_dataframe["gcn_has_upper_limit"].sum()),
+        "n_gcn_adds_upper_limit": int(comparison_dataframe["gcn_adds_upper_limit"].sum()),
         "output_files": {
             "comparison_csv": str((output_dir / ENRICHMENT_COMPARISON_CSV).resolve()),
             "comparison_parquet": str((output_dir / ENRICHMENT_COMPARISON_PARQUET).resolve()),
@@ -706,16 +767,16 @@ def run_gcn_event_best_claims_build(args: argparse.Namespace) -> None:
 
 
 def run_gcn_event_enrichment_comparison(args: argparse.Namespace) -> None:
-    """Compare GCN best-claim candidates against the selected SkyPortal metadata."""
+    """Compare GCN best-claim candidates against the prebuilt SkyPortal baseline."""
     setup_console_logging()
-    selected_sources_path = resolve_project_path(args.selected_sources)
+    skyportal_baseline_path = resolve_project_path(args.skyportal_baseline_path)
     best_claims_path = resolve_project_path(args.best_claims_path)
     output_dir = ensure_output_dir(args.output_dir)
 
-    selected_sources_rows = load_skyportal_event_rows(selected_sources_path)
+    skyportal_baseline_rows = load_skyportal_event_rows(skyportal_baseline_path)
     best_claims_dataframe = pd.read_parquet(best_claims_path)
     comparison_dataframe = build_event_enrichment_comparison_dataframe(
-        selected_sources_rows,
+        skyportal_baseline_rows,
         best_claims_dataframe,
     )
 
@@ -731,6 +792,7 @@ def run_gcn_event_enrichment_comparison(args: argparse.Namespace) -> None:
     save_json(output_dir / ENRICHMENT_REPORT_JSON, report)
 
     logging.info("Events compared: %s", len(comparison_dataframe))
+    logging.info("SkyPortal baseline rows loaded: %s", len(skyportal_baseline_rows))
     logging.info("Events with enrichment fields: %s", int((comparison_dataframe['n_enrichment_fields'] > 0).sum()))
     logging.info("Wrote CSV: %s", csv_path)
     logging.info("Wrote Parquet: %s", parquet_path)
