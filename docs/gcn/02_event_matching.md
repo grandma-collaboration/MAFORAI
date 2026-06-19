@@ -8,7 +8,7 @@ Circulars.
 Current input universe:
 
 ```text
-data/samples/gcn_grandma.json
+data/interim/skyportal/gcn_grandma.json
 ```
 
 The matching is conservative. It uses event IDs, aliases, small formatting
@@ -28,7 +28,7 @@ variants, and the GCN fields `subject`, `event_id`, and `body`.
 SkyPortal-side input:
 
 ```text
-data/samples/gcn_grandma.json
+data/interim/skyportal/gcn_grandma.json
 ```
 
 GCN-side input root:
@@ -50,7 +50,7 @@ Typical command:
 
 ```bash
 python scripts/gcn/03a_build_event_search_terms.py \
-  --selected-sources data/samples/gcn_grandma.json \
+  --selected-sources data/interim/skyportal/gcn_grandma.json \
   --output-dir data/interim/gcn/event_matching
 ```
 

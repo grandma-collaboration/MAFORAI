@@ -85,11 +85,14 @@ The workflow writes one directory per run under `data/raw/skyportal/`.
 | `data/raw/skyportal/endpoint_audit/endpoint_audit_<label>_<timestamp>/` | `scripts/01_audit_endpoint_availability.py` | `endpoint_status.csv`, `endpoint_status.json`, `summary.json`, `endpoint_audit.log` |
 | `data/raw/skyportal/inventory/source_inventory_<run_label>_<timestamp>/` | `scripts/02_fetch_source_inventory.py` | `manifest.json`, `source_inventory.log`, `sources_page_XXX.json` |
 
-The workflow also writes compact shared review artifacts under `data/samples/`:
+The workflow also writes compact shared pipeline artifacts under
+`data/interim/skyportal/`:
 
 | Path | Produced by | Purpose |
 |---|---|---|
-| `data/samples/gcn_grandma.json` | `scripts/03_build_gcn_grandma.py` | Compact GCN-derived base list built from the `gcn`, `grb`, `ep`, and `grandma_base` inventory union; this is the current default input for the GCN matching pipeline |
+| `data/interim/skyportal/gcn_grandma.json` | `scripts/03_build_gcn_grandma.py` | Compact GCN-derived base list built from the `gcn`, `grb`, `ep`, and `grandma_base` inventory union; this is the current default input for the GCN matching pipeline |
+| `data/interim/skyportal/skyportal_event_baseline.csv` | `scripts/04_build_skyportal_event_baseline.py` | Tabular SkyPortal-side baseline derived from `gcn_grandma.json` using native fields, `source_summary`, and normalized `tags` |
+| `data/interim/skyportal/skyportal_event_baseline.parquet` | `scripts/04_build_skyportal_event_baseline.py` | Canonical baseline artifact consumed later by GCN enrichment comparison and review |
 
 ## Basic verification
 
@@ -97,6 +100,7 @@ The workflow also writes compact shared review artifacts under `data/samples/`:
 python scripts/01_audit_endpoint_availability.py --help
 python scripts/02_fetch_source_inventory.py --help
 python scripts/03_build_gcn_grandma.py --help
+python scripts/04_build_skyportal_event_baseline.py --help
 python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 

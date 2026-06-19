@@ -4,8 +4,9 @@ This folder documents the current, reproducible SkyPortal workflow used in this
 repository.
 
 It is focused on what we can run today: setup, endpoint audit, source
-inventories, the GCN-derived base built from the current inventory union, and
-the conclusions supported by those runs.
+inventories, the GCN-derived base built from the current inventory union, the
+SkyPortal-side baseline derived from that base, and the conclusions supported
+by those runs.
 
 ## How this fits with the code
 
@@ -60,8 +61,11 @@ The workflow writes raw outputs under `data/raw/skyportal/`:
 | `data/raw/skyportal/endpoint_audit/` | One directory per endpoint-audit run |
 | `data/raw/skyportal/inventory/` | One directory per `/api/sources` inventory run |
 
-It also writes the compact shared event base under `data/samples/`:
+It also writes the canonical compact SkyPortal-side handoff artifacts under
+`data/interim/skyportal/`:
 
 | Path | Purpose |
 |---|---|
-| `data/samples/gcn_grandma.json` | Canonical compact GCN-derived event universe built from the inventory union |
+| `data/interim/skyportal/gcn_grandma.json` | Canonical compact GCN-derived event universe built from the inventory union |
+| `data/interim/skyportal/skyportal_event_baseline.csv` | Tabular SkyPortal-side baseline combining native fields, `source_summary`, and normalized `tags` |
+| `data/interim/skyportal/skyportal_event_baseline.parquet` | Canonical baseline input for later GCN enrichment comparison and review |

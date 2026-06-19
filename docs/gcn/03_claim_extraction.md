@@ -74,7 +74,7 @@ Current active claim types:
 | `claim_type` | What it stores | Main notes |
 |---|---|---|
 | `instrument_mention` | Mention of a known mission, telescope, or instrument | Uses a fixed instrument catalog |
-| `trigger_time_t0` | Absolute trigger time or T0-like timestamp | Keeps only absolute times, not relative offsets such as `T+...` or `t - t0` |
+| `trigger_time_t0` | Absolute trigger time or T0-like timestamp | Keeps only absolute times with full date-time context, or explicit trigger MJD values; relative offsets and time-only values are rejected |
 | `duration_t90` | Numeric burst duration / T90 value | Keeps the parsed numeric value in `normalized_value` |
 | `duration_class` | Long/short duration label | Keeps normalized value such as `long` or `short` |
 | `redshift` | Redshift value with context | Only extracted when redshift context is strong |
@@ -116,7 +116,8 @@ small line-level keyword checks.
   Looks for `MJD = ...` only when the local context is trigger-related.
 - `trigger_ut_context`
   Looks for phrases like `At 13:22:50 UT` and keeps them only when the nearby
-  text clearly indicates a trigger rather than a later observation.
+  text clearly indicates a trigger rather than a later observation, and only
+  when the same fragment also carries the calendar date.
 
 ### `duration_t90`
 
@@ -148,7 +149,8 @@ small line-level keyword checks.
 Important safeguard:
 
 - the extractor rejects `z` values when the evidence looks like photometry in
-  the `z` band, such as `mag z = 22.23` or `z-band`.
+  the `z` band, such as `mag z = 22.23`, `z-band`, or multiband photometry
+  fragments like `g = ... , r = ... , z = ...`.
 
 ### `counterpart_type`
 
@@ -163,6 +165,12 @@ Important safeguard:
 
 The specific counterpart family is stored in `normalized_value`, for example
 `optical`, `xray`, `radio`, `nir`, `uv`, or `candidate_counterpart`.
+
+Important safeguard:
+
+- the extractor does not emit `counterpart_type` when the local context is
+  clearly negative, such as `no optical counterpart`, `not detected`,
+  `upper limit`, `spurious`, or similar non-detection/retraction phrasing.
 
 ### `detection_status`
 
@@ -316,6 +324,6 @@ The enrichment stage starts from:
 
 - `data/interim/gcn/event_extraction/gcn_core_claims.parquet`
 - `data/interim/gcn/event_matching/event_gcn_match_summary.csv`
-- `data/samples/gcn_grandma.json`
+- `data/interim/skyportal/skyportal_event_baseline.parquet`
 
 It uses only the claims already extracted here. It does not create new claims.

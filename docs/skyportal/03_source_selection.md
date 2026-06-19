@@ -5,9 +5,11 @@
 This document describes the current workflow used to prepare the SkyPortal-side
 event universe before any GCN matching.
 
-Today this stage does one thing only:
+Today this stage prepares the two canonical SkyPortal-side artifacts that feed
+the downstream GCN workflow:
 
-1. build `gcn_grandma.json` from the inventory union.
+1. build `gcn_grandma.json` from the inventory union;
+2. build `skyportal_event_baseline` from `gcn_grandma.json`.
 
 
 ## Entry points
@@ -15,7 +17,9 @@ Today this stage does one thing only:
 | File | Role |
 |---|---|
 | `scripts/03_build_gcn_grandma.py` | Build the compact GCN-derived base list from saved inventories |
+| `scripts/04_build_skyportal_event_baseline.py` | Build the compact SkyPortal baseline from `gcn_grandma.json` |
 | `src/skyportal_corpus/extraction/source_selection.py` | Build and merge the compact `gcn_grandma` base records |
+| `src/skyportal_corpus/extraction/skyportal_event_baseline.py` | Extract `summary`/`tags` context into the SkyPortal-side baseline |
 
 ## Current source model
 
@@ -65,7 +69,7 @@ python scripts/03_build_gcn_grandma.py \
 Default output:
 
 ```text
-data/samples/gcn_grandma.json
+data/interim/skyportal/gcn_grandma.json
 ```
 
 ## Fields kept in `gcn_grandma`
@@ -75,6 +79,7 @@ Each event is reduced to a compact record:
 - `id`
 - `gcn_source_type`
 - `aliases`
+- `tags`
 - `redshift`
 - `trigger_time`
 - `comment_exists`
@@ -92,6 +97,7 @@ Each event is reduced to a compact record:
 | `id` | Preserves the original SkyPortal identifier and the GCN-derived subtype prefix |
 | `gcn_source_type` | Makes it explicit whether the source currently looks like `gcn`, `grb`, `gw`, or `ep` |
 | `aliases` | Keeps the alias strings that can also trigger inclusion when the main `id` does not start with `GCN`, `GRB`, `GW`, or `EP` |
+| `tags` | Keeps only the raw SkyPortal tag names so the later GCN comparison can normalize trusted astronomer categorizations without carrying full tag objects |
 | `redshift` | Useful compact science field already exposed in the inventory |
 | `trigger_time` | Keeps the inventory-level `t0` value when SkyPortal already exposes it, without needing deeper endpoint downloads |
 | `comment_exists` | Cheap proxy for whether the event already has discussion in SkyPortal |
@@ -114,22 +120,55 @@ The build does two things before writing `gcn_grandma.json`:
 When duplicates are merged:
 
 - aliases are unioned;
+- raw tag names are unioned without duplicates;
 - boolean flags are OR-combined;
 - `num_det_global` keeps the maximum value;
 - `redshift` and `trigger_time` are filled from the first non-null value seen;
 - compact summary text is kept when available.
 
+## Build `skyportal_event_baseline`
+
+Input:
+
+- `data/interim/skyportal/gcn_grandma.json`
+
+Typical command:
+
+```bash
+python scripts/04_build_skyportal_event_baseline.py \
+  --selected-sources data/interim/skyportal/gcn_grandma.json \
+  --output-dir data/interim/skyportal
+```
+
+Outputs:
+
+- `data/interim/skyportal/skyportal_event_baseline.csv`
+- `data/interim/skyportal/skyportal_event_baseline.parquet`
+
+This second artifact keeps the compact native fields from `gcn_grandma.json`
+and adds:
+
+- claims re-extracted from `source_summary`;
+- normalized semantic categories derived from raw `tags`;
+- union baseline fields used later to decide whether GCN truly adds new
+  information.
+
 ## Handoff to the GCN pipeline
 
 For the current workflow, the canonical handoff to the later GCN stages is:
 
-- `data/samples/gcn_grandma.json`
+- `data/interim/skyportal/gcn_grandma.json`
+- `data/interim/skyportal/skyportal_event_baseline.parquet`
 
-That file is now the default event universe to use for:
+`gcn_grandma.json` is the default event universe to use for:
 
 - GCN Circular matching
-- GCN body claim extraction
+
+`skyportal_event_baseline.parquet` is the default SkyPortal-side artifact to
+use for:
+
 - GCN enrichment comparison against the compact SkyPortal inventory view
+- the final GCN review table
 
 The downstream operational details for those GCN stages now live in:
 

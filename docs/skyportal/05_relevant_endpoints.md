@@ -98,7 +98,10 @@ extractions, but it is not part of the active operational workflow anymore.
 
 Current consequence:
 
-- the SkyPortal workflow currently stops at `data/samples/gcn_grandma.json`;
-- GCN matching now starts directly from that compact inventory-derived base;
+- the SkyPortal workflow currently stops at
+  `data/interim/skyportal/gcn_grandma.json` and
+  `data/interim/skyportal/skyportal_event_baseline.parquet`;
+- GCN matching starts from the compact inventory-derived base;
+- later GCN enrichment and review use the prebuilt SkyPortal baseline;
 - deeper per-source endpoint downloads are postponed until they are clearly
   needed again.

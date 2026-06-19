@@ -7,7 +7,8 @@ Repository for the MAFORAI internship work.
 The repository currently has two connected workflows:
 
 1. a SkyPortal workflow to audit the API, build source inventories, and prepare
-   the compact `gcn_grandma.json` event universe;
+   the compact `gcn_grandma.json` event universe plus the tabular
+   `skyportal_event_baseline`;
 2. a GCN workflow to download Circulars, build a searchable index, match
    events against Circulars, extract structured claims from matched bodies, and
    compare those claims against the compact SkyPortal metadata before building
@@ -16,7 +17,7 @@ The repository currently has two connected workflows:
 The active handoff between both sides is:
 
 ```text
-SkyPortal inventories -> data/samples/gcn_grandma.json -> GCN pipeline
+SkyPortal inventories -> data/interim/skyportal/gcn_grandma.json -> data/interim/skyportal/skyportal_event_baseline.parquet -> GCN pipeline
 ```
 
 ## Documentation map
@@ -55,6 +56,7 @@ SkyPortal:
 - `scripts/01_audit_endpoint_availability.py`
 - `scripts/02_fetch_source_inventory.py`
 - `scripts/03_build_gcn_grandma.py`
+- `scripts/04_build_skyportal_event_baseline.py`
 
 GCN:
 
@@ -68,6 +70,7 @@ GCN:
 - `scripts/gcn/05a_build_event_enrichment_candidates.py`
 - `scripts/gcn/05b_compare_gcn_enrichment_with_skyportal.py`
 - `scripts/gcn/05c_build_event_review_table.py`
+- `scripts/gcn/06_export_astronomer_review_xlsx.py`
 
 ## Data layout
 
@@ -77,21 +80,24 @@ The repository writes generated data under the project `data/` directory.
 |---|---|
 | `data/raw/skyportal/endpoint_audit/` | One directory per SkyPortal endpoint-audit run |
 | `data/raw/skyportal/inventory/` | One directory per SkyPortal source-inventory run |
-| `data/samples/gcn_grandma.json` | Compact event universe handed from SkyPortal to the GCN workflow |
+| `data/interim/skyportal/gcn_grandma.json` | Compact event universe handed from SkyPortal to the GCN matching workflow |
+| `data/interim/skyportal/skyportal_event_baseline.parquet` | Canonical SkyPortal-side baseline used later by GCN enrichment and review |
 | `data/raw/gcn/circulars/archive_json/` | One directory per raw GCN Circular archive download |
 | `data/interim/gcn/circulars/` | Year-partitioned normalized GCN Circular indexes |
 | `data/interim/gcn/event_matching/` | Step-A matching outputs |
 | `data/interim/gcn/event_extraction/` | Step-B claim extraction outputs |
 | `data/interim/gcn/event_enrichment/` | Step-C event-level enrichment outputs |
 | `data/interim/gcn/event_validation/` | Final review table for astronomer validation |
+| `data/interim/gcn/event_validation/astronomer_review/` | Curated `.xlsx` workbook for astronomer review |
 
 ## Minimal starting points
 
 If you want to reproduce the current workflow, start here:
 
 1. read [docs/skyportal/README.md](docs/skyportal/README.md);
-2. build or refresh `data/samples/gcn_grandma.json`;
-3. read [docs/gcn/README.md](docs/gcn/README.md) to continue with the GCN side.
+2. build or refresh `data/interim/skyportal/gcn_grandma.json`;
+3. build or refresh `data/interim/skyportal/skyportal_event_baseline.parquet`;
+4. read [docs/gcn/README.md](docs/gcn/README.md) to continue with the GCN side.
 
 This root `README.md` is intentionally kept as a general map. The operational
 commands, outputs, and step-by-step details live in the workflow-specific
