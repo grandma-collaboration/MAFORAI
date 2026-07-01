@@ -124,7 +124,7 @@ def build_astronomer_review_dataframe(review_dataframe: pd.DataFrame) -> pd.Data
     filtered["_field_rank"] = filtered["field_name"].map(FIELD_ORDER).fillna(99)
     filtered = (
         filtered.sort_values(
-            by=["_status_rank", "_field_rank", "source_id", "circular_id"],
+            by=["_status_rank", "source_id", "_field_rank", "circular_id"],
             kind="stable",
         )
         .drop(columns=["_status_rank", "_field_rank"])

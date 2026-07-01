@@ -154,7 +154,7 @@ class GcnEventReviewExportTests(unittest.TestCase):
             "summary_extracted+tag_normalized",
         )
 
-    def test_export_order_respects_status_and_field_priority(self) -> None:
+    def test_export_order_respects_status_priority_and_groups_rows_by_event(self) -> None:
         dataframe = pd.DataFrame(
             [
                 make_review_row(
@@ -187,6 +187,12 @@ class GcnEventReviewExportTests(unittest.TestCase):
                     comparison_status="missing_in_skyportal",
                     circular_id="5",
                 ),
+                make_review_row(
+                    source_id="B",
+                    field_name="duration_class",
+                    comparison_status="missing_in_skyportal",
+                    circular_id="4",
+                ),
             ]
         )
 
@@ -209,6 +215,11 @@ class GcnEventReviewExportTests(unittest.TestCase):
                     "comparison_status": "missing_in_skyportal",
                     "field_name": "t90",
                     "source_id": "A",
+                },
+                {
+                    "comparison_status": "missing_in_skyportal",
+                    "field_name": "duration_class",
+                    "source_id": "B",
                 },
                 {
                     "comparison_status": "complementary_context",

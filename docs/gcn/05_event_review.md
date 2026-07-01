@@ -152,9 +152,12 @@ Sorting inside `review_high`:
 
 Then by:
 
-- `field_name`
 - `source_id`
+- `field_name`
 - `circular_id`
+
+This keeps the workbook grouped by event inside each `comparison_status` block,
+so astronomers can review all rows of the same source together.
 
 
 ## Practical use
