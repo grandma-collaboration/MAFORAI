@@ -23,7 +23,8 @@ and covers the full GCN side:
 4. claim extraction from matched Circular bodies;
 5. event-level enrichment comparison against the compact SkyPortal metadata;
 6. final event-review table for astronomer validation;
-7. curated Excel export for astronomer delivery.
+7. curated Excel export for astronomer delivery;
+8. blind INCEpTION pilot dossiers built from already matched Circulars.
 
 ## How this fits with the rest of the project
 
@@ -53,6 +54,7 @@ Included here:
 | Claim extraction from matched Circular bodies | [03_claim_extraction.md](./03_claim_extraction.md) |
 | Event-level enrichment candidates and SkyPortal comparison | [04_event_enrichment.md](./04_event_enrichment.md) |
 | Final validation table plus curated Excel export | [05_event_review.md](./05_event_review.md) |
+| Blind INCEpTION pilot dossiers | [06_inception_dossiers.md](./06_inception_dossiers.md) |
 
 ## Suggested reading order
 
@@ -61,6 +63,7 @@ Included here:
 3. [03_claim_extraction.md](./03_claim_extraction.md)
 4. [04_event_enrichment.md](./04_event_enrichment.md)
 5. [05_event_review.md](./05_event_review.md)
+6. [06_inception_dossiers.md](./06_inception_dossiers.md)
 
 ## Code layout
 
@@ -75,6 +78,7 @@ Included here:
 | `src/skyportal_corpus/extraction/gcn_event_enrichment.py` | Step-C event-level best-claims and comparison logic |
 | `src/skyportal_corpus/extraction/gcn_event_review.py` | Final field-by-field review table for astronomer validation |
 | `src/skyportal_corpus/extraction/gcn_event_review_export.py` | Curated `.xlsx` export built from the review table |
+| `src/skyportal_corpus/extraction/gcn_inception_dossiers.py` | Blind plain-text dossier builder for INCEpTION pilot annotation |
 
 ## Local output roots
 
@@ -89,6 +93,7 @@ The GCN workflow writes to these main roots:
 | `data/interim/gcn/event_enrichment/` | Step-C event-level enrichment outputs |
 | `data/interim/gcn/event_validation/` | Final review table for manual scientific validation |
 | `data/interim/gcn/event_validation/astronomer_review/` | Curated Excel workbook delivered to astronomers |
+| `data/interim/gcn/event_validation/inception_dossiers/` | Plain-text event dossiers ready to upload into INCEpTION |
 
 ## Current default assumptions
 

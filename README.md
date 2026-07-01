@@ -29,6 +29,7 @@ The documentation is intentionally split by workflow.
 | SkyPortal | [docs/skyportal/README.md](docs/skyportal/README.md) | Setup, endpoint audit, source inventories, and construction of `gcn_grandma.json` |
 | GCN | [docs/gcn/README.md](docs/gcn/README.md) | Circular archive download, yearly indexing, event matching, claim extraction, and enrichment comparison |
 | GCN review table | [docs/gcn/05_event_review.md](docs/gcn/05_event_review.md) | Final field-by-field table for astronomer validation |
+| GCN INCEpTION dossiers | [docs/gcn/06_inception_dossiers.md](docs/gcn/06_inception_dossiers.md) | Blind plain-text dossiers built from matched Circulars for pilot annotation |
 
 Supporting documents:
 
@@ -71,6 +72,7 @@ GCN:
 - `scripts/gcn/05b_compare_gcn_enrichment_with_skyportal.py`
 - `scripts/gcn/05c_build_event_review_table.py`
 - `scripts/gcn/06_export_astronomer_review_xlsx.py`
+- `scripts/gcn/07_build_inception_event_dossier.py`
 
 ## Data layout
 
@@ -89,6 +91,7 @@ The repository writes generated data under the project `data/` directory.
 | `data/interim/gcn/event_enrichment/` | Step-C event-level enrichment outputs |
 | `data/interim/gcn/event_validation/` | Final review table for astronomer validation |
 | `data/interim/gcn/event_validation/astronomer_review/` | Curated `.xlsx` workbook for astronomer review |
+| `data/interim/gcn/event_validation/inception_dossiers/` | Blind `.txt` dossiers ready to upload into INCEpTION |
 
 ## Minimal starting points
 
