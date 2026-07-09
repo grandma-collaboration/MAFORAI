@@ -26,6 +26,15 @@ MODULE_RESPONSIBILITIES = {
     "src/skyportal_corpus/extraction_v2/event_identity.py": (
         "Extracts event identity names such as GRB, EP, AT/SN, ZTF, IceCube, GW, and S-names."
     ),
+    "src/skyportal_corpus/extraction_v2/event_grouping.py": (
+        "Groups candidate Circulars by canonical event aliases and subject-first membership rules."
+    ),
+    "src/skyportal_corpus/extraction_v2/event_document.py": (
+        "Builds immutable EventCanonicalDocument text, Circular segments, hashes, and offset maps."
+    ),
+    "src/skyportal_corpus/extraction_v2/event_annotations.py": (
+        "Runs active extractors per Circular and translates verified local spans to event-global offsets."
+    ),
     "src/skyportal_corpus/extraction_v2/instruments_vocab.py": (
         "Central vocabulary of known trigger instruments and their aliases."
     ),
@@ -55,11 +64,26 @@ MODULE_RESPONSIBILITIES = {
     ),
 }
 
+EVENT_FLOW_SCRIPTS = {
+    "scripts/event_grouping_demo.py": (
+        "Reports included and excluded Circulars for the configured event."
+    ),
+    "scripts/event_document_demo.py": (
+        "Builds the configured EventCanonicalDocument and checks segment and offset invariants."
+    ),
+    "scripts/event_xmi_export.py": (
+        "Exports the configured event XMI and manifest, then verifies the XMI round-trip."
+    ),
+}
+
 
 TEST_COVERAGE = {
     "tests/test_alerts_report.py": "alerts report grouping, filtering, and output generation",
     "tests/test_canonical_document.py": "canonical text rendering, segments, hashing, and XML-safe text",
     "tests/test_config.py": "project configuration helpers",
+    "tests/test_event_annotations.py": "event-global annotation offsets and source-Circular provenance",
+    "tests/test_event_document.py": "event canonical text, segments, hashes, and local/global offset maps",
+    "tests/test_event_grouping.py": "subject-first event membership and alias matching",
     "tests/test_event_identity.py": "EVENT_IDENTITY extractor and canonical identity validation",
     "tests/test_gcn_circulars_archive.py": "legacy/raw GCN circular archive handling",
     "tests/test_gcn_circulars_index.py": "legacy/interim GCN circular index handling",
@@ -88,6 +112,8 @@ def main() -> None:
     print_active_extractors()
     print()
     print_pipeline_modules()
+    print()
+    print_event_flow_scripts()
     print()
     print_tagsets()
     print()
@@ -119,6 +145,14 @@ def print_pipeline_modules() -> None:
     for path in sorted(MODULE_RESPONSIBILITIES):
         status = "present" if (PROJECT_ROOT / path).exists() else "missing"
         print(f"- {path} [{status}]: {MODULE_RESPONSIBILITIES[path]}")
+
+
+def print_event_flow_scripts() -> None:
+    print("EVENT FLOW SCRIPTS")
+    print("------------------")
+    for path in sorted(EVENT_FLOW_SCRIPTS):
+        status = "present" if (PROJECT_ROOT / path).exists() else "missing"
+        print(f"- {path} [{status}]: {EVENT_FLOW_SCRIPTS[path]}")
 
 
 def print_tagsets() -> None:

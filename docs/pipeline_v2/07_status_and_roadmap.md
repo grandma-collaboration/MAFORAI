@@ -8,11 +8,12 @@ This document separates implemented, scale-tested components from future work. I
 
 | Check | Current result |
 |---|---|
-| Full test suite | 266 tests passing across 21 test files |
+| Full test suite | 282 tests passing across 24 test files |
 | Active extractors | 5 |
 | Tagsets | 17 labels, 6 targets, 5 certainties |
 | INCEpTION layer | `webanno.custom.ASTRO_EVIDENCE` |
 | XMI round-trip | OK: text, spans, and features preserved |
+| Event XMI example | `2026owq`: 28 Circulars, 120 annotations, 11 review comments, round-trip OK |
 | Latest all-extractor sweep | `per_year=100`, 400 Circulars, 1478 annotations, 0 errors |
 | Latest alert report | synchronized, 219 review alerts |
 
@@ -30,6 +31,10 @@ This document separates implemented, scale-tested components from future work. I
 | `REDSHIFT_EVENT` / `REDSHIFT_CONTEXT` extractor | Implemented and scale-tested | 4 rules, `tests/test_redshift.py`, sweep coverage 6.50 percent |
 | XMI export to INCEpTION | Implemented | `tests/test_xmi_roundtrip.py` |
 | XMI round-trip check | Implemented | `scripts/xmi_roundtrip_demo.py` reports `OK final` |
+| Event grouping | Implemented | `tests/test_event_grouping.py`; confirmed subject identity takes precedence over body references |
+| `EventCanonicalDocument` | Implemented | `tests/test_event_document.py`; local canonical text and SHA-256 survive inside global event text |
+| Event annotation offset translation | Implemented | `tests/test_event_annotations.py`; local spans map to verified global spans with `source_circular_id` |
+| Event-level XMI deliverable | Implemented | `scripts/event_xmi_export.py`; `2026owq` round-trip preserves 120 annotations |
 
 ## Implemented Infrastructure
 
@@ -42,6 +47,8 @@ This document separates implemented, scale-tested components from future work. I
 | Alert context windows | Suspicious spans carry enough context for diagnosis. |
 | Identity gaps | Missing identities are visible even though they produce no annotation alerts. |
 | Table-row detection | Avoids treating catalog rows as Circular-level event identity or redshift evidence. |
+| Event-to-document flow | Groups Circulars, builds immutable global text, translates offsets, and exports one event XMI. |
+| Review-only comments | Keeps `comment` empty for confirmed annotations and reserves it for human review instructions. |
 
 ## Extractor Roadmap
 
@@ -69,10 +76,14 @@ This document separates implemented, scale-tested components from future work. I
 
 The `PHOTOMETRIC_MEASUREMENT` layer is not implemented in v2. It will need its own model because individual measurements carry magnitude or flux, unit, filter, time, limit/detection status, and table context.
 
-Event aggregation is also future work. Pipeline v2 currently focuses on Circular-level span evidence. Aggregating multiple Circular annotations into an `EVENT_SUMMARY` should happen after span-level annotation quality is measured against human review.
+Event document aggregation is implemented: related Circulars can be grouped into one immutable `EventCanonicalDocument`, and their annotations can be exported with global offsets. Scientific aggregation into `EVENT_SUMMARY` is still future work; the current flow deliberately preserves repeated and conflicting Circular evidence instead of resolving it automatically.
+
+Event aliases and candidate ranges are currently configured manually in the event scripts. Automatically loading aliases from the existing `event_search_terms` outputs is future work.
 
 The pipeline still needs quantitative evaluation against human annotations. Round-trip success proves that offsets and features survive export; it does not prove scientific correctness.
 
 ## Recommended Next Step
 
-Build the next extractor only after choosing the scientific priority. `T90` is narrow and testable, while `SPECTROSCOPY` and `PHOTOMETRY_TABLE` are higher complexity and should follow the method in [09_method_and_lessons.md](./09_method_and_lessons.md).
+For event-level work, the next architectural step is automatic alias integration from `event_search_terms`, followed by a separately designed `EVENT_SUMMARY` model. For extraction work, `T90` remains narrow and testable, while `SPECTROSCOPY` and `PHOTOMETRY_TABLE` are higher complexity and should follow the method in [09_method_and_lessons.md](./09_method_and_lessons.md).
+
+See [10_event_flow.md](./10_event_flow.md) for the implemented architecture and [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) for the reproduction procedure.

@@ -33,9 +33,9 @@ human review
 
 | If you are | Start with | Why |
 |---|---|---|
-| Annotator | [05_inception_export.md](./05_inception_export.md), then [06_glossary.md](./06_glossary.md) | You need to know what is imported into INCEpTION and what the terms mean. |
-| Developer | [04_extractors/README.md](./04_extractors/README.md), then [09_method_and_lessons.md](./09_method_and_lessons.md) | You need the extractor contract and the scale-validation method. |
-| Architect | [00_overview.md](./00_overview.md), [01_architecture.md](./01_architecture.md), then [08_sweep_and_reports.md](./08_sweep_and_reports.md) | You need the design rationale, flow, and operational validation loop. |
+| Annotator | [05_inception_export.md](./05_inception_export.md), then [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) | You need to know what is imported into INCEpTION and how the event deliverable is generated. |
+| Developer | [04_extractors/README.md](./04_extractors/README.md), [09_method_and_lessons.md](./09_method_and_lessons.md), then [10_event_flow.md](./10_event_flow.md) | You need the extractor contract, scale-validation method, and local-to-global offset flow. |
+| Architect | [00_overview.md](./00_overview.md), [01_architecture.md](./01_architecture.md), then [10_event_flow.md](./10_event_flow.md) | You need the design rationale and the transition from Circular evidence to an event document. |
 
 ## Documents
 
@@ -56,3 +56,5 @@ human review
 | [07_status_and_roadmap.md](./07_status_and_roadmap.md) | What is implemented, what is missing, and the next roadmap areas. |
 | [08_sweep_and_reports.md](./08_sweep_and_reports.md) | The corpus sweep, stratified sampling, run synchronization, alert context, and gap diagnostics. |
 | [09_method_and_lessons.md](./09_method_and_lessons.md) | The development method and lessons learned from hardening extractors at scale. |
+| [10_event_flow.md](./10_event_flow.md) | Event grouping, global canonical text, global annotation offsets, and event XMI export. |
+| [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) | Exact commands and prerequisites for regenerating an event-level INCEpTION document. |
