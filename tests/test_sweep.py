@@ -546,12 +546,12 @@ def test_alerts_report_sync_status_detects_mismatch() -> None:
         generated_at="2026-07-06T00:00:00+00:00",
     )
 
-    assert "SINCRONIZADO ✓" in sync_status(run_meta, flagged)
+    assert "SYNCHRONIZED ✓" in sync_status(run_meta, flagged)
 
     stale_meta = dict(run_meta)
     stale_meta["total_alerts"] = 3
 
     assert (
-        "DESINCRONIZADO: el JSON tiene 3 alertas pero se leyeron 2"
+        "OUT OF SYNC: the JSON declares 3 alerts but 2 were read"
         in sync_status(stale_meta, flagged)
     )

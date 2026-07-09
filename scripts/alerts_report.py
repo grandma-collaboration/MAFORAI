@@ -27,13 +27,13 @@ def main() -> int:
         )
     except FileNotFoundError:
         print(
-            "No existe data/interim/gcn/sweep/sweep_report.json. "
-            "Corre primero: .venv/bin/python scripts/sweep_report.py 500"
+            "data/interim/gcn/sweep/sweep_report.json does not exist. "
+            "Run this first: .venv/bin/python scripts/sweep_report.py 500"
         )
         return 1
 
     print(summary)
-    print(f"\nArchivo completo: {out_path.relative_to(PROJECT_ROOT)}")
+    print(f"\nFull report: {out_path.relative_to(PROJECT_ROOT)}")
     return 0
 
 
@@ -91,7 +91,7 @@ def _parse_args(argv: list[str]) -> dict[str, str | bool | None]:
         if rule_id_filter is None:
             rule_id_filter = argument
             continue
-        raise SystemExit("Uso: .venv/bin/python scripts/alerts_report.py [rule_id] [--check-freshness]")
+        raise SystemExit("Usage: .venv/bin/python scripts/alerts_report.py [rule_id] [--check-freshness]")
     return {"rule_id_filter": rule_id_filter, "check_freshness": check_freshness}
 
 
@@ -134,12 +134,12 @@ def render_summary(
     lines: list[str] = []
     lines.extend(render_run_meta(run_meta or {}, sync_message, freshness_message))
     lines.append("")
-    lines.append("RESUMEN DE ALERTAS COMPLETO")
-    lines.append(f"  total de alertas: {len(flagged)}")
+    lines.append("FULL ALERT SUMMARY")
+    lines.append(f"  total alerts: {len(flagged)}")
     if rule_id_filter:
-        lines.append(f"  filtro rule_id: {rule_id_filter}")
+        lines.append(f"  rule_id filter: {rule_id_filter}")
     lines.append("")
-    lines.append("tipo_flag                    extractor        rule_id                                count")
+    lines.append("flag_type                    extractor        rule_id                                count")
     if not counts:
         lines.append("(none)")
     for row in counts:
@@ -162,10 +162,10 @@ def render_full_report(
     freshness_message: str | None = None,
 ) -> str:
     lines: list[str] = []
-    lines.append("ALERTAS COMPLETAS DEL BARRIDO")
-    lines.append(f"Fuente: {input_path}")
+    lines.append("FULL SWEEP ALERTS")
+    lines.append(f"Source: {input_path}")
     if rule_id_filter:
-        lines.append(f"Filtro rule_id: {rule_id_filter}")
+        lines.append(f"Rule_id filter: {rule_id_filter}")
     lines.append("")
     lines.append(
         render_summary(
@@ -178,7 +178,7 @@ def render_full_report(
         )
     )
     lines.append("")
-    lines.append("DETALLE")
+    lines.append("DETAILS")
 
     groups = group_alerts(flagged)
     if not groups:
@@ -187,7 +187,7 @@ def render_full_report(
 
     for (flag, extractor, rule_id), items in groups.items():
         lines.append("")
-        lines.append(f"### {flag} / {extractor} / {rule_id}  ({len(items)} alertas)")
+        lines.append(f"### {flag} / {extractor} / {rule_id}  ({len(items)} alerts)")
         for item in sorted(items, key=_alert_sort_key):
             lines.append(
                 f"circular_id={item.get('circular_id')} | "
@@ -210,8 +210,8 @@ def render_run_meta(
 ) -> list[str]:
     lines = ["RUN_META"]
     if not run_meta:
-        lines.append("  (no disponible)")
-        lines.append(f"  {sync_message or 'DESINCRONIZADO: falta run_meta en el JSON.'}")
+        lines.append("  (unavailable)")
+        lines.append(f"  {sync_message or 'OUT OF SYNC: run_meta is missing from the JSON.'}")
         return lines
     lines.append(f"  generated_at: {run_meta.get('generated_at', '')}")
     lines.append(f"  mode: {run_meta.get('mode', '')}")
@@ -229,24 +229,24 @@ def render_run_meta(
 def sync_status(run_meta: dict[str, Any], flagged: list[dict[str, Any]]) -> str:
     if not run_meta:
         return (
-            "DESINCRONIZADO: falta run_meta en el JSON. "
-            "Vuelve a correr sweep_report.py y luego alerts_report.py EN ESE ORDEN."
+            "OUT OF SYNC: run_meta is missing from the JSON. "
+            "Run sweep_report.py and then alerts_report.py IN THAT ORDER."
         )
     try:
         expected = int(run_meta.get("total_alerts"))
     except (TypeError, ValueError):
         return (
-            "DESINCRONIZADO: run_meta.total_alerts no es válido. "
-            "Vuelve a correr sweep_report.py y luego alerts_report.py EN ESE ORDEN."
+            "OUT OF SYNC: run_meta.total_alerts is invalid. "
+            "Run sweep_report.py and then alerts_report.py IN THAT ORDER."
         )
     actual = len(flagged)
     generated_at = str(run_meta.get("generated_at") or "")
     run_id = str(run_meta.get("run_id") or "")
     if expected == actual:
-        return f"SINCRONIZADO ✓ (run_id={run_id}, generated_at={generated_at})"
+        return f"SYNCHRONIZED ✓ (run_id={run_id}, generated_at={generated_at})"
     return (
-        f"DESINCRONIZADO: el JSON tiene {expected} alertas pero se leyeron {actual}. "
-        "Vuelve a correr sweep_report.py y luego alerts_report.py EN ESE ORDEN."
+        f"OUT OF SYNC: the JSON declares {expected} alerts but {actual} were read. "
+        "Run sweep_report.py and then alerts_report.py IN THAT ORDER."
     )
 
 
@@ -257,16 +257,16 @@ def freshness_status(
 ) -> str | None:
     generated_at = run_meta.get("generated_at")
     if not generated_at:
-        return "ADVERTENCIA: falta generated_at; no se puede verificar frescura."
+        return "WARNING: generated_at is missing; freshness cannot be checked."
     try:
         parsed = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00"))
     except ValueError:
-        return "ADVERTENCIA: generated_at no tiene formato ISO válido."
+        return "WARNING: generated_at is not a valid ISO timestamp."
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     current = now or datetime.now(timezone.utc)
     if current - parsed > timedelta(hours=max_age_hours):
-        return "ADVERTENCIA: el JSON puede ser de una corrida anterior."
+        return "WARNING: the JSON may belong to an earlier run."
     return None
 
 

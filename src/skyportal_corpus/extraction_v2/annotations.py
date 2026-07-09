@@ -9,6 +9,7 @@ class EventEvidenceAnnotation(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     circular_id: int
+    source_circular_id: int | None = None
     text_sha256: str
     span_start: int
     span_end: int
@@ -48,6 +49,13 @@ class EventEvidenceAnnotation(BaseModel):
             raise ValueError(f"Invalid EVENT_EVIDENCE certainty: {value!r}")
         return value
 
+    @field_validator("comment", mode="before")
+    @classmethod
+    def _normalize_comment(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("span_start")
     @classmethod
     def _validate_span_start(cls, value: int) -> int:
@@ -61,6 +69,10 @@ class EventEvidenceAnnotation(BaseModel):
             raise ValueError("span_end must be > span_start")
         if len(self.text) != self.span_end - self.span_start:
             raise ValueError("text length must match span_end - span_start")
+        if self.needs_review and self.comment is None:
+            raise ValueError("comment is required when needs_review=True")
+        if not self.needs_review and self.comment is not None:
+            raise ValueError("comment must be empty when needs_review=False")
         return self
 
     def verify(self, rendered_text: str) -> bool:

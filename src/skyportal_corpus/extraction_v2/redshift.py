@@ -9,11 +9,12 @@ from skyportal_corpus.extraction_v2.event_identity import is_in_table_row
 
 
 AMBIGUOUS_REDSHIFT_COMMENT = (
-    "Redshift sin atribución explícita a evento o contexto; verificar si pertenece "
-    "al evento/afterglow/host o a una galaxia de contexto."
+    "Redshift without explicit attribution to event or context; verify whether it "
+    "belongs to the event/afterglow/host or to a context galaxy."
 )
-CITED_GCN_REDSHIFT_COMMENT = "Redshift del evento citado de otra circular (referencia GCN)."
-CONTEXT_REDSHIFT_COMMENT = "Clasificado como redshift de contexto/intervening; verificar que no sea el redshift del evento."
+CONTEXT_REDSHIFT_COMMENT = (
+    "Classified as a context/intervening redshift; verify that it is not the event redshift."
+)
 
 _REDSHIFT_VALUE_RE = re.compile(r"\d+\.\d+")
 _TENTATIVE_RE = re.compile(r"\b(possible|likely|candidate)\b|~", re.IGNORECASE)
@@ -338,13 +339,12 @@ def _certainty(text: str, span_start: int, span_end: int) -> str:
 
 
 def _comment_for_reason(attribution: str, reason: str, needs_review: bool) -> str | None:
+    del reason
+    if not needs_review:
+        return None
     if attribution == "CONTEXT":
         return CONTEXT_REDSHIFT_COMMENT
-    if reason == "event_gcn_reference":
-        return CITED_GCN_REDSHIFT_COMMENT
-    if needs_review:
-        return AMBIGUOUS_REDSHIFT_COMMENT
-    return None
+    return AMBIGUOUS_REDSHIFT_COMMENT
 
 
 def _has_negated_context_for_span(text: str, start: int, end: int) -> bool:

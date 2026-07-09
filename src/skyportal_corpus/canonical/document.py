@@ -14,7 +14,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-MIN_YEAR = 2023  # Bajar para incluir circulars mas antiguos.
+MIN_YEAR = 2023  # Lower this value to include older circulars.
 
 
 class Segment(BaseModel):

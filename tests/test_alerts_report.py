@@ -56,8 +56,8 @@ def test_alerts_report_writes_file_with_context(tmp_path: Path) -> None:
 
     text = out_path.read_text(encoding="utf-8")
     assert out_path == tmp_path / "alerts_report.txt"
-    assert "total de alertas: 3" in summary
-    assert "### needs_review_true / event_identity / event_identity.grb_dayfraction  (2 alertas)" in text
+    assert "total alerts: 3" in summary
+    assert "### needs_review_true / event_identity / event_identity.grb_dayfraction  (2 alerts)" in text
     assert "CONTEXT: before ⟦GRB230101.09⟧ after" in text
     assert "LINE:    line with GRB230101.09" in text
 
@@ -74,7 +74,7 @@ def test_alerts_report_writes_filtered_file(tmp_path: Path) -> None:
 
     text = out_path.read_text(encoding="utf-8")
     assert out_path == tmp_path / "alerts_report_event_identity.grb_dayfraction.txt"
-    assert "total de alertas: 2" in summary
+    assert "total alerts: 2" in summary
     assert "event_identity.grb_dayfraction" in text
     assert "localization.error_radius" not in text
     assert "very long localization text" not in text

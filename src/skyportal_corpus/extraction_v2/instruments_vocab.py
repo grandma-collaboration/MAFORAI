@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 
-# Lista ampliable; agregar instrumentos nuevos aqui sin tocar la logica del extractor.
+# Extensible list; add new instruments here without changing extractor logic.
 @dataclass(frozen=True)
 class InstrumentSpec:
     canonical: str

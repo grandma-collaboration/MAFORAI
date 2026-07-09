@@ -9,7 +9,7 @@ from skyportal_corpus.extraction_v2.instruments_vocab import iter_instrument_mat
 
 
 TRIGGER_INSTRUMENT_REVIEW_COMMENT = (
-    "Múltiples instrumentos con contexto de trigger; el anotador debe confirmar el primario."
+    "Multiple instruments have trigger context; the annotator must confirm the primary one."
 )
 
 _TRIGGER_ACTION_RE = re.compile(

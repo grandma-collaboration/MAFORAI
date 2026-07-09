@@ -37,7 +37,7 @@ def main() -> int:
         if first is None:
             print("No circulars found for demo.")
             return 1
-        print("No se hallaron redshifts en los primeros 100 circulars; usando el primero.")
+        print("No redshifts found in the first 100 circulars; using the first one.")
         chosen = first
 
     circular, doc, annotations = chosen

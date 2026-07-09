@@ -15,8 +15,8 @@ SENTENCE_TYPE = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TOKEN_TYPE = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Token"
 TYPESYSTEM_PATH = "data/inception/TypeSystem.xml"
 MISSING_TYPESYSTEM_MESSAGE = (
-    "Copia tu TypeSystem.xml (exportado de INCEpTION, formato UIMA CAS XMI XML 1.0) "
-    "a data/inception/TypeSystem.xml y vuelve a correr"
+    "Copy your TypeSystem.xml (exported from INCEpTION as UIMA CAS XMI XML 1.0) "
+    "to data/inception/TypeSystem.xml and run the command again"
 )
 
 

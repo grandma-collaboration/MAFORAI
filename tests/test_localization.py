@@ -65,7 +65,7 @@ def test_localization_error_radius() -> None:
     assert annotation.rule_id == "localization.error_radius"
     assert annotation.unit in {"deg", "degrees"}
     assert annotation.value == "2.8"
-    assert annotation.comment == "positional uncertainty"
+    assert annotation.comment is None
     assert annotation.verify(doc.rendered_text)
 
 

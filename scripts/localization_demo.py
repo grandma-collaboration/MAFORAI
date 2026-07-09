@@ -37,7 +37,7 @@ def main() -> int:
         if first is None:
             print("No circulars found for demo.")
             return 1
-        print("No se hallaron coordenadas en los primeros 50 circulars; usando el primero.")
+        print("No coordinates found in the first 50 circulars; using the first one.")
         chosen = first
 
     circular, doc, annotations = chosen

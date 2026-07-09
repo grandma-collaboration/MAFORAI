@@ -119,7 +119,7 @@ class LocalizationExtractor:
                     text=doc.rendered_text[match.start() : match.end()],
                     value=match.group("value"),
                     unit=_normalize_unit(match.group("unit")),
-                    comment="positional uncertainty",
+                    comment=None,
                     target=_target_from_context(doc.rendered_text, match.start(), match.end()),
                 )
             )

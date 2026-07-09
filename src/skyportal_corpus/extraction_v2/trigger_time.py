@@ -7,10 +7,12 @@ from skyportal_corpus.canonical.document import CanonicalDocument
 from skyportal_corpus.extraction_v2.annotations import EventEvidenceAnnotation
 
 
-TRIGGER_TIME_REVIEW_COMMENT = "Múltiples horas con contexto de trigger; el anotador debe elegir la correcta"
+TRIGGER_TIME_REVIEW_COMMENT = (
+    "Multiple times have trigger context; the annotator must choose the correct one."
+)
 TRIGGER_TIME_MISSING_DATE_REVIEW_COMMENT = (
-    "Hora de trigger sin fecha adyacente en el texto; el anotador debe completar la fecha "
-    "(p. ej. desde el nombre del evento o el contexto)."
+    "Trigger time without an adjacent date in the text; the annotator must complete "
+    "the date (for example, from the event name or context)."
 )
 
 _TRIGGER_CONTEXT_RE = re.compile(

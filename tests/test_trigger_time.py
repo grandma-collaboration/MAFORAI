@@ -474,7 +474,9 @@ def test_trigger_time_multiple_candidates_need_review() -> None:
     assert len(annotations) == 2
     for annotation in annotations:
         assert annotation.needs_review is True
-        assert annotation.comment == "Múltiples horas con contexto de trigger; el anotador debe elegir la correcta"
+        assert annotation.comment == (
+            "Multiple times have trigger context; the annotator must choose the correct one."
+        )
         assert annotation.verify(doc.rendered_text)
 
 

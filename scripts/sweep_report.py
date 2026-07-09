@@ -155,7 +155,7 @@ def _parse_mode(argv: list[str]) -> dict[str, int | None | str | list[str] | Non
         mode_seen = True
 
     base_label = f"per_year={per_year}" if kind == "per_year" else f"limit={limit}"
-    extractors_label = ",".join(only_extractors) if only_extractors else "todos"
+    extractors_label = ",".join(only_extractors) if only_extractors else "all"
     label = f"{base_label} only={extractors_label}" if only_extractors else base_label
     return {
         "kind": kind,
@@ -176,30 +176,30 @@ def _render_report(
     lines: list[str] = []
     annotations = list(sweep["annotations"])
 
-    lines.append("RESUMEN GLOBAL")
-    lines.append(f"  modo: {mode['label']}")
-    lines.append(f"  extractores: {mode.get('extractors_label', 'todos')}")
-    lines.append(f"  circulars procesados: {sweep['n_circulars_processed']}")
-    lines.append(f"  circulars con errores: {sweep['n_circulars_with_errors']}")
-    lines.append(f"  anotaciones totales: {len(annotations)}")
+    lines.append("GLOBAL SUMMARY")
+    lines.append(f"  mode: {mode['label']}")
+    lines.append(f"  extractors: {mode.get('extractors_label', 'all')}")
+    lines.append(f"  circulars processed: {sweep['n_circulars_processed']}")
+    lines.append(f"  circulars with errors: {sweep['n_circulars_with_errors']}")
+    lines.append(f"  total annotations: {len(annotations)}")
 
     lines.append("")
-    lines.append("COBERTURA POR EXTRACTOR")
-    lines.append("  extractor        circulars  cobertura")
+    lines.append("COVERAGE BY EXTRACTOR")
+    lines.append("  extractor        circulars  coverage")
     for extractor_name, stats in aggregates["coverage"].items():
         lines.append(f"  {extractor_name:<16} {stats['n_circulars']:>9}  {stats['percent']:>7.2f}%")
 
     lines.append("")
-    lines.append("POR AÑO — CIRCULARS")
-    lines.append("  año     circulars")
+    lines.append("BY YEAR - CIRCULARS")
+    lines.append("  year    circulars")
     for year, count in aggregates["by_year"]["circulars"].items():
         lines.append(f"  {year:<7} {count:>9}")
 
     lines.append("")
-    lines.append("POR AÑO — COBERTURA")
+    lines.append("BY YEAR - COVERAGE")
     for extractor_name, values_by_year in aggregates["by_year"]["coverage"].items():
         lines.append(f"  {extractor_name}")
-        lines.append("    año     anotaciones  circulars_con_una  cobertura")
+        lines.append("    year    annotations  circulars_with_one  coverage")
         for year, stats in values_by_year.items():
             lines.append(
                 f"    {year:<7} {stats['n_annotations']:>11}  "
@@ -207,8 +207,8 @@ def _render_report(
             )
 
     lines.append("")
-    lines.append("POR AÑO — ALERTAS")
-    lines.append("  año     alertas")
+    lines.append("BY YEAR - ALERTS")
+    lines.append("  year    alerts")
     if aggregates["by_year"]["alerts"]:
         for year, count in aggregates["by_year"]["alerts"].items():
             lines.append(f"  {year:<7} {count:>7}")
@@ -217,7 +217,7 @@ def _render_report(
 
     if "event_identity" in dict(sweep.get("extractors") or {}):
         lines.append("")
-        lines.append("HUECOS — EVENT_IDENTITY (circulars sin ninguna identidad)")
+        lines.append("GAPS - EVENT_IDENTITY (circulars without an identity)")
         identity_gaps = list(dict(sweep.get("gaps") or {}).get("event_identity") or [])
         if identity_gaps:
             for year, gaps in _gaps_by_year(identity_gaps).items():
@@ -228,8 +228,8 @@ def _render_report(
             lines.append("  (none)")
 
     lines.append("")
-    lines.append("TASA DE REVISIÓN")
-    lines.append("  extractor        total  needs_review  tasa")
+    lines.append("REVIEW RATE")
+    lines.append("  extractor        total  needs_review  rate")
     for extractor_name, stats in aggregates["review_rate"].items():
         lines.append(
             f"  {extractor_name:<16} {stats['total']:>5}  "
@@ -237,7 +237,7 @@ def _render_report(
         )
 
     lines.append("")
-    lines.append("DISPAROS POR REGLA")
+    lines.append("MATCHES BY RULE")
     if aggregates["rule_counts"]:
         for rule_id, count in aggregates["rule_counts"].items():
             lines.append(f"  {rule_id:<38} {count}")
@@ -245,7 +245,7 @@ def _render_report(
         lines.append("  (none)")
 
     lines.append("")
-    lines.append("RESUMEN DE SEÑALES DE ALERTA")
+    lines.append("ALERT FLAG SUMMARY")
     if aggregates["flag_counts"]:
         for flag, count in aggregates["flag_counts"].items():
             lines.append(f"  {flag:<28} {count}")
@@ -253,7 +253,7 @@ def _render_report(
         lines.append("  (none)")
 
     lines.append("")
-    lines.append("MUESTRAS DE ALERTAS")
+    lines.append("ALERT SAMPLES")
     if flagged:
         for flag, items in _flagged_by_type(flagged).items():
             lines.append(f"  {flag}")
@@ -272,7 +272,7 @@ def _render_report(
         lines.append("  (none)")
 
     lines.append("")
-    lines.append("EJEMPLOS POSITIVOS")
+    lines.append("POSITIVE EXAMPLES")
     flagged_keys = {_annotation_key(item) for item in flagged}
     for extractor_name in sweep["extractors"]:
         clean = [
@@ -294,7 +294,7 @@ def _render_report(
             )
 
     lines.append("")
-    lines.append("ERRORES")
+    lines.append("ERRORS")
     if sweep["errors"]:
         for error in sweep["errors"]:
             lines.append(

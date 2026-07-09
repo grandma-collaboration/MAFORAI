@@ -53,7 +53,9 @@ def test_redshift_context_nearby_galaxies() -> None:
     assert annotations[0].label == "REDSHIFT_CONTEXT"
     assert annotations[0].target == "nearby_galaxy"
     assert annotations[0].needs_review is True
-    assert annotations[0].comment == "Clasificado como redshift de contexto/intervening; verificar que no sea el redshift del evento."
+    assert annotations[0].comment == (
+        "Classified as a context/intervening redshift; verify that it is not the event redshift."
+    )
 
 
 def test_redshift_context_foreground_intervening() -> None:
@@ -208,8 +210,7 @@ def test_redshift_gcn_citation_is_event_without_review() -> None:
     assert annotations[0].label == "REDSHIFT_EVENT"
     assert annotations[0].certainty == "confirmed"
     assert annotations[0].needs_review is False
-    assert annotations[0].comment
-    assert "GCN" in annotations[0].comment
+    assert annotations[0].comment is None
 
 
 def test_redshift_galaxy_range_is_context() -> None:

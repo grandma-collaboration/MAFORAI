@@ -8,20 +8,24 @@ from skyportal_corpus.extraction_v2.annotations import EventEvidenceAnnotation
 
 
 EVENT_IDENTITY_REVIEW_COMMENT = (
-    "Nombre de evento ausente en el subject; verificar si es alias del evento principal "
-    "o un evento referenciado/de comparacion"
+    "Event name absent from the subject; verify whether it is an alias of the main "
+    "event or a referenced/comparison event."
 )
 GRB_DAYFRACTION_REVIEW_COMMENT = (
-    "Formato de fracción de día (MASTER/Fermi); puede corresponder a un GRB "
-    "con letra oficial. Verificar el mapeo al evento canónico."
+    "Day-fraction format (MASTER/Fermi); it may correspond to a GRB with an official "
+    "letter suffix. Verify the mapping to the canonical event."
 )
 EP_WXT_TRIGGER_REVIEW_COMMENT = (
-    "Identificador de trigger EP-WXT; el anotador debe verificar el mapeo al evento/fuente canónica."
+    "EP-WXT trigger identifier; the annotator must verify the mapping to the canonical "
+    "event/source."
 )
 EP_FXT_TRIGGER_REVIEW_COMMENT = (
-    "Identificador de trigger EP-FXT; el anotador debe verificar el mapeo al evento/fuente canónica."
+    "EP-FXT trigger identifier; the annotator must verify the mapping to the canonical "
+    "event/source."
 )
-EP_DAYFRACTION_REVIEW_COMMENT = "Formato de fracción de día de EP; verificar mapeo al evento canónico."
+EP_DAYFRACTION_REVIEW_COMMENT = (
+    "EP day-fraction format; verify the mapping to the canonical event."
+)
 
 GRB_DAYFRACTION_RULE_ID = "event_identity.grb_dayfraction"
 EP_WXT_TRIGGER_RULE_ID = "event_identity.ep_wxt_trigger"
@@ -207,6 +211,8 @@ def _overlaps(left: _Candidate, right: _Candidate) -> bool:
 
 
 def _review_comment(rule_id: str, needs_review: bool) -> str | None:
+    if not needs_review:
+        return None
     if rule_id == GRB_DAYFRACTION_RULE_ID:
         return GRB_DAYFRACTION_REVIEW_COMMENT
     if rule_id == EP_WXT_TRIGGER_RULE_ID:
@@ -215,9 +221,7 @@ def _review_comment(rule_id: str, needs_review: bool) -> str | None:
         return EP_FXT_TRIGGER_REVIEW_COMMENT
     if rule_id == EP_DAYFRACTION_RULE_ID:
         return EP_DAYFRACTION_REVIEW_COMMENT
-    if needs_review:
-        return EVENT_IDENTITY_REVIEW_COMMENT
-    return None
+    return EVENT_IDENTITY_REVIEW_COMMENT
 
 
 def _normalize_event_identity(value: str, rule_id: str) -> str:

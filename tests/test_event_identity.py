@@ -67,8 +67,8 @@ def test_event_identity_grb_dayfraction_preserves_fraction(raw_value: str, expec
     assert annotation.needs_review is True
     assert annotation.confidence == 0.5
     assert annotation.comment == (
-        "Formato de fracción de día (MASTER/Fermi); puede corresponder a un GRB "
-        "con letra oficial. Verificar el mapeo al evento canónico."
+        "Day-fraction format (MASTER/Fermi); it may correspond to a GRB with an official "
+        "letter suffix. Verify the mapping to the canonical event."
     )
     assert annotation.verify(doc.rendered_text)
 
@@ -118,7 +118,8 @@ def test_event_identity_ep_wxt_trigger_phrase_requires_review() -> None:
     assert annotation.needs_review is True
     assert annotation.confidence == 0.5
     assert annotation.comment == (
-        "Identificador de trigger EP-WXT; el anotador debe verificar el mapeo al evento/fuente canónica."
+        "EP-WXT trigger identifier; the annotator must verify the mapping to the canonical "
+        "event/source."
     )
     assert annotation.verify(doc.rendered_text)
 
@@ -154,7 +155,9 @@ def test_event_identity_ep_dayfraction_requires_review() -> None:
     assert annotations[0].value == "EP 260225.148"
     assert annotations[0].rule_id == "event_identity.ep_dayfraction"
     assert annotations[0].needs_review is True
-    assert annotations[0].comment == "Formato de fracción de día de EP; verificar mapeo al evento canónico."
+    assert annotations[0].comment == (
+        "EP day-fraction format; verify the mapping to the canonical event."
+    )
     assert annotations[0].verify(doc.rendered_text)
 
 

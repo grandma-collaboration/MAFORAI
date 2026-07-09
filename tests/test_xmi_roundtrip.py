@@ -19,7 +19,7 @@ from skyportal_corpus.inception_v2.xmi_export import TYPESYSTEM_PATH
 def test_xmi_roundtrip_preserves_offsets_and_features(tmp_path: Path) -> None:
     typesystem_path = PROJECT_ROOT / TYPESYSTEM_PATH
     if not typesystem_path.exists():
-        pytest.skip("Falta TypeSystem.xml")
+        pytest.skip("TypeSystem.xml is missing")
 
     from skyportal_corpus.inception_v2.xmi_export import export_document_to_xmi
     from skyportal_corpus.inception_v2.xmi_roundtrip import roundtrip_check

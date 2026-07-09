@@ -228,7 +228,7 @@ def alert_counts_by_year(flagged: list[Mapping[str, Any]]) -> dict[str, int]:
 
 
 def get_active_extractors() -> list[_Extractor]:
-    # Fuente única de extractores activos. Para agregar uno nuevo al barrido, añadelo aquí.
+    # Single source of truth for active extractors. Add new sweep extractors here.
     return [
         EventIdentityExtractor(),
         TriggerTimeExtractor(),
