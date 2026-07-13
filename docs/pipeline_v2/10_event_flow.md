@@ -16,7 +16,7 @@ annotation.text
 event_rendered_text[annotation.span_start:annotation.span_end]
 ```
 
-The resulting XMI contains the full event text and all accepted `ASTRO_EVIDENCE` spans. The current verified example is `2026owq`, titled `GRB 260610B / AT2026owq`: 28 Circulars, 120 annotations, 11 annotations marked for review, and a successful XMI round-trip.
+The resulting XMI contains the full event text and two independent annotation layers: accepted `ASTRO_EVIDENCE` spans and row/prose `PHOTOMETRIC_MEASUREMENT` spans. Both layers use the same immutable sofa text and are round-trip checked independently.
 
 ## End-To-End Flow
 
@@ -32,21 +32,28 @@ event_document.py
   immutable EventCanonicalDocument
   + CircularSegment map
           |
-          v
-event_annotations.py
-  run 5 extractors on each local CanonicalDocument
-  + translate local offsets to global offsets
-          |
-          v
+          +------------------------------+
+          |                              |
+          v                              v
+event_annotations.py            event_photometry.py
+  run 5 evidence extractors       run table + prose photometry
+  + translate local offsets        + translate local offsets
+          |                              |
+          v                              v
+ASTRO_EVIDENCE                  PHOTOMETRIC_MEASUREMENT
+          |                              |
+          +---------------+--------------+
+                          |
+                          v
 event_xmi_export.py
-  ASTRO_EVIDENCE annotations over one event text
-          |
-          v
+  both annotation layers over one event text
+                          |
+                          v
 data/inception/out/event_2026owq.xmi
-          |
-          v
-xmi_roundtrip.py
-  verify text, spans, features, and annotation count
+                          |
+                          v
+event_layers_roundtrip_check()
+  verify text, spans, features, and annotation counts by layer
 ```
 
 ## 1. Grouping Circulars By Event
@@ -181,6 +188,10 @@ The translated annotation receives the event text SHA-256 and is verified agains
 
 The `comment` field has a narrower purpose: it contains an English review instruction only when `needs_review=True`. Confirmed annotations have an empty comment. Provenance is never encoded in `comment`.
 
+### Photometry offsets
+
+`extract_event_photometry()` in `event_photometry.py` runs table-row and prose photometry against each local `CanonicalDocument`, translates accepted spans with the same `local_to_global()` map, verifies the event-text slice, and stores `source_circular_id` as internal provenance. Broken translated spans are excluded rather than exported.
+
 ## 4. Exporting One Event XMI
 
 The executable entry point is:
@@ -189,15 +200,16 @@ The executable entry point is:
 scripts/event_xmi_export.py
 ```
 
-The script reuses `export_document_to_xmi()` with an adapter whose `rendered_text` is the immutable event text. This keeps CAS creation, minimal sentence/token segmentation, feature mapping, and span validation in the existing XMI exporter.
+The script calls `export_event_layers_xmi()` from `inception_v2/event_xmi_export.py`. It creates one CAS whose sofa is the immutable event text, adds minimal segmentation, verifies every span, and writes both custom layers.
 
-The internal INCEpTION layer is:
+The INCEpTION layers are:
 
 ```text
 webanno.custom.ASTRO_EVIDENCE
+webanno.custom.PHOTOMETRIC_MEASUREMENT
 ```
 
-It exports six string features:
+`ASTRO_EVIDENCE` exports six string features:
 
 ```text
 label
@@ -208,7 +220,7 @@ unit
 comment
 ```
 
-`needs_review` and `source_circular_id` are internal fields and are not features in the current TypeSystem. Reviewable annotations remain visible through their non-empty review comment.
+Photometry features are mapped by `photometry_feature_values()` and include measurement type, magnitude/error/limit confidence, band/system, observation time, exposure, instrument, and review comment when those features exist in the loaded TypeSystem. `needs_review` and `source_circular_id` remain internal fields for both paths; reviewable annotations remain visible through their non-empty review comment.
 
 The event script writes:
 
@@ -217,9 +229,9 @@ data/inception/out/event_2026owq.xmi
 data/inception/out/event_2026owq_manifest.txt
 ```
 
-The manifest lists the event hash, output path, counts by extractor and label, and all 28 Circulars with their date, subject, annotation count, and label counts.
+The manifest lists the event hash, output path, summaries for both layers, and per-Circular contributions.
 
-Finally, `roundtrip_check()` reloads the XMI and verifies:
+Finally, `event_layers_roundtrip_check()` reloads the XMI and verifies each layer independently:
 
 ```text
 text_matches
@@ -228,15 +240,13 @@ all_features_ok
 n_original == n_roundtripped
 ```
 
-For the verified `2026owq` export, all checks passed for 120 annotations.
-
 ## Known Limitations And Decisions
 
 - **Aliases are manual.** `SOURCE_ID`, `TITLE`, and `ALIASES` are currently constants in the event scripts. Automatic use of the existing `event_search_terms` data is future work.
 - **Candidate selection is example-specific.** The current scripts use year 2026 and Circular IDs `44880..45050`. A general command-line interface has not yet replaced these constants.
-- **One annotation layer carries all labels.** Event identity, time, localization, instrument, and redshift evidence are all exported to `ASTRO_EVIDENCE`.
+- **Two layers share one sofa.** Event identity, time, localization, instrument, and redshift remain in `ASTRO_EVIDENCE`; individual optical/NIR/UV measurements use `PHOTOMETRIC_MEASUREMENT`.
 - **Comments are review-only.** A comment is present only when human review is requested. It is not a general metadata or provenance field.
-- **Extraction remains Circular-local.** The five extractors do not reason across Circular boundaries. The event document only preserves and combines their evidence.
+- **Extraction remains Circular-local.** The five evidence extractors and both photometry paths do not reason across Circular boundaries. The event document only preserves and combines their outputs.
 - **No event summary is inferred yet.** Repeated or conflicting evidence is intentionally retained. Resolving it into `EVENT_SUMMARY` is future work built on this global offset map.
 
 ## Related Documents
@@ -246,3 +256,4 @@ For the verified `2026owq` export, all checks passed for 120 annotations.
 - [INCEpTION export](./05_inception_export.md)
 - [Reproducing an event XMI](./11_reproduce_event_xmi.md)
 - [Status and roadmap](./07_status_and_roadmap.md)
+- [Photometric measurement layer](./12_photometry.md)

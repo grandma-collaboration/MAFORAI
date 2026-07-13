@@ -10,10 +10,10 @@ This document separates implemented, scale-tested components from future work. I
 |---|---|
 | Full test suite | 282 tests passing across 24 test files |
 | Active extractors | 5 |
-| Tagsets | 17 labels, 6 targets, 5 certainties |
-| INCEpTION layer | `webanno.custom.ASTRO_EVIDENCE` |
+| Tagsets | Shared EVENT_EVIDENCE tagsets plus photometry measurement, time, reference, and system tagsets |
+| INCEpTION layers | `webanno.custom.ASTRO_EVIDENCE` and `webanno.custom.PHOTOMETRIC_MEASUREMENT` |
 | XMI round-trip | OK: text, spans, and features preserved |
-| Event XMI example | `2026owq`: 28 Circulars, 120 annotations, 11 review comments, round-trip OK |
+| Event XMI | Both custom layers share one sofa and pass independent span/feature round-trip checks |
 | Latest all-extractor sweep | `per_year=100`, 400 Circulars, 1478 annotations, 0 errors |
 | Latest alert report | synchronized, 219 review alerts |
 
@@ -34,7 +34,11 @@ This document separates implemented, scale-tested components from future work. I
 | Event grouping | Implemented | `tests/test_event_grouping.py`; confirmed subject identity takes precedence over body references |
 | `EventCanonicalDocument` | Implemented | `tests/test_event_document.py`; local canonical text and SHA-256 survive inside global event text |
 | Event annotation offset translation | Implemented | `tests/test_event_annotations.py`; local spans map to verified global spans with `source_circular_id` |
-| Event-level XMI deliverable | Implemented | `scripts/event_xmi_export.py`; `2026owq` round-trip preserves 120 annotations |
+| `PhotometricMeasurementAnnotation` model and tagsets | Implemented | `tests/test_photometry_annotations.py` |
+| Table photometry extraction | Implemented | `tests/test_photometry_tables.py`, `tests/test_photometry_rows.py` |
+| Prose photometry extraction | Implemented | `tests/test_photometry_prose.py` |
+| Photometry XMI export and round-trip | Implemented | `tests/test_photometry_xmi.py` |
+| Event-level XMI deliverable | Implemented | `scripts/event_xmi_export.py`; both custom layers are checked independently during round-trip |
 
 ## Implemented Infrastructure
 
@@ -47,7 +51,8 @@ This document separates implemented, scale-tested components from future work. I
 | Alert context windows | Suspicious spans carry enough context for diagnosis. |
 | Identity gaps | Missing identities are visible even though they produce no annotation alerts. |
 | Table-row detection | Avoids treating catalog rows as Circular-level event identity or redshift evidence. |
-| Event-to-document flow | Groups Circulars, builds immutable global text, translates offsets, and exports one event XMI. |
+| Event-to-document flow | Groups Circulars, builds immutable global text, translates both evidence and photometry offsets, and exports one event XMI. |
+| Photometry audit report | Audits table and prose extraction by source, format, rule, field, review reason, year, overlap, and uncovered format. |
 | Review-only comments | Keeps `comment` empty for confirmed annotations and reserves it for human review instructions. |
 
 ## Extractor Roadmap
@@ -70,11 +75,11 @@ This document separates implemented, scale-tested components from future work. I
 | `NEGATIVE_STATEMENT` | Pending | Non-detections and explicit absence statements. |
 | `LIGHTCURVE_EVOLUTION` | Pending | Fading, rising, plateau, and temporal-evolution language. |
 | `COUNTERPART_ASSOCIATION` | Pending | Association claims between event and counterpart. |
-| `PHOTOMETRY_TABLE` | Pending | Likely needs table-aware extraction rather than line regex only. |
+| `PHOTOMETRY_TABLE` | Implemented as table-detection evidence | The same detected blocks feed row-level `PHOTOMETRIC_MEASUREMENT` parsing. |
 
 ## Larger Missing Pieces
 
-The `PHOTOMETRIC_MEASUREMENT` layer is not implemented in v2. It will need its own model because individual measurements carry magnitude or flux, unit, filter, time, limit/detection status, and table context.
+The `PHOTOMETRIC_MEASUREMENT` layer is implemented for magnitude-based optical, NIR, and UV measurements in tables and prose. X-ray count rates, radio flux densities, high-energy quantities, and spectroscopy remain outside its schema and need separately designed layers.
 
 Event document aggregation is implemented: related Circulars can be grouped into one immutable `EventCanonicalDocument`, and their annotations can be exported with global offsets. Scientific aggregation into `EVENT_SUMMARY` is still future work; the current flow deliberately preserves repeated and conflicting Circular evidence instead of resolving it automatically.
 
@@ -84,6 +89,6 @@ The pipeline still needs quantitative evaluation against human annotations. Roun
 
 ## Recommended Next Step
 
-For event-level work, the next architectural step is automatic alias integration from `event_search_terms`, followed by a separately designed `EVENT_SUMMARY` model. For extraction work, `T90` remains narrow and testable, while `SPECTROSCOPY` and `PHOTOMETRY_TABLE` are higher complexity and should follow the method in [09_method_and_lessons.md](./09_method_and_lessons.md).
+For event-level work, the next architectural step is automatic alias integration from `event_search_terms`, followed by a separately designed `EVENT_SUMMARY` model. For extraction work, `T90` remains narrow and testable, while `SPECTROSCOPY` needs its own scope and schema. Photometry maintenance and extension points are documented in [12_photometry.md](./12_photometry.md).
 
 See [10_event_flow.md](./10_event_flow.md) for the implemented architecture and [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) for the reproduction procedure.
