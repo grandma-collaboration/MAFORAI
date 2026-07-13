@@ -5,10 +5,11 @@ title: GRB 260610B / AT2026owq
 n_circulars: 28
 event_text_sha256: a51b058b1e19cdbaa71dd858451999825147b8f38ac9d36f6fe45e45e9c234d6
 event_text_length: 54631
-n_annotations: 120
+n_event_evidence: 120
+n_photometric_measurements: 76
 xmi_path: /home/meneses/project_astronomical/MAFORAI/data/inception/out/event_2026owq.xmi
 
-ANNOTATIONS BY EXTRACTOR
+EVENT_EVIDENCE BY EXTRACTOR
 extractor | count
 event_identity | 97
 localization | 3
@@ -16,7 +17,7 @@ redshift | 7
 trigger_instrument | 5
 trigger_time | 8
 
-ANNOTATIONS BY TYPE
+EVENT_EVIDENCE BY LABEL
 label | count
 EVENT_IDENTITY | 97
 LOCALIZATION | 3
@@ -25,33 +26,43 @@ REDSHIFT_EVENT | 6
 TRIGGER_INSTRUMENT | 5
 TRIGGER_TIME | 8
 
+PHOTOMETRY BY TYPE
+measurement_type | count
+detection | 66
+upper_limit | 10
+
+PHOTOMETRY BY SOURCE
+source | count
+prose | 19
+table | 57
+
 CIRCULARS
-circular_id | created_on | subject | n_annotations | annotations_by_type
-44901 | 2026-06-11T01:29:13.105000+00:00 | GRB 260610B: Fermi GBM Final Localization | 6 | EVENT_IDENTITY=2, LOCALIZATION=2, TRIGGER_INSTRUMENT=1, TRIGGER_TIME=1
-44903 | 2026-06-11T02:49:52.775000+00:00 | GRB 260610B: GOTO optical counterpart candidate | 6 | EVENT_IDENTITY=4, TRIGGER_TIME=2
-44905 | 2026-06-11T06:31:15.998000+00:00 | GRB 260610B: DDOTI optical observations | 3 | EVENT_IDENTITY=3
-44909 | 2026-06-11T09:13:48.943000+00:00 | GRB 260610B: TRT optical observation | 2 | EVENT_IDENTITY=2
-44910 | 2026-06-11T11:00:56.882000+00:00 | GRB 260610B / AT2026owq: Early ATLAS observations | 11 | EVENT_IDENTITY=9, REDSHIFT_CONTEXT=1, TRIGGER_INSTRUMENT=1
-44911 | 2026-06-11T11:14:07.488000+00:00 | GRB 260610B / AT 2026owq: COLIBRÍ optical observations | 7 | EVENT_IDENTITY=7
-44914 | 2026-06-11T13:44:50.797000+00:00 | GRB 260610B: optical counterpart shows spectroscopic redshift of z=0.473 | 6 | EVENT_IDENTITY=4, REDSHIFT_EVENT=2
-44918 | 2026-06-11T22:05:25.819000+00:00 | GRB 260610B / AT2026owq: SAO RAS optical observations | 4 | EVENT_IDENTITY=3, TRIGGER_TIME=1
-44919 | 2026-06-12T07:06:28.617000+00:00 | GRB 260610B: IAC-80 Optical observations | 2 | EVENT_IDENTITY=2
-44920 | 2026-06-12T07:54:38.465000+00:00 | GRB 260610B / AT2026owq: OASDG optical observations | 4 | EVENT_IDENTITY=4
-44921 | 2026-06-12T08:27:15.580000+00:00 | GRB 260610B / AT2026owq: SVOM/VT optical observations | 5 | EVENT_IDENTITY=4, TRIGGER_TIME=1
-44927 | 2026-06-12T18:02:21.506000+00:00 | GRB 260610b: Liverpool Telescope optical observations | 2 | EVENT_IDENTITY=2
-44929 | 2026-06-13T06:35:11.272000+00:00 | GRB 260610B / AT2026owq: further SAO RAS optical observations | 3 | EVENT_IDENTITY=3
-44930 | 2026-06-13T13:50:34.176000+00:00 | GRB 260610B / AT2026owq: GRANDMA optical observations  | 3 | EVENT_IDENTITY=3
-44931 | 2026-06-13T18:21:44.066000+00:00 | GRB 260610B: Fermi GBM Observation | 4 | EVENT_IDENTITY=2, REDSHIFT_EVENT=1, TRIGGER_TIME=1
-44932 | 2026-06-13T19:36:46.093000+00:00 | GRB 260610B: further Liverpool Telescope optical observations | 2 | EVENT_IDENTITY=2
-44941 | 2026-06-14T21:57:00.740000+00:00 | GRB 260610B: ALMA detection | 2 | EVENT_IDENTITY=2
-44944 | 2026-06-15T08:36:29.040000+00:00 | GRB 260610B: SVOM/GRM observation | 9 | EVENT_IDENTITY=4, LOCALIZATION=1, REDSHIFT_EVENT=1, TRIGGER_INSTRUMENT=2, TRIGGER_TIME=1
-44946 | 2026-06-15T08:46:27.827000+00:00 | GRB 260610B: Terskol optical observations | 2 | EVENT_IDENTITY=2
-44955 | 2026-06-16T15:30:51.554000+00:00 | GRB 260610B / AT 2026owq: Possible re-brightening identified from Pan-STARRS observations | 9 | EVENT_IDENTITY=7, REDSHIFT_EVENT=1, TRIGGER_INSTRUMENT=1
-44958 | 2026-06-16T19:58:21.552000+00:00 | GRB 260610B / AT 2026owq: COLIBRÍ further observations and confirmation of the rebrigthening | 5 | EVENT_IDENTITY=5
-44959 | 2026-06-16T20:04:25.181000+00:00 | GRB 260610B / AT 2026owq: Liverpool Telescope confirmation of continuing optical rebrightening | 4 | EVENT_IDENTITY=4
-44963 | 2026-06-17T09:33:10.882000+00:00 | GRB 260610B / AT2026owq: SAO RAS optical observations of possible re-brightening | 3 | EVENT_IDENTITY=3
-44977 | 2026-06-18T10:47:10.471000+00:00 | GRB 260610B: AbAO optical observations | 2 | EVENT_IDENTITY=2
-44981 | 2026-06-18T19:32:02.167000+00:00 | GRB 260610B/AT 2026owq: FTW optical and NIR observations | 4 | EVENT_IDENTITY=4
-44993 | 2026-06-19T10:18:21.721000+00:00 | GRB 260610B/AT2026owq: 1.3m DFOT optical rebrightening detection | 5 | EVENT_IDENTITY=4, TRIGGER_TIME=1
-45004 | 2026-06-19T14:42:59.770000+00:00 | GRB 260610B: VLT/FORS2 spectroscopic observation suggests the non-thermal nature of the optical rebrightening | 3 | EVENT_IDENTITY=2, REDSHIFT_EVENT=1
-45007 | 2026-06-19T15:24:48.436000+00:00 | GRB 260610B: Further GRANDMA Optical Observations and re-brightening detection | 2 | EVENT_IDENTITY=2
+circular_id | created_on | subject | n_event_evidence | event_labels | n_photometry | photometry_types
+44901 | 2026-06-11T01:29:13.105000+00:00 | GRB 260610B: Fermi GBM Final Localization | 6 | EVENT_IDENTITY=2, LOCALIZATION=2, TRIGGER_INSTRUMENT=1, TRIGGER_TIME=1 | 0 | none
+44903 | 2026-06-11T02:49:52.775000+00:00 | GRB 260610B: GOTO optical counterpart candidate | 6 | EVENT_IDENTITY=4, TRIGGER_TIME=2 | 2 | detection=2
+44905 | 2026-06-11T06:31:15.998000+00:00 | GRB 260610B: DDOTI optical observations | 3 | EVENT_IDENTITY=3 | 1 | detection=1
+44909 | 2026-06-11T09:13:48.943000+00:00 | GRB 260610B: TRT optical observation | 2 | EVENT_IDENTITY=2 | 1 | detection=1
+44910 | 2026-06-11T11:00:56.882000+00:00 | GRB 260610B / AT2026owq: Early ATLAS observations | 11 | EVENT_IDENTITY=9, REDSHIFT_CONTEXT=1, TRIGGER_INSTRUMENT=1 | 4 | detection=2, upper_limit=2
+44911 | 2026-06-11T11:14:07.488000+00:00 | GRB 260610B / AT 2026owq: COLIBRÍ optical observations | 7 | EVENT_IDENTITY=7 | 4 | detection=4
+44914 | 2026-06-11T13:44:50.797000+00:00 | GRB 260610B: optical counterpart shows spectroscopic redshift of z=0.473 | 6 | EVENT_IDENTITY=4, REDSHIFT_EVENT=2 | 8 | detection=8
+44918 | 2026-06-11T22:05:25.819000+00:00 | GRB 260610B / AT2026owq: SAO RAS optical observations | 4 | EVENT_IDENTITY=3, TRIGGER_TIME=1 | 2 | detection=1, upper_limit=1
+44919 | 2026-06-12T07:06:28.617000+00:00 | GRB 260610B: IAC-80 Optical observations | 2 | EVENT_IDENTITY=2 | 8 | detection=8
+44920 | 2026-06-12T07:54:38.465000+00:00 | GRB 260610B / AT2026owq: OASDG optical observations | 4 | EVENT_IDENTITY=4 | 2 | detection=2
+44921 | 2026-06-12T08:27:15.580000+00:00 | GRB 260610B / AT2026owq: SVOM/VT optical observations | 5 | EVENT_IDENTITY=4, TRIGGER_TIME=1 | 4 | detection=4
+44927 | 2026-06-12T18:02:21.506000+00:00 | GRB 260610b: Liverpool Telescope optical observations | 2 | EVENT_IDENTITY=2 | 4 | detection=4
+44929 | 2026-06-13T06:35:11.272000+00:00 | GRB 260610B / AT2026owq: further SAO RAS optical observations | 3 | EVENT_IDENTITY=3 | 2 | detection=1, upper_limit=1
+44930 | 2026-06-13T13:50:34.176000+00:00 | GRB 260610B / AT2026owq: GRANDMA optical observations  | 3 | EVENT_IDENTITY=3 | 0 | none
+44931 | 2026-06-13T18:21:44.066000+00:00 | GRB 260610B: Fermi GBM Observation | 4 | EVENT_IDENTITY=2, REDSHIFT_EVENT=1, TRIGGER_TIME=1 | 0 | none
+44932 | 2026-06-13T19:36:46.093000+00:00 | GRB 260610B: further Liverpool Telescope optical observations | 2 | EVENT_IDENTITY=2 | 4 | detection=4
+44941 | 2026-06-14T21:57:00.740000+00:00 | GRB 260610B: ALMA detection | 2 | EVENT_IDENTITY=2 | 0 | none
+44944 | 2026-06-15T08:36:29.040000+00:00 | GRB 260610B: SVOM/GRM observation | 9 | EVENT_IDENTITY=4, LOCALIZATION=1, REDSHIFT_EVENT=1, TRIGGER_INSTRUMENT=2, TRIGGER_TIME=1 | 0 | none
+44946 | 2026-06-15T08:46:27.827000+00:00 | GRB 260610B: Terskol optical observations | 2 | EVENT_IDENTITY=2 | 4 | detection=2, upper_limit=2
+44955 | 2026-06-16T15:30:51.554000+00:00 | GRB 260610B / AT 2026owq: Possible re-brightening identified from Pan-STARRS observations | 9 | EVENT_IDENTITY=7, REDSHIFT_EVENT=1, TRIGGER_INSTRUMENT=1 | 8 | detection=8
+44958 | 2026-06-16T19:58:21.552000+00:00 | GRB 260610B / AT 2026owq: COLIBRÍ further observations and confirmation of the rebrigthening | 5 | EVENT_IDENTITY=5 | 4 | detection=4
+44959 | 2026-06-16T20:04:25.181000+00:00 | GRB 260610B / AT 2026owq: Liverpool Telescope confirmation of continuing optical rebrightening | 4 | EVENT_IDENTITY=4 | 4 | detection=4
+44963 | 2026-06-17T09:33:10.882000+00:00 | GRB 260610B / AT2026owq: SAO RAS optical observations of possible re-brightening | 3 | EVENT_IDENTITY=3 | 6 | detection=3, upper_limit=3
+44977 | 2026-06-18T10:47:10.471000+00:00 | GRB 260610B: AbAO optical observations | 2 | EVENT_IDENTITY=2 | 2 | detection=1, upper_limit=1
+44981 | 2026-06-18T19:32:02.167000+00:00 | GRB 260610B/AT 2026owq: FTW optical and NIR observations | 4 | EVENT_IDENTITY=4 | 1 | detection=1
+44993 | 2026-06-19T10:18:21.721000+00:00 | GRB 260610B/AT2026owq: 1.3m DFOT optical rebrightening detection | 5 | EVENT_IDENTITY=4, TRIGGER_TIME=1 | 1 | detection=1
+45004 | 2026-06-19T14:42:59.770000+00:00 | GRB 260610B: VLT/FORS2 spectroscopic observation suggests the non-thermal nature of the optical rebrightening | 3 | EVENT_IDENTITY=2, REDSHIFT_EVENT=1 | 0 | none
+45007 | 2026-06-19T15:24:48.436000+00:00 | GRB 260610B: Further GRANDMA Optical Observations and re-brightening detection | 2 | EVENT_IDENTITY=2 | 0 | none
