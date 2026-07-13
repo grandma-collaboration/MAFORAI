@@ -279,6 +279,64 @@ def test_event_identity_negative_without_names() -> None:
     assert EventIdentityExtractor().extract(doc) == []
 
 
+def test_body_identity_repeated_from_subject_does_not_need_review() -> None:
+    doc = render_canonical(
+        circular_id=44910,
+        subject="GRB 260610B / AT2026owq: Early ATLAS observations",
+        body="ATLAS observed the sky location of AT2026owq four times.",
+    )
+
+    at_annotations = [
+        annotation
+        for annotation in EventIdentityExtractor().extract(doc)
+        if annotation.value == "AT 2026owq"
+    ]
+
+    assert len(at_annotations) == 2
+    assert all(not annotation.needs_review for annotation in at_annotations)
+    assert all(annotation.comment is None for annotation in at_annotations)
+
+
+def test_explicit_counterpart_alias_of_subject_event_does_not_need_review() -> None:
+    doc = render_canonical(
+        circular_id=44914,
+        subject="GRB 260610B: optical counterpart spectroscopy",
+        body=(
+            "We observed GOTO26fua/AT2026owq, the optical counterpart of "
+            "GRB 260610B, with NOT."
+        ),
+    )
+
+    at_annotation = next(
+        annotation
+        for annotation in EventIdentityExtractor().extract(doc)
+        if annotation.value == "AT 2026owq"
+    )
+
+    assert not at_annotation.needs_review
+    assert at_annotation.comment is None
+
+
+def test_unlinked_body_alias_absent_from_subject_still_needs_review() -> None:
+    doc = render_canonical(
+        circular_id=44903,
+        subject="GRB 260610B: GOTO optical counterpart candidate",
+        body="A new optical source GOTO26fua/AT2026owq is identified in the localization.",
+    )
+
+    at_annotation = next(
+        annotation
+        for annotation in EventIdentityExtractor().extract(doc)
+        if annotation.value == "AT 2026owq"
+    )
+
+    assert at_annotation.needs_review
+    assert at_annotation.comment == (
+        "Event name absent from the subject; verify whether it is an alias of the main "
+        "event or a referenced/comparison event."
+    )
+
+
 def test_event_identity_does_not_match_gcn_reference_number() -> None:
     doc = render_canonical(
         circular_id=3,

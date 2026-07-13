@@ -40,6 +40,10 @@ ALWAYS_REVIEW_RULE_IDS = frozenset(
     }
 )
 TABLE_FILTER_RULE_IDS = frozenset({"event_identity.at_sn", "event_identity.ztf"})
+_EXPLICIT_EVENT_ALIAS_RE = re.compile(
+    r"\b(?:the\s+)?(?:optical\s+)?(?:counterpart|afterglow)\s+(?:of|to)\b",
+    re.IGNORECASE,
+)
 _CANONICAL_IDENTITY_PATTERNS = (
     re.compile(r"^GRB \d{6}(?:[A-Z]|\.\d+)?$"),
     re.compile(r"^EP \d{6}(?:[a-z]|\.\d+)$"),
@@ -102,8 +106,16 @@ class EventIdentityExtractor:
         annotations: list[EventEvidenceAnnotation] = []
         for candidate in _selected_candidates(doc.rendered_text, self._rules):
             is_always_review = candidate.rule.rule_id in ALWAYS_REVIEW_RULE_IDS
-            is_in_header = candidate.value in header_values
-            needs_review = True if is_always_review else not is_in_header
+            is_confirmed_event = (
+                candidate.value in header_values
+                or _is_explicit_body_alias_of_subject_event(
+                    doc.rendered_text,
+                    candidate,
+                    header_values,
+                    self._rules,
+                )
+            )
+            needs_review = True if is_always_review else not is_confirmed_event
             annotations.append(
                 EventEvidenceAnnotation(
                     circular_id=doc.circular_id,
@@ -140,6 +152,36 @@ def _header_text(doc: CanonicalDocument) -> str:
         if segment.name == "header":
             return segment.text
     return ""
+
+
+def _is_explicit_body_alias_of_subject_event(
+    text: str,
+    candidate: _Candidate,
+    header_values: set[str],
+    rules: tuple[_Rule, ...],
+) -> bool:
+    """Accept a body alias only when the text explicitly links it to the subject.
+
+    A different identity in the body remains reviewable by default. The narrow
+    exception is a paragraph that contains both the candidate and a confirmed
+    subject identity and explicitly calls one the counterpart/afterglow of the
+    other. This covers statements such as ``AT... the optical counterpart of
+    GRB...`` without treating a merely nearby comparison event as an alias.
+    """
+
+    if not header_values:
+        return False
+    paragraph_start = text.rfind("\n\n", 0, candidate.start)
+    paragraph_start = 0 if paragraph_start < 0 else paragraph_start + 2
+    paragraph_end = text.find("\n\n", candidate.end)
+    paragraph_end = len(text) if paragraph_end < 0 else paragraph_end
+    paragraph = text[paragraph_start:paragraph_end]
+    if not _EXPLICIT_EVENT_ALIAS_RE.search(paragraph):
+        return False
+    paragraph_values = {
+        match.value for match in _selected_candidates(paragraph, rules)
+    }
+    return bool(header_values.intersection(paragraph_values))
 
 
 def _selected_candidates(text: str, rules: tuple[_Rule, ...]) -> list[_Candidate]:
