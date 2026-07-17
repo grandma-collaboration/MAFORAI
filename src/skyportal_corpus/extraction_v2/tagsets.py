@@ -7,7 +7,6 @@ LABELS = frozenset(
         "TRIGGER_INSTRUMENT",
         "LOCALIZATION",
         "COUNTERPART_ASSOCIATION",
-        "PHOTOMETRY_TABLE",
         "REDSHIFT_EVENT",
         "REDSHIFT_CONTEXT",
         "T90",
@@ -16,7 +15,6 @@ LABELS = frozenset(
         "HIGH_ENERGY_PROPERTY",
         "HOST_CONTEXT",
         "CLASSIFICATION_INTERPRETATION",
-        "FOLLOWUP_ACTION",
         "NEGATIVE_STATEMENT",
         "LIGHTCURVE_EVOLUTION",
     }

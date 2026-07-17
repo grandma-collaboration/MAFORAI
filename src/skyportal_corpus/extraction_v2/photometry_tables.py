@@ -6,11 +6,6 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from skyportal_corpus.canonical.document import CanonicalDocument
-from skyportal_corpus.extraction_v2.annotations import EventEvidenceAnnotation
-
-
-PHOTOMETRY_TABLE_REVIEW_COMMENT = "Photometry table detected; per-row measurements pending parsing."
 TABLE_ROLES = frozenset(
     {
         "time",
@@ -296,45 +291,6 @@ def infer_column_role_confidences(block: TableBlock) -> dict[int, float]:
 
 def infer_time_subtypes(block: TableBlock) -> dict[int, str | None]:
     return {index: role.time_subtype for index, role in infer_column_roles(block).items() if role.role == "time"}
-
-
-def emit_photometry_table_annotations(doc: CanonicalDocument) -> list[EventEvidenceAnnotation]:
-    annotations: list[EventEvidenceAnnotation] = []
-    for block in detect_table_blocks(doc.rendered_text):
-        text = doc.rendered_text[block.start_offset : block.end_offset]
-        annotation = EventEvidenceAnnotation(
-            circular_id=doc.circular_id,
-            text_sha256=doc.text_sha256,
-            span_start=block.start_offset,
-            span_end=block.end_offset,
-            text=text,
-            label="PHOTOMETRY_TABLE",
-            target="event",
-            certainty="confirmed",
-            value="",
-            extractor_id="photometry-table-v1",
-            extractor_version="0.1",
-            method="heuristic",
-            rule_id=f"photometry_table.{block.delimiter_type}",
-            confidence=0.8,
-            needs_review=True,
-            comment=PHOTOMETRY_TABLE_REVIEW_COMMENT,
-        )
-        if not annotation.verify(doc.rendered_text):
-            raise ValueError(
-                f"PHOTOMETRY_TABLE annotation failed offset verification: "
-                f"{annotation.span_start}-{annotation.span_end}"
-            )
-        annotations.append(annotation)
-    return annotations
-
-
-class PhotometryTableExtractor:
-    extractor_id = "photometry-table-v1"
-    extractor_version = "0.1"
-
-    def extract(self, doc: CanonicalDocument) -> list[EventEvidenceAnnotation]:
-        return emit_photometry_table_annotations(doc)
 
 
 def _iter_lines(text: str) -> list[_Line]:

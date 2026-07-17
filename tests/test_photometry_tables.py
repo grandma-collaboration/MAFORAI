@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import skyportal_corpus.extraction_v2.photometry_tables as photometry_tables
 from skyportal_corpus.canonical.document import render_canonical
 from skyportal_corpus.extraction_v2.photometry_tables import (
     ColumnRole,
     detect_table_blocks,
-    emit_photometry_table_annotations,
     infer_column_roles,
     split_row,
 )
@@ -199,21 +199,16 @@ def test_content_signature_exposure_and_numeric_magnitude_disambiguation() -> No
     assert roles[2].time_subtype is None
 
 
-def test_photometry_table_annotation_verifies_and_needs_review() -> None:
+def test_photometry_table_detection_does_not_emit_event_evidence() -> None:
     doc = _doc(
         "| Date | Tel | Exp | Filter | Mag |\n"
         "| 2024-10-25T02:46:16 | KNC-iT11 | 4x180s | R | >18.5 (U.L) |\n"
         "| 2024-10-25T03:10:00 | KNC-iT11 | 4x180s | R | 19.2 +/- 0.2 |\n"
     )
 
-    annotations = emit_photometry_table_annotations(doc)
-
-    assert len(annotations) == 1
-    assert annotations[0].label == "PHOTOMETRY_TABLE"
-    assert annotations[0].rule_id == "photometry_table.pipe"
-    assert annotations[0].needs_review
-    assert annotations[0].comment == "Photometry table detected; per-row measurements pending parsing."
-    assert annotations[0].verify(doc.rendered_text)
+    assert len(detect_table_blocks(doc.rendered_text)) == 1
+    assert not hasattr(photometry_tables, "emit_photometry_table_annotations")
+    assert not hasattr(photometry_tables, "PhotometryTableExtractor")
 
 
 def test_sigma_ul_and_limiting_magnitude_headers_are_magnitude_not_error() -> None:
