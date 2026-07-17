@@ -51,6 +51,14 @@ human review
 | [04_extractors/localization.md](./04_extractors/localization.md) | The `LOCALIZATION` extractor for RA/Dec positions and uncertainty spans. |
 | [04_extractors/trigger_instrument.md](./04_extractors/trigger_instrument.md) | The `TRIGGER_INSTRUMENT` extractor, instrument vocabulary, trigger/follow-up gates, and false-positive gates. |
 | [04_extractors/redshift.md](./04_extractors/redshift.md) | The redshift extractor for `REDSHIFT_EVENT` and `REDSHIFT_CONTEXT`, including the attribution safety policy. |
+| [04_extractors/duration.md](./04_extractors/duration.md) | The `T90` and `DURATION_GENERAL` extractor, duration boundaries, normalization, and scientific-context comments. |
+| [04_extractors/high_energy.md](./04_extractors/high_energy.md) | The `HIGH_ENERGY_PROPERTY` extractor, property normalization, units, governing energy bands, and exclusion gates. |
+| [04_extractors/negative_statement.md](./04_extractors/negative_statement.md) | The `NEGATIVE_STATEMENT` extractor, rejection certainty, anti-photometry gate, and light-curve handoff. |
+| [04_extractors/lightcurve_evolution.md](./04_extractors/lightcurve_evolution.md) | The `LIGHTCURVE_EVOLUTION` extractor for observed qualitative behavior and its interpretation boundary. |
+| [04_extractors/counterpart_association.md](./04_extractors/counterpart_association.md) | The `COUNTERPART_ASSOCIATION` extractor, association certainty, conservative scope, and identity/negation gates. |
+| [04_extractors/classification_interpretation.md](./04_extractors/classification_interpretation.md) | The `CLASSIFICATION_INTERPRETATION` extractor for event classes, physical causes, and cross-label boundaries. |
+| [04_extractors/host_context.md](./04_extractors/host_context.md) | The `HOST_CONTEXT` extractor, host and nearby-galaxy targets, offset evidence, and redshift boundary. |
+| [04_extractors/spectroscopy.md](./04_extractors/spectroscopy.md) | The `SPECTROSCOPY` extractor for optical/NIR observations, spectra, features, and high-energy exclusions. |
 | [05_inception_export.md](./05_inception_export.md) | XMI export, INCEpTION import, and round-trip verification. |
 | [06_glossary.md](./06_glossary.md) | Short definitions of the terms used by the pipeline. |
 | [07_status_and_roadmap.md](./07_status_and_roadmap.md) | What is implemented, what is missing, and the next roadmap areas. |

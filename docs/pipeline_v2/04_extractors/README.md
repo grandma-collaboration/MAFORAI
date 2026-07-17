@@ -78,3 +78,11 @@ Use the project interpreter directly:
 | `LocalizationExtractor` | `LOCALIZATION` | 3 | [localization.md](./localization.md) |
 | `TriggerInstrumentExtractor` | `TRIGGER_INSTRUMENT` | 16 instrument rules | [trigger_instrument.md](./trigger_instrument.md) |
 | `RedshiftExtractor` | `REDSHIFT_EVENT`, `REDSHIFT_CONTEXT` | 4 | [redshift.md](./redshift.md) |
+| `DurationExtractor` | `T90`, `DURATION_GENERAL` | 6 | [duration.md](./duration.md) |
+| `HighEnergyPropertyExtractor` | `HIGH_ENERGY_PROPERTY` | 10 | [high_energy.md](./high_energy.md) |
+| `NegativeStatementExtractor` | `NEGATIVE_STATEMENT` | 18 | [negative_statement.md](./negative_statement.md) |
+| `LightcurveEvolutionExtractor` | `LIGHTCURVE_EVOLUTION` | 5 | [lightcurve_evolution.md](./lightcurve_evolution.md) |
+| `CounterpartAssociationExtractor` | `COUNTERPART_ASSOCIATION` | 8 | [counterpart_association.md](./counterpart_association.md) |
+| `ClassificationInterpretationExtractor` | `CLASSIFICATION_INTERPRETATION` | 10 | [classification_interpretation.md](./classification_interpretation.md) |
+| `HostContextExtractor` | `HOST_CONTEXT` | 5 | [host_context.md](./host_context.md) |
+| `SpectroscopyExtractor` | `SPECTROSCOPY` | 3 | [spectroscopy.md](./spectroscopy.md) |

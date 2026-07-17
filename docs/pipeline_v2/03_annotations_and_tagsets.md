@@ -36,7 +36,7 @@ The method `verify(rendered_text)` checks exactly that condition and also confir
 
 The tagsets are the single source of truth for extractor outputs and must match the `EVENT_EVIDENCE` layer in INCEpTION.
 
-### Labels: 17 Values
+### Labels: 15 Values
 
 ```text
 EVENT_IDENTITY
@@ -44,7 +44,6 @@ TRIGGER_TIME
 TRIGGER_INSTRUMENT
 LOCALIZATION
 COUNTERPART_ASSOCIATION
-PHOTOMETRY_TABLE
 REDSHIFT_EVENT
 REDSHIFT_CONTEXT
 T90
@@ -53,7 +52,6 @@ SPECTROSCOPY
 HIGH_ENERGY_PROPERTY
 HOST_CONTEXT
 CLASSIFICATION_INTERPRETATION
-FOLLOWUP_ACTION
 NEGATIVE_STATEMENT
 LIGHTCURVE_EVOLUTION
 ```
@@ -84,4 +82,3 @@ unclear
 When an extractor sees an event name that may be a referenced comparison event rather than the main Circular event, it still uses `target="event"` and sets `needs_review=True`.
 
 For example, `EventIdentityExtractor` marks an event name as lower confidence when the normalized value appears only in the body and not in the header. The human annotator then decides whether it is an alias for the main event or a referenced event.
-
