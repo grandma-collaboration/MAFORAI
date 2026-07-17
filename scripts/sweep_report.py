@@ -23,6 +23,7 @@ from skyportal_corpus.extraction_v2.sweep import (  # noqa: E402
     flag_suspicious,
     review_rate,
     run_sweep,
+    samples_by_rule,
 )
 
 
@@ -38,6 +39,11 @@ def main() -> int:
     )
     annotations = list(sweep["annotations"])
     flagged = flag_suspicious(annotations, sweep.get("rendered_text_by_circular_id", {}))
+    rule_samples = samples_by_rule(
+        annotations,
+        sweep.get("rendered_text_by_circular_id", {}),
+    )
+    anomaly_flags = _anomaly_flagged(flagged)
     run_meta = build_run_meta(
         mode=str(mode["label"]),
         n_circulars_processed=int(sweep["n_circulars_processed"]),
@@ -50,6 +56,7 @@ def main() -> int:
         "review_rate": review_rate(annotations),
         "rule_counts": aggregate_by_rule(annotations),
         "flag_counts": flag_summary(flagged),
+        "anomaly_flag_counts": flag_summary(anomaly_flags),
         "by_year": {
             "circulars": dict(dict(sweep.get("by_year") or {}).get("circulars") or {}),
             "coverage": coverage_stats_by_year(sweep),
@@ -69,6 +76,8 @@ def main() -> int:
         "aggregates": aggregates,
         "annotations": annotations,
         "flagged": flagged,
+        "anomaly_flags": anomaly_flags,
+        "rule_samples": rule_samples,
         "gaps": sweep.get("gaps", {}),
         "errors": sweep["errors"],
     }
@@ -76,7 +85,7 @@ def main() -> int:
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(_render_report(mode, sweep, flagged, aggregates))
+    print(_render_report(mode, sweep, flagged, aggregates, rule_samples))
     print(f"\nJSON: {OUT_PATH.relative_to(PROJECT_ROOT)}")
     return 0
 
@@ -172,6 +181,7 @@ def _render_report(
     sweep: dict[str, Any],
     flagged: list[dict[str, Any]],
     aggregates: dict[str, Any],
+    rule_samples: dict[str, list[dict[str, Any]]],
 ) -> str:
     lines: list[str] = []
     annotations = list(sweep["annotations"])
@@ -227,6 +237,59 @@ def _render_report(
         else:
             lines.append("  (none)")
 
+    gaps = dict(sweep.get("gaps") or {})
+    if "duration" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - DURATION (signal present, zero annotations)",
+            list(gaps.get("duration") or []),
+        )
+    if "high_energy" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - HIGH ENERGY (signal present, zero annotations)",
+            list(gaps.get("high_energy") or []),
+        )
+    if "negative_statement" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - NEGATIVE STATEMENT (signal present, zero annotations)",
+            list(gaps.get("negative_statement") or []),
+        )
+    if "lightcurve_evolution" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - LIGHTCURVE EVOLUTION (signal present, zero annotations)",
+            list(gaps.get("lightcurve_evolution") or []),
+        )
+    if "counterpart_association" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - COUNTERPART ASSOCIATION (signal present, zero annotations)",
+            list(gaps.get("counterpart_association") or []),
+        )
+    if "classification_interpretation" in dict(
+        sweep.get("extractors") or {}
+    ):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - CLASSIFICATION INTERPRETATION "
+            "(signal present, zero annotations)",
+            list(gaps.get("classification_interpretation") or []),
+        )
+    if "host_context" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - HOST CONTEXT (signal present, zero annotations)",
+            list(gaps.get("host_context") or []),
+        )
+    if "spectroscopy" in dict(sweep.get("extractors") or {}):
+        _append_signal_gap_section(
+            lines,
+            "GAPS - SPECTROSCOPY (signal present, zero annotations)",
+            list(gaps.get("spectroscopy") or []),
+        )
+
     lines.append("")
     lines.append("REVIEW RATE")
     lines.append("  extractor        total  needs_review  rate")
@@ -241,6 +304,47 @@ def _render_report(
     if aggregates["rule_counts"]:
         for rule_id, count in aggregates["rule_counts"].items():
             lines.append(f"  {rule_id:<38} {count}")
+    else:
+        lines.append("  (none)")
+
+    lines.append("")
+    lines.append("DURATION / HIGH-ENERGY ANOMALY FLAGS")
+    anomaly_by_type = _flagged_by_type(_anomaly_flagged(flagged))
+    if anomaly_by_type:
+        for flag_name in ("duration_out_of_range", "high_energy_implausible", "missing_unit"):
+            items = anomaly_by_type.get(flag_name, [])
+            if not items:
+                continue
+            lines.append(f"  {flag_name}: {len(items)}")
+            for item in items:
+                lines.append(
+                    "    - "
+                    f"circular_id={item.get('circular_id')} "
+                    f"value={item.get('value')!r} "
+                    f"unit={item.get('unit')!r} "
+                    f"rule_id={item.get('rule_id')}"
+                )
+                lines.append(f"      LINE: {item.get('source_line', '')}")
+    else:
+        lines.append("  (none)")
+
+    lines.append("")
+    lines.append("RULE SAMPLES WITH CONTEXT")
+    if rule_samples:
+        for rule_id, samples in rule_samples.items():
+            lines.append(f"  {rule_id}: {len(samples)} sample(s)")
+            for sample in samples:
+                lines.append(
+                    "    - "
+                    f"circular_id={sample.get('circular_id')} "
+                    f"label={sample.get('label')} "
+                    f"value={sample.get('value')!r} "
+                    f"unit={sample.get('unit')!r} "
+                    f"comment={sample.get('comment')!r}"
+                )
+                lines.append(f"      SOURCE_TEXT: {sample.get('text')!r}")
+                lines.append(f"      SOURCE_LINE: {sample.get('source_line', '')}")
+                lines.append(f"      CONTEXT:     {sample.get('context_window', '')}")
     else:
         lines.append("  (none)")
 
@@ -315,6 +419,71 @@ def _flagged_by_type(flagged: list[dict[str, Any]]) -> dict[str, list[dict[str, 
         for flag in item.get("flags", []):
             by_flag[str(flag)].append(item)
     return dict(sorted(by_flag.items()))
+
+
+def _anomaly_flagged(flagged: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    anomaly_names = {
+        "duration_out_of_range",
+        "high_energy_implausible",
+        "missing_unit",
+    }
+    return [
+        item
+        for item in flagged
+        if anomaly_names.intersection(str(flag) for flag in item.get("flags", []))
+    ]
+
+
+def _append_signal_gap_section(
+    lines: list[str],
+    title: str,
+    gaps: list[dict[str, Any]],
+) -> None:
+    lines.append("")
+    lines.append(title)
+    lines.append(f"  total gaps: {len(gaps)}")
+    if not gaps:
+        lines.append("  (none)")
+        return
+    for year, year_gaps in _gaps_by_year(gaps).items():
+        lines.append(f"  {year}: {len(year_gaps)}")
+    examples = _distributed_gap_examples(gaps, max_items=20)
+    lines.append(f"  examples shown: {len(examples)}")
+    for gap in examples:
+        lines.append(
+            "    - "
+            f"circular_id={gap.get('circular_id')} "
+            f"year={gap.get('year')} "
+            f"subject={gap.get('subject')}"
+        )
+        lines.append(f"      SIGNAL: {gap.get('signal')!r}")
+        lines.append(f"      LINE:   {gap.get('source_line', '')}")
+
+
+def _distributed_gap_examples(
+    gaps: list[dict[str, Any]],
+    max_items: int,
+) -> list[dict[str, Any]]:
+    grouped = {
+        year: sorted(items, key=lambda item: int(item.get("circular_id") or 0))
+        for year, items in _gaps_by_year(gaps).items()
+    }
+    selected: list[dict[str, Any]] = []
+    index = 0
+    while len(selected) < max_items:
+        added = False
+        for year in sorted(grouped, key=_year_sort_key):
+            items = grouped[year]
+            if index >= len(items):
+                continue
+            selected.append(items[index])
+            added = True
+            if len(selected) >= max_items:
+                break
+        if not added:
+            break
+        index += 1
+    return selected
 
 
 def _gaps_by_year(gaps: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:

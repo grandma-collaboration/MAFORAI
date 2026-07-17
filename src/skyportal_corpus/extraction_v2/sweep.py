@@ -12,11 +12,67 @@ from skyportal_corpus.canonical.document import (
     render_canonical,
 )
 from skyportal_corpus.extraction_v2.annotations import EventEvidenceAnnotation
+from skyportal_corpus.extraction_v2.classification_interpretation import (
+    CLASSIFICATION_SIGNAL_RE,
+    ClassificationInterpretationExtractor,
+)
+from skyportal_corpus.extraction_v2.counterpart_association import (
+    COUNTERPART_SIGNAL_RE,
+    CounterpartAssociationExtractor,
+)
+from skyportal_corpus.extraction_v2.duration import DurationExtractor
 from skyportal_corpus.extraction_v2.event_identity import EventIdentityExtractor, is_canonical_identity
+from skyportal_corpus.extraction_v2.high_energy import HighEnergyPropertyExtractor
+from skyportal_corpus.extraction_v2.host_context import (
+    HOST_CONTEXT_SIGNAL_RE,
+    HostContextExtractor,
+)
+from skyportal_corpus.extraction_v2.lightcurve_evolution import (
+    LIGHTCURVE_SIGNAL_RE,
+    LightcurveEvolutionExtractor,
+)
 from skyportal_corpus.extraction_v2.localization import LocalizationExtractor
+from skyportal_corpus.extraction_v2.negative_statement import (
+    NEGATIVE_SIGNAL_RE,
+    NegativeStatementExtractor,
+)
 from skyportal_corpus.extraction_v2.redshift import RedshiftExtractor
+from skyportal_corpus.extraction_v2.spectroscopy import (
+    SPECTROSCOPY_SIGNAL_RE,
+    SpectroscopyExtractor,
+)
 from skyportal_corpus.extraction_v2.trigger_instrument import TriggerInstrumentExtractor
 from skyportal_corpus.extraction_v2.trigger_time import TriggerTimeExtractor
+
+
+_DURATION_GAP_SIGNAL_RE = re.compile(
+    r"\b(?:T90|T50|burst\s+duration|duration|lasted)\b",
+    re.IGNORECASE,
+)
+_HIGH_ENERGY_GAP_SIGNAL_RE = re.compile(
+    r"\b(?:"
+    r"fluence|E[_ ]?peak|peak\s+flux|power[- ]law\s+index|photon\s+index|"
+    r"E[_ ]?iso|cutoff\s+energy|Band\s+function|spectral\s+index"
+    r")\b",
+    re.IGNORECASE,
+)
+_PRIMARY_NUMBER_RE = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)")
+_SCIENTIFIC_EXPONENT_RE = re.compile(
+    r"(?:"
+    r"[Ee]\s*(?P<direct>[+-]?\d+)|"
+    r"[xX*×]\s*10\s*(?:\^\s*)?\(?\s*(?P<times_ten>[+-]?\d+)\s*\)?|"
+    r"\*\s*[Ee]\s*(?P<star_e>[+-]?\d+)"
+    r")",
+)
+DIMENSIONLESS_RULES = frozenset(
+    {
+        "high_energy.powerlaw_index",
+        "high_energy.photon_index",
+        "high_energy.spectral_index",
+        "high_energy.alpha",
+        "high_energy.beta",
+    }
+)
 
 
 class _Extractor(Protocol):
@@ -45,6 +101,14 @@ def run_sweep(
     circulars_by_year: Counter[str] = Counter()
     extractor_stats_by_year: dict[str, dict[str, dict[str, int]]] = {name: {} for name in extractor_map}
     event_identity_gaps: list[dict[str, Any]] = []
+    duration_gaps: list[dict[str, Any]] = []
+    high_energy_gaps: list[dict[str, Any]] = []
+    negative_statement_gaps: list[dict[str, Any]] = []
+    lightcurve_evolution_gaps: list[dict[str, Any]] = []
+    counterpart_association_gaps: list[dict[str, Any]] = []
+    classification_interpretation_gaps: list[dict[str, Any]] = []
+    host_context_gaps: list[dict[str, Any]] = []
+    spectroscopy_gaps: list[dict[str, Any]] = []
     processed = 0
 
     circular_iterable = _circular_iterable(limit=limit, per_year=per_year, circulars=circulars)
@@ -90,6 +154,38 @@ def run_sweep(
                         "subject": doc.subject,
                     }
                 )
+            elif extractor_name == "duration":
+                gap = _signal_gap(doc, year, _DURATION_GAP_SIGNAL_RE)
+                if gap is not None:
+                    duration_gaps.append(gap)
+            elif extractor_name == "high_energy":
+                gap = _signal_gap(doc, year, _HIGH_ENERGY_GAP_SIGNAL_RE)
+                if gap is not None:
+                    high_energy_gaps.append(gap)
+            elif extractor_name == "negative_statement":
+                gap = _signal_gap(doc, year, NEGATIVE_SIGNAL_RE)
+                if gap is not None:
+                    negative_statement_gaps.append(gap)
+            elif extractor_name == "lightcurve_evolution":
+                gap = _signal_gap(doc, year, LIGHTCURVE_SIGNAL_RE)
+                if gap is not None:
+                    lightcurve_evolution_gaps.append(gap)
+            elif extractor_name == "counterpart_association":
+                gap = _signal_gap(doc, year, COUNTERPART_SIGNAL_RE)
+                if gap is not None:
+                    counterpart_association_gaps.append(gap)
+            elif extractor_name == "classification_interpretation":
+                gap = _signal_gap(doc, year, CLASSIFICATION_SIGNAL_RE)
+                if gap is not None:
+                    classification_interpretation_gaps.append(gap)
+            elif extractor_name == "host_context":
+                gap = _signal_gap(doc, year, HOST_CONTEXT_SIGNAL_RE)
+                if gap is not None:
+                    host_context_gaps.append(gap)
+            elif extractor_name == "spectroscopy":
+                gap = _signal_gap(doc, year, SPECTROSCOPY_SIGNAL_RE)
+                if gap is not None:
+                    spectroscopy_gaps.append(gap)
             stats[extractor_name]["n_annotations"] += len(extracted)
             _year_extractor_stats(extractor_stats_by_year, extractor_name, year_key)["n_annotations"] += len(extracted)
             for annotation in extracted:
@@ -108,7 +204,17 @@ def run_sweep(
         },
         "annotations": annotations,
         "errors": errors,
-        "gaps": {"event_identity": event_identity_gaps},
+        "gaps": {
+            "event_identity": event_identity_gaps,
+            "duration": duration_gaps,
+            "high_energy": high_energy_gaps,
+            "negative_statement": negative_statement_gaps,
+            "lightcurve_evolution": lightcurve_evolution_gaps,
+            "counterpart_association": counterpart_association_gaps,
+            "classification_interpretation": classification_interpretation_gaps,
+            "host_context": host_context_gaps,
+            "spectroscopy": spectroscopy_gaps,
+        },
         "rendered_text_by_circular_id": rendered_text_by_circular_id,
         "mode": {"limit": limit, "per_year": per_year, "only_extractors": list(extractor_map)},
     }
@@ -133,6 +239,7 @@ def flag_suspicious(
             flags.append("trigger_value_not_iso")
         if label == "LOCALIZATION" and _localization_out_of_range(value):
             flags.append("localization_out_of_range")
+        flags.extend(_scientific_anomaly_flags(annotation))
         if bool(annotation.get("needs_review")):
             flags.append("needs_review_true")
 
@@ -143,6 +250,8 @@ def flag_suspicious(
                 "extractor": annotation.get("extractor"),
                 "label": label,
                 "value": value,
+                "unit": annotation.get("unit"),
+                "comment": annotation.get("comment"),
                 "text": text,
                 "span_start": annotation.get("span_start"),
                 "span_end": annotation.get("span_end"),
@@ -153,6 +262,57 @@ def flag_suspicious(
                 _attach_context(flagged, annotation, rendered_text_by_circular_id)
             suspicious.append(flagged)
     return suspicious
+
+
+def samples_by_rule(
+    annotations: list[Mapping[str, Any]],
+    rendered_text_by_circular_id: Mapping[str, str] | Mapping[int, str],
+    max_per_rule: int = 5,
+) -> dict[str, list[dict[str, Any]]]:
+    """Return deterministic duration/high-energy examples with source context."""
+
+    samples: dict[str, list[dict[str, Any]]] = {}
+    ordered = sorted(
+        annotations,
+        key=lambda annotation: (
+            str(annotation.get("rule_id") or "unknown"),
+            _safe_int(annotation.get("circular_id")),
+            _safe_int(annotation.get("span_start")),
+        ),
+    )
+    for annotation in ordered:
+        extractor = str(annotation.get("extractor") or "")
+        if extractor not in {"duration", "high_energy"}:
+            continue
+        rule_id = str(annotation.get("rule_id") or "unknown")
+        rule_samples = samples.setdefault(rule_id, [])
+        if len(rule_samples) >= max_per_rule:
+            continue
+        rendered_text = _rendered_text_for_annotation(annotation, rendered_text_by_circular_id)
+        if rendered_text is None:
+            continue
+        try:
+            start = int(annotation.get("span_start"))
+            end = int(annotation.get("span_end"))
+        except (TypeError, ValueError):
+            continue
+        if not (0 <= start < end <= len(rendered_text)):
+            continue
+        rule_samples.append(
+            {
+                "circular_id": annotation.get("circular_id"),
+                "year": annotation.get("year"),
+                "extractor": extractor,
+                "label": annotation.get("label"),
+                "value": annotation.get("value"),
+                "unit": annotation.get("unit"),
+                "comment": annotation.get("comment"),
+                "text": annotation.get("text"),
+                "source_line": _source_line(rendered_text, start),
+                "context_window": _context_window(rendered_text, start, end, radius=80),
+            }
+        )
+    return dict(sorted(samples.items()))
 
 
 def aggregate_by_rule(annotations: list[Mapping[str, Any]]) -> dict[str, int]:
@@ -235,6 +395,14 @@ def get_active_extractors() -> list[_Extractor]:
         LocalizationExtractor(),
         TriggerInstrumentExtractor(),
         RedshiftExtractor(),
+        DurationExtractor(),
+        HighEnergyPropertyExtractor(),
+        NegativeStatementExtractor(),
+        LightcurveEvolutionExtractor(),
+        CounterpartAssociationExtractor(),
+        ClassificationInterpretationExtractor(),
+        HostContextExtractor(),
+        SpectroscopyExtractor(),
     ]
 
 
@@ -452,6 +620,133 @@ def _localization_out_of_range(value: str) -> bool:
     except ValueError:
         return False
     return not (0 <= ra <= 360 and -90 <= dec <= 90)
+
+
+def _signal_gap(
+    doc: CanonicalDocument,
+    year: int | None,
+    pattern: re.Pattern[str],
+) -> dict[str, Any] | None:
+    search_ranges = [
+        (segment.start, segment.end)
+        for segment in doc.segments
+        if segment.name == "body"
+    ]
+    search_ranges.append((0, len(doc.rendered_text)))
+    for range_start, range_end in search_ranges:
+        match = pattern.search(doc.rendered_text, range_start, range_end)
+        if match is None:
+            continue
+        return {
+            "circular_id": doc.circular_id,
+            "year": year,
+            "subject": doc.subject,
+            "signal": match.group(0),
+            "source_line": _source_line(doc.rendered_text, match.start()),
+        }
+    return None
+
+
+def _scientific_anomaly_flags(annotation: Mapping[str, Any]) -> list[str]:
+    extractor = str(annotation.get("extractor") or "")
+    value = str(annotation.get("value") or "")
+    unit = str(annotation.get("unit") or "").strip()
+    rule_id = str(annotation.get("rule_id") or "")
+    flags: list[str] = []
+
+    if extractor == "duration":
+        seconds = _duration_seconds(value, unit)
+        if seconds is not None and not 0.001 <= seconds <= 10000:
+            flags.append("duration_out_of_range")
+        if not unit:
+            flags.append("missing_unit")
+        return flags
+
+    if extractor != "high_energy":
+        return flags
+
+    primary_value = _primary_scientific_value(value)
+    if primary_value is not None and _high_energy_value_out_of_range(
+        primary_value,
+        unit,
+        rule_id,
+    ):
+        flags.append("high_energy_implausible")
+    if not unit and rule_id not in DIMENSIONLESS_RULES:
+        flags.append("missing_unit")
+    return flags
+
+
+def _duration_seconds(value: str, unit: str) -> float | None:
+    numeric = _primary_scientific_value(value)
+    if numeric is None or not unit:
+        return None
+    normalized_unit = unit.lower().strip().rstrip(".")
+    if normalized_unit in {"ms", "msec", "millisecond", "milliseconds"}:
+        return numeric / 1000
+    if normalized_unit in {"s", "sec", "secs", "second", "seconds"}:
+        return numeric
+    return None
+
+
+def _high_energy_value_out_of_range(value: float, unit: str, rule_id: str) -> bool:
+    if rule_id == "high_energy.epeak":
+        value_kev = _energy_to_kev(value, unit)
+        return value_kev is not None and not 1 <= value_kev <= 100000
+    if rule_id == "high_energy.fluence":
+        return not 1e-9 <= abs(value) <= 1e-2
+    if rule_id in DIMENSIONLESS_RULES:
+        return not -10 <= value <= 5
+    if rule_id == "high_energy.eiso":
+        return not 1e45 <= abs(value) <= 1e56
+    return False
+
+
+def _energy_to_kev(value: float, unit: str) -> float | None:
+    normalized_unit = unit.lower().strip()
+    if normalized_unit == "kev":
+        return value
+    if normalized_unit == "mev":
+        return value * 1000
+    if normalized_unit == "gev":
+        return value * 1_000_000
+    return None
+
+
+def _primary_scientific_value(value: str) -> float | None:
+    payload = value.split("=", 1)[1] if "=" in value else value
+    number_match = _PRIMARY_NUMBER_RE.search(payload)
+    if number_match is None:
+        return None
+    try:
+        numeric = float(number_match.group(0))
+    except ValueError:
+        return None
+
+    exponent_match = _SCIENTIFIC_EXPONENT_RE.search(payload, number_match.end())
+    if exponent_match is None:
+        return numeric
+    exponent_raw = next(
+        (
+            exponent_match.group(name)
+            for name in ("direct", "times_ten", "star_e")
+            if exponent_match.group(name) is not None
+        ),
+        None,
+    )
+    if exponent_raw is None:
+        return numeric
+    try:
+        return numeric * (10.0 ** int(exponent_raw))
+    except OverflowError:
+        return float("inf") if numeric >= 0 else float("-inf")
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _attach_context(

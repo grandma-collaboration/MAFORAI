@@ -13,11 +13,16 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from scripts.alerts_report import sync_status  # noqa: E402
-from scripts.sweep_report import build_run_meta, compute_run_id  # noqa: E402
+from scripts.sweep_report import (  # noqa: E402
+    _distributed_gap_examples,
+    build_run_meta,
+    compute_run_id,
+)
 import skyportal_corpus.canonical.document as canonical_document  # noqa: E402
 from skyportal_corpus.canonical.document import CanonicalDocument  # noqa: E402
 from skyportal_corpus.extraction_v2.event_identity import EventIdentityExtractor  # noqa: E402
 from skyportal_corpus.extraction_v2.sweep import (  # noqa: E402
+    DIMENSIONLESS_RULES,
     aggregate_by_rule,
     alert_counts_by_year,
     coverage_stats,
@@ -27,11 +32,35 @@ from skyportal_corpus.extraction_v2.sweep import (  # noqa: E402
     get_active_extractors,
     review_rate,
     run_sweep,
+    samples_by_rule,
 )
 
 
 def _synthetic_body() -> str:
     return "This synthetic circular body is intentionally long enough for loader filtering. " * 4
+
+
+def _scientific_annotation(
+    circular_id: int,
+    extractor: str,
+    label: str,
+    value: str,
+    unit: str,
+    rule_id: str,
+) -> dict[str, object]:
+    return {
+        "circular_id": circular_id,
+        "year": 2026,
+        "extractor": extractor,
+        "label": label,
+        "value": value,
+        "unit": unit,
+        "text": value,
+        "span_start": 0,
+        "span_end": len(value),
+        "rule_id": rule_id,
+        "needs_review": False,
+    }
 
 
 def test_iter_stratified_circulars_samples_uniformly_by_year(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -174,7 +203,7 @@ def test_run_sweep_records_event_identity_gaps_with_subject() -> None:
     ]
 
 
-def test_get_active_extractors_includes_five_extractors() -> None:
+def test_get_active_extractors_includes_thirteen_extractors() -> None:
     extractor_ids = [extractor.extractor_id for extractor in get_active_extractors()]
 
     assert extractor_ids == [
@@ -183,6 +212,325 @@ def test_get_active_extractors_includes_five_extractors() -> None:
         "localization-v1",
         "trigger-instrument-v1",
         "redshift-v1",
+        "duration-v1",
+        "high-energy-v1",
+        "negative-statement-v1",
+        "lightcurve-evolution-v1",
+        "counterpart-association-v1",
+        "classification-interpretation-v1",
+        "host-context-v1",
+        "spectroscopy-v1",
+    ]
+
+
+def test_run_sweep_filters_duration_and_high_energy_extractors() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["duration", "high_energy"],
+        circulars=[
+            {
+                "circular_id": 48,
+                "subject": "GRB duration and spectrum",
+                "body": (
+                    "The burst has a T90 of 2.4 +/- 0.4 s. "
+                    "The power law index is -1.50 +/- 0.01."
+                ),
+            }
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"duration", "high_energy"}
+    assert {annotation["label"] for annotation in sweep["annotations"]} == {
+        "T90",
+        "HIGH_ENERGY_PROPERTY",
+    }
+
+
+def test_run_sweep_records_duration_and_high_energy_signal_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["duration", "high_energy"],
+        circulars=[
+            {
+                "circular_id": 70,
+                "year": 2023,
+                "subject": "Unconstrained duration",
+                "body": "The T90 could not be constrained from the available data.",
+            },
+            {
+                "circular_id": 71,
+                "year": 2024,
+                "subject": "Spectral analysis",
+                "body": "The photon index could not be constrained by this fit.",
+            },
+            {
+                "circular_id": 72,
+                "year": 2025,
+                "subject": "Measured duration and fluence",
+                "body": "The T90 is 2.0 s and the fluence is 1.2E-06 erg/cm^2.",
+            },
+        ],
+    )
+
+    assert sweep["gaps"]["duration"] == [
+        {
+            "circular_id": 70,
+            "year": 2023,
+            "subject": "Unconstrained duration",
+            "signal": "T90",
+            "source_line": "The T90 could not be constrained from the available data.",
+        }
+    ]
+    assert sweep["gaps"]["high_energy"] == [
+        {
+            "circular_id": 71,
+            "year": 2024,
+            "subject": "Spectral analysis",
+            "signal": "photon index",
+            "source_line": "The photon index could not be constrained by this fit.",
+        }
+    ]
+
+
+def test_run_sweep_filters_and_records_negative_statement_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["negative_statement"],
+        circulars=[
+            {
+                "circular_id": 73,
+                "year": 2024,
+                "subject": "Supernova constraint",
+                "body": "We find no evidence for a supernova.",
+            },
+            {
+                "circular_id": 74,
+                "year": 2025,
+                "subject": "Uncovered non-detection",
+                "body": "The counterpart was not detected.",
+            },
+            {
+                "circular_id": 75,
+                "year": 2026,
+                "subject": "Photometric non-detection",
+                "body": "There is no optical counterpart in our i-band images.",
+            },
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"negative_statement"}
+    assert sweep["extractors"]["negative_statement"] == {
+        "n_annotations": 1,
+        "n_circulars_with_at_least_one": 1,
+    }
+    assert len(sweep["annotations"]) == 1
+    assert sweep["annotations"][0]["label"] == "NEGATIVE_STATEMENT"
+    assert sweep["annotations"][0]["target"] is None
+    assert sweep["gaps"]["negative_statement"] == [
+        {
+            "circular_id": 74,
+            "year": 2025,
+            "subject": "Uncovered non-detection",
+            "signal": "not detected",
+            "source_line": "The counterpart was not detected.",
+        },
+        {
+            "circular_id": 75,
+            "year": 2026,
+            "subject": "Photometric non-detection",
+            "signal": "no optical counterpart",
+            "source_line": "There is no optical counterpart in our i-band images.",
+        },
+    ]
+
+
+def test_run_sweep_filters_and_records_lightcurve_evolution_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["lightcurve_evolution"],
+        circulars=[
+            {
+                "circular_id": 76,
+                "year": 2024,
+                "subject": "Observed optical evolution",
+                "body": "The source continues to fade.",
+            },
+            {
+                "circular_id": 77,
+                "year": 2025,
+                "subject": "Unconstrained light curve",
+                "body": "The light curve could not be characterized.",
+            },
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"lightcurve_evolution"}
+    assert sweep["extractors"]["lightcurve_evolution"] == {
+        "n_annotations": 1,
+        "n_circulars_with_at_least_one": 1,
+    }
+    assert sweep["annotations"][0]["label"] == "LIGHTCURVE_EVOLUTION"
+    assert sweep["annotations"][0]["target"] == "counterpart"
+    assert sweep["gaps"]["lightcurve_evolution"] == [
+        {
+            "circular_id": 77,
+            "year": 2025,
+            "subject": "Unconstrained light curve",
+            "signal": "light curve",
+            "source_line": "The light curve could not be characterized.",
+        }
+    ]
+
+
+def test_run_sweep_filters_and_records_counterpart_association_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["counterpart_association"],
+        circulars=[
+            {
+                "circular_id": 78,
+                "year": 2024,
+                "subject": "Optical association",
+                "body": "We identify one candidate optical counterpart.",
+            },
+            {
+                "circular_id": 79,
+                "year": 2025,
+                "subject": "Generic candidate discussion",
+                "body": "The candidate was discussed without an association claim.",
+            },
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"counterpart_association"}
+    assert sweep["extractors"]["counterpart_association"] == {
+        "n_annotations": 1,
+        "n_circulars_with_at_least_one": 1,
+    }
+    assert sweep["annotations"][0]["label"] == "COUNTERPART_ASSOCIATION"
+    assert sweep["annotations"][0]["target"] == "counterpart"
+    assert sweep["gaps"]["counterpart_association"] == [
+        {
+            "circular_id": 79,
+            "year": 2025,
+            "subject": "Generic candidate discussion",
+            "signal": "candidate",
+            "source_line": "The candidate was discussed without an association claim.",
+        }
+    ]
+
+
+def test_run_sweep_filters_and_records_classification_interpretation_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["classification_interpretation"],
+        circulars=[
+            {
+                "circular_id": 80,
+                "year": 2024,
+                "subject": "Physical interpretation",
+                "body": "This rebrightening may be due to late jet activity.",
+            },
+            {
+                "circular_id": 81,
+                "year": 2025,
+                "subject": "Unresolved classification",
+                "body": "A supernova interpretation remains under discussion.",
+            },
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"classification_interpretation"}
+    assert sweep["extractors"]["classification_interpretation"] == {
+        "n_annotations": 1,
+        "n_circulars_with_at_least_one": 1,
+    }
+    assert sweep["annotations"][0]["label"] == "CLASSIFICATION_INTERPRETATION"
+    assert sweep["annotations"][0]["target"] == "event"
+    assert sweep["gaps"]["classification_interpretation"] == [
+        {
+            "circular_id": 81,
+            "year": 2025,
+            "subject": "Unresolved classification",
+            "signal": "supernova",
+            "source_line": "A supernova interpretation remains under discussion.",
+        }
+    ]
+
+
+def test_run_sweep_filters_and_records_host_context_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["host_context"],
+        circulars=[
+            {
+                "circular_id": 82,
+                "year": 2025,
+                "subject": "Context report",
+                "body": "The host association is not obvious.",
+            },
+            {
+                "circular_id": 83,
+                "year": 2026,
+                "subject": "Galaxy redshift",
+                "body": "A galaxy redshift of z=0.42 is reported.",
+            },
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"host_context"}
+    assert sweep["extractors"]["host_context"] == {
+        "n_annotations": 1,
+        "n_circulars_with_at_least_one": 1,
+    }
+    assert sweep["annotations"][0]["label"] == "HOST_CONTEXT"
+    assert sweep["annotations"][0]["target"] == "host"
+    assert sweep["gaps"]["host_context"] == [
+        {
+            "circular_id": 83,
+            "year": 2026,
+            "subject": "Galaxy redshift",
+            "signal": "galaxy",
+            "source_line": "A galaxy redshift of z=0.42 is reported.",
+        }
+    ]
+
+
+def test_run_sweep_filters_and_records_spectroscopy_gaps() -> None:
+    sweep = run_sweep(
+        limit=10,
+        only_extractors=["spectroscopy"],
+        circulars=[
+            {
+                "circular_id": 84,
+                "year": 2025,
+                "subject": "Follow-up result",
+                "body": "We obtained spectroscopy with ALFOSC.",
+            },
+            {
+                "circular_id": 85,
+                "year": 2026,
+                "subject": "Follow-up request",
+                "body": "Further spectroscopic observations are encouraged.",
+            },
+        ],
+    )
+
+    assert set(sweep["extractors"]) == {"spectroscopy"}
+    assert sweep["extractors"]["spectroscopy"] == {
+        "n_annotations": 1,
+        "n_circulars_with_at_least_one": 1,
+    }
+    assert sweep["annotations"][0]["label"] == "SPECTROSCOPY"
+    assert sweep["annotations"][0]["target"] == "counterpart"
+    assert sweep["gaps"]["spectroscopy"] == [
+        {
+            "circular_id": 85,
+            "year": 2026,
+            "subject": "Follow-up request",
+            "signal": "spectroscop",
+            "source_line": "Further spectroscopic observations are encouraged.",
+        }
     ]
 
 
@@ -408,6 +756,107 @@ def test_flag_suspicious_marks_review_and_weird_formats() -> None:
     by_id = {item["circular_id"]: item for item in suspicious}
     assert set(by_id[30]["flags"]) == {"identity_value_weird", "needs_review_true"}
     assert by_id[31]["flags"] == ["trigger_value_not_iso"]
+
+
+def test_flag_suspicious_validates_duration_and_high_energy_ranges_and_units() -> None:
+    annotations = [
+        _scientific_annotation(80, "duration", "T90", "0.5", "ms", "duration.t90_explicit"),
+        _scientific_annotation(81, "duration", "T90", "5", "", "duration.t90_explicit"),
+        _scientific_annotation(82, "high_energy", "HIGH_ENERGY_PROPERTY", "Epeak = 200", "MeV", "high_energy.epeak"),
+        _scientific_annotation(83, "high_energy", "HIGH_ENERGY_PROPERTY", "fluence = 1E-10", "erg/cm^2", "high_energy.fluence"),
+        _scientific_annotation(84, "high_energy", "HIGH_ENERGY_PROPERTY", "alpha = 6", "", "high_energy.alpha"),
+        _scientific_annotation(85, "high_energy", "HIGH_ENERGY_PROPERTY", "Eiso = 1E44", "erg", "high_energy.eiso"),
+        _scientific_annotation(86, "high_energy", "HIGH_ENERGY_PROPERTY", "peak flux = 4", "", "high_energy.peak_flux"),
+        _scientific_annotation(87, "high_energy", "HIGH_ENERGY_PROPERTY", "beta = -2.3", "", "high_energy.beta"),
+        _scientific_annotation(
+            88,
+            "high_energy",
+            "HIGH_ENERGY_PROPERTY",
+            "photon index = 1.7",
+            "",
+            "high_energy.photon_index",
+        ),
+        _scientific_annotation(
+            89,
+            "high_energy",
+            "HIGH_ENERGY_PROPERTY",
+            "Epeak = 200",
+            "",
+            "high_energy.epeak",
+        ),
+    ]
+    rendered = {str(annotation["circular_id"]): str(annotation["text"]) for annotation in annotations}
+
+    flagged = flag_suspicious(annotations, rendered)
+    by_id = {item["circular_id"]: item for item in flagged}
+
+    assert by_id[80]["flags"] == ["duration_out_of_range"]
+    assert by_id[81]["flags"] == ["missing_unit"]
+    assert by_id[82]["flags"] == ["high_energy_implausible"]
+    assert by_id[83]["flags"] == ["high_energy_implausible"]
+    assert by_id[84]["flags"] == ["high_energy_implausible"]
+    assert by_id[85]["flags"] == ["high_energy_implausible"]
+    assert by_id[86]["flags"] == ["missing_unit"]
+    assert 87 not in by_id
+    assert 88 not in by_id
+    assert by_id[89]["flags"] == ["missing_unit"]
+    assert by_id[82]["unit"] == "MeV"
+    assert by_id[82]["source_line"] == "Epeak = 200"
+    assert by_id[82]["circular_id"] == 82
+    assert by_id[82]["rule_id"] == "high_energy.epeak"
+    assert by_id[82]["value"] == "Epeak = 200"
+    assert "⟦Epeak = 200⟧" in by_id[82]["context_window"]
+
+
+def test_dimensionless_rules_cover_all_supported_spectral_indices() -> None:
+    assert DIMENSIONLESS_RULES == frozenset(
+        {
+            "high_energy.powerlaw_index",
+            "high_energy.photon_index",
+            "high_energy.spectral_index",
+            "high_energy.alpha",
+            "high_energy.beta",
+        }
+    )
+
+
+def test_samples_by_rule_include_source_text_line_and_context() -> None:
+    rendered_text = "Before the fit. The T90 is 2.0 s in the detector. After the fit."
+    source_text = "T90 is 2.0 s"
+    start = rendered_text.index(source_text)
+    annotation = {
+        "circular_id": 90,
+        "year": 2026,
+        "extractor": "duration",
+        "label": "T90",
+        "value": "2.0",
+        "unit": "s",
+        "comment": "15-150 keV",
+        "text": source_text,
+        "span_start": start,
+        "span_end": start + len(source_text),
+        "rule_id": "duration.t90_explicit",
+    }
+
+    samples = samples_by_rule([annotation], {"90": rendered_text}, max_per_rule=1)
+
+    assert list(samples) == ["duration.t90_explicit"]
+    sample = samples["duration.t90_explicit"][0]
+    assert sample["text"] == source_text
+    assert sample["source_line"] == rendered_text
+    assert "⟦T90 is 2.0 s⟧" in sample["context_window"]
+
+
+def test_gap_examples_are_distributed_across_years() -> None:
+    gaps = [
+        {"circular_id": year * 100 + index, "year": year}
+        for year in (2023, 2024, 2025)
+        for index in range(4)
+    ]
+
+    examples = _distributed_gap_examples(gaps, max_items=6)
+
+    assert [item["year"] for item in examples] == [2023, 2024, 2025, 2023, 2024, 2025]
 
 
 @pytest.mark.parametrize(
