@@ -5,6 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from skyportal_corpus.extraction_v2.tagsets import CERTAINTIES, LABELS, TARGETS
 
 
+# These labels use comment for compact scientific context (for example, the
+# instrument or energy band) even when no review is required. All other labels
+# retain the pipeline-wide contract that comment is exclusively a review note.
+INFORMATIVE_COMMENT_LABELS = frozenset({"T90", "DURATION_GENERAL", "HIGH_ENERGY_PROPERTY"})
+
+
 class EventEvidenceAnnotation(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -15,7 +21,7 @@ class EventEvidenceAnnotation(BaseModel):
     span_end: int
     text: str
     label: str
-    target: str
+    target: str | None = None
     certainty: str
     value: str | None = None
     unit: str | None = None
@@ -37,8 +43,8 @@ class EventEvidenceAnnotation(BaseModel):
 
     @field_validator("target")
     @classmethod
-    def _validate_target(cls, value: str) -> str:
-        if value not in TARGETS:
+    def _validate_target(cls, value: str | None) -> str | None:
+        if value is not None and value not in TARGETS:
             raise ValueError(f"Invalid EVENT_EVIDENCE target: {value!r}")
         return value
 
@@ -71,7 +77,11 @@ class EventEvidenceAnnotation(BaseModel):
             raise ValueError("text length must match span_end - span_start")
         if self.needs_review and self.comment is None:
             raise ValueError("comment is required when needs_review=True")
-        if not self.needs_review and self.comment is not None:
+        if (
+            not self.needs_review
+            and self.comment is not None
+            and self.label not in INFORMATIVE_COMMENT_LABELS
+        ):
             raise ValueError("comment must be empty when needs_review=False")
         return self
 
