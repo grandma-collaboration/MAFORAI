@@ -34,8 +34,8 @@ human review
 | If you are | Start with | Why |
 |---|---|---|
 | Annotator | [05_inception_export.md](./05_inception_export.md), then [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) | You need to know what is imported into INCEpTION and how the event deliverable is generated. |
-| Developer | [04_extractors/README.md](./04_extractors/README.md), [09_method_and_lessons.md](./09_method_and_lessons.md), then [10_event_flow.md](./10_event_flow.md) and [12_photometry.md](./12_photometry.md) | You need the extractor contract, scale-validation method, local-to-global offset flow, and photometry maintenance guide. |
-| Architect | [00_overview.md](./00_overview.md), [01_architecture.md](./01_architecture.md), then [10_event_flow.md](./10_event_flow.md) | You need the design rationale and the transition from Circular evidence to an event document. |
+| Developer | [../RUNBOOK.md](../RUNBOOK.md), [04_extractors/README.md](./04_extractors/README.md), then [13_event_selection.md](./13_event_selection.md) | You need the from-zero command order, extractor contract, and automatic membership rules. |
+| Architect | [00_overview.md](./00_overview.md), [01_architecture.md](./01_architecture.md), then [10_event_flow.md](./10_event_flow.md) and [13_event_selection.md](./13_event_selection.md) | You need the design rationale and the transition from SkyPortal events to selected Circular evidence and an event document. |
 
 ## Documents
 
@@ -67,3 +67,4 @@ human review
 | [10_event_flow.md](./10_event_flow.md) | Event grouping, global canonical text, global annotation offsets, and event XMI export. |
 | [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) | Exact commands and prerequisites for regenerating an event-level INCEpTION document. |
 | [12_photometry.md](./12_photometry.md) | Developer guide to table/prose photometry extraction, field semantics, XMI export, auditing, and extension points. |
+| [13_event_selection.md](./13_event_selection.md) | SkyPortal-derived terms, event registry, identity index, matching hierarchy, selection reports, and viability audit. |
