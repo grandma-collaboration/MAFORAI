@@ -85,12 +85,30 @@ def _body_match(
         if match is not None:
             return {"identity": _identity_evidence(identity), "alias": match}
 
-    normalized_body = normalize_for_match(str(event_alias_info.get("body_text") or ""))
+    body_text = str(event_alias_info.get("body_text") or "")
     for alias in aliases:
-        normalized_alias = str(alias.get("normalized") or "")
-        if normalized_alias and normalized_alias in normalized_body:
-            return {"alias": dict(alias), "match_type": "normalized_body_text"}
+        pattern = _body_name_pattern(str(alias.get("raw") or ""))
+        if pattern is None:
+            continue
+        match = pattern.search(body_text)
+        if match is not None:
+            return {
+                "alias": dict(alias),
+                "match_type": "body_name_match",
+                "matched_text": match.group(0),
+            }
     return None
+
+
+def _body_name_pattern(alias: str) -> re.Pattern[str] | None:
+    """Build a separator-flexible, boundary-aware pattern for one event name."""
+    runs = re.findall(r"[A-Za-z]+|\d+[A-Za-z]*", alias)
+    if not runs:
+        return None
+    expression = r"\b" + r"[^A-Za-z0-9]*".join(
+        re.escape(run) for run in runs
+    ) + r"\b"
+    return re.compile(expression, re.IGNORECASE)
 
 
 def group_event_circulars(

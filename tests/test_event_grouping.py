@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
@@ -76,7 +78,7 @@ def test_grouping_includes_body_mention_when_subject_has_no_confirmed_identity()
     assert result["included"][0]["evidence"]["identity"]["value"] == "AT 2026owq"
 
 
-def test_nonstandard_alias_matches_by_normalized_direct_text() -> None:
+def test_nonstandard_alias_matches_by_boundary_aware_body_text() -> None:
     result = _group(
         [
             _circular(
@@ -90,7 +92,50 @@ def test_nonstandard_alias_matches_by_normalized_direct_text() -> None:
 
     assert result["n_included"] == 1
     assert result["included"][0]["reason"] == "body_mention"
-    assert result["included"][0]["evidence"]["match_type"] == "normalized_body_text"
+    assert result["included"][0]["evidence"] == {
+        "alias": {
+            "raw": "2026owq",
+            "canonical": None,
+            "normalized": "2026owq",
+            "recognizable": False,
+        },
+        "match_type": "body_name_match",
+        "matched_text": "2026owq",
+    }
+
+
+@pytest.mark.parametrize(
+    ("alias", "body", "expected"),
+    [
+        ("GRB240912", "The event is GRb 240912.", True),
+        ("GRB240912", "The event is GRB240912.", True),
+        ("GRB240912", "The event is GRB 240912A.", False),
+        ("GRB240912", "The event is GRB240912C.", False),
+        ("GRB 240912A", "The event is GRB240912A.", True),
+        ("GRB 240912A", "The event is GRB 240912.", False),
+    ],
+)
+def test_body_name_match_is_separator_flexible_and_suffix_safe(
+    alias: str,
+    body: str,
+    expected: bool,
+) -> None:
+    belongs, reason, evidence = circular_matches_event(
+        subject_identities=[],
+        body_identities=[],
+        event_alias_info={
+            "aliases": list(canonical_aliases([alias]).values()),
+            "body_text": body,
+        },
+    )
+
+    assert belongs is expected
+    if expected:
+        assert reason == "body_mention"
+        assert evidence["match_type"] == "body_name_match"
+        assert evidence["matched_text"] in body
+    else:
+        assert reason == "no_match"
 
 
 def test_canonical_aliases_marks_unrecognized_aliases() -> None:
