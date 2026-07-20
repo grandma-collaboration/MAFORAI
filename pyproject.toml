@@ -9,15 +9,22 @@ description = "SkyPortal API audit and source-inventory workflow for the MAFORAI
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+  "dkpro-cassis",
   "jupyter",
   "matplotlib",
   "numpy",
   "openpyxl",
   "pandas",
   "pyarrow",
+  "pydantic>=2",
   "python-dotenv",
   "pyyaml",
   "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
 ]
 
 [tool.setuptools]
