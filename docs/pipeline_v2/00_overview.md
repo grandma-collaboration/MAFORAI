@@ -8,7 +8,7 @@ GCN Circulars are short astronomical reports used to communicate transient-event
 
 The older GCN workflow in this repository downloads Circulars, builds yearly indexes, matches SkyPortal events against Circulars, extracts structured claims, and builds review tables. That workflow is useful, but it is not built around one invariant text representation. When text is assembled, cleaned, or normalized in different places, an offset can point to the wrong substring.
 
-Pipeline v2 exists to fix that. It starts at the Circular level, renders one canonical text for each Circular, and makes every extractor work against that exact string. Event-level aggregation still matters, but it is future work; the current priority is reliable span-level evidence.
+Pipeline v2 exists to fix that. It starts at the Circular level, renders one canonical text for each Circular, and makes every extractor work against that exact string. Automatic selection then combines verified Circular spans into an immutable event document; scientific adjudication into `EVENT_SUMMARY` remains a human task.
 
 ## Design Principles
 
@@ -24,8 +24,8 @@ Pipeline v2 exists to fix that. It starts at the Circular level, renders one can
 4. The machine proposes and the human validates.
    Extractors are intentionally conservative. Ambiguous cases use `needs_review=True` instead of pretending the decision is final.
 
-5. Circular-level evidence comes first.
-   Pipeline v2 currently annotates each Circular independently. Aggregation into event-level summaries, such as `EVENT_SUMMARY`, is a later layer.
+5. Circular-level evidence remains the extraction unit.
+   Automatic event selection aggregates verified local annotations into immutable event documents without cross-Circular inference. Annotators perform event-level adjudication through `EVENT_SUMMARY` in INCEpTION.
 
 ## Why v2 Exists Beside `extraction/`
 
@@ -40,4 +40,3 @@ GRB 230101A: Fermi GBM Final Real-time Localization
 ```
 
 Pipeline v2 renders that into canonical text, extracts `GRB 230101A` as `EVENT_IDENTITY`, extracts `02:16:38 UT on 1 Jan 2023` as `TRIGGER_TIME`, and exports both as span annotations for human review.
-

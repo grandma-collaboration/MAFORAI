@@ -2,7 +2,7 @@
 
 For whom: developers and architects who need to understand how Circular-level evidence becomes one event-level INCEpTION document.
 
-This flow groups related GCN Circulars, preserves each Circular's canonical text inside one immutable event document, translates local evidence spans to global offsets, and exports one UIMA CAS XMI file. It provides the document foundation for future `EVENT_SUMMARY` work without inventing event-level facts or changing the five Circular-level extractors.
+This flow selects related GCN Circulars automatically, preserves each Circular's canonical text inside one immutable event document, translates local evidence spans to global offsets, and exports one UIMA CAS XMI file. It provides the document foundation for human `EVENT_SUMMARY` work without inventing event-level facts or changing the registered Circular-level extractors.
 
 ## Purpose
 
@@ -21,11 +21,12 @@ The resulting XMI contains the full event text and two independent annotation la
 ## End-To-End Flow
 
 ```text
-event metadata + aliases
+event_registry.csv + identity_index.parquet
           |
           v
-event_grouping.py
-  include/exclude candidate Circulars
+event_selection.py
+  scan all indexed Circulars
+  + verify decisions through event_grouping.py
           |
           v
 event_document.py
@@ -36,7 +37,7 @@ event_document.py
           |                              |
           v                              v
 event_annotations.py            event_photometry.py
-  run 5 evidence extractors       run table + prose photometry
+  run 13 evidence extractors      run table + prose photometry
   + translate local offsets        + translate local offsets
           |                              |
           v                              v
@@ -45,11 +46,11 @@ ASTRO_EVIDENCE                  PHOTOMETRIC_MEASUREMENT
           +---------------+--------------+
                           |
                           v
-event_xmi_export.py
+scripts/event_build.py
   both annotation layers over one event text
                           |
                           v
-data/inception/out/event_2026owq.xmi
+data/inception/out/<source_id>/event_<source_id>.xmi
                           |
                           v
 event_layers_roundtrip_check()
@@ -64,7 +65,9 @@ The implementation lives in:
 src/skyportal_corpus/extraction_v2/event_grouping.py
 ```
 
-The grouping input is an event `source_id`, a list of aliases, and a candidate sequence of real Circular dictionaries. For the verified example, the aliases are:
+`select_event_candidates()` loads the event `source_id`, title, and terms from `event_registry.csv`, then applies `circular_matches_event()` to every row in the reusable identity index. The selected IDs are resolved to complete Circular dictionaries and passed through `group_event_circulars()` for an authoritative live-extraction check. Any disagreement between cached and live decisions raises an error.
+
+The grouping primitive still receives an event `source_id`, aliases, and a candidate sequence. For the verified example, the active terms include:
 
 ```python
 ["GRB 260610B", "AT2026owq", "2026owq"]
@@ -74,7 +77,7 @@ The grouping input is an event `source_id`, a list of aliases, and a candidate s
 
 `canonical_aliases()` first tries to interpret every alias with `EventIdentityExtractor`. Standard names such as `GRB 260610B` and `AT2026owq` therefore use the same canonical normalization as the extractor itself.
 
-Aliases that the extractor does not recognize, such as the source identifier `2026owq`, remain available through direct normalized matching. `normalize_for_match()` lowercases the text and removes non-alphanumeric characters:
+`normalize_for_match()` lowercases text and removes non-alphanumeric characters for exact alias-to-identity comparison:
 
 ```text
 GRB 260610B -> grb260610b
@@ -82,7 +85,7 @@ AT2026owq   -> at2026owq
 2026owq     -> 2026owq
 ```
 
-This fallback is deliberately simple. It supports known non-standard aliases without creating a second event-name parser.
+The raw-body fallback is not a normalized substring search. `_body_name_pattern()` splits one term into alphanumeric runs, joins them with `[^A-Za-z0-9]*`, wraps the expression in `\b` boundaries, and uses case-insensitive matching. This accepts spacing or punctuation variants but prevents `GRB240912` from matching the sibling `GRB240912A`. Its evidence records `match_type="body_name_match"` and the exact source substring.
 
 ### Membership hierarchy
 
@@ -92,12 +95,12 @@ The hierarchy is:
 
 1. **Confirmed subject identity:** an identity in the header with `needs_review=False` is authoritative. If it matches an event alias, the Circular is included with `reason="confirmed_subject_match"`.
 2. **Confirmed competing event:** if the subject confirms another event while the body mentions the requested event, the Circular is excluded with `reason="confirmed_other_event"`. A body reference cannot override the event named by the subject.
-3. **Body fallback:** only when there is no confirmed subject identity may an extracted body identity or direct normalized body mention include the Circular with `reason="body_mention"`.
+3. **Body fallback:** only when there is no confirmed subject identity may an extracted body identity or boundary-aware body-name match include the Circular with `reason="body_mention"`.
 4. **No evidence:** candidates without a usable match are excluded with `reason="no_match"`.
 
 The real Circular `44891` demonstrates why this ordering matters. Its subject identifies `GRB 260610A`, while its body mentions `GRB 260610B`. It is excluded from `2026owq` as `confirmed_other_event`; otherwise a comparison or reference could silently contaminate the event dossier.
 
-Included and excluded entries retain the `circular_id`, subject, creation time, decision reason, and matching evidence. Both lists are sorted by `created_on` and then `circular_id`.
+Included and excluded entries retain the `circular_id`, subject, creation time, decision reason, and matching evidence. Both lists are sorted by `created_on` and then `circular_id`. The complete selection audit is written to `data/interim/gcn/event_matching/selections/selection_<source_id>.txt`.
 
 ## 2. Building The Event Canonical Document
 
@@ -165,7 +168,7 @@ src/skyportal_corpus/extraction_v2/event_annotations.py
 
 `extract_event_annotations()` walks the event segments and retrieves the matching local `CanonicalDocument`. It verifies that the local SHA-256 agrees with the segment before extraction.
 
-For each Circular, it calls the five extractors returned by `get_active_extractors()`:
+For each Circular, it calls the 13 extractors returned by `get_active_extractors()`:
 
 ```text
 event_identity
@@ -173,6 +176,14 @@ trigger_time
 localization
 trigger_instrument
 redshift
+duration
+high_energy
+negative_statement
+lightcurve_evolution
+counterpart_association
+classification_interpretation
+host_context
+spectroscopy
 ```
 
 Each extractor still works against the local Circular document. Its accepted offsets are translated afterward:
@@ -197,10 +208,10 @@ The `comment` field has a narrower purpose: it contains an English review instru
 The executable entry point is:
 
 ```text
-scripts/event_xmi_export.py
+scripts/event_build.py --source-id <id>
 ```
 
-The script calls `export_event_layers_xmi()` from `inception_v2/event_xmi_export.py`. It creates one CAS whose sofa is the immutable event text, adds minimal segmentation, verifies every span, and writes both custom layers.
+The script runs automatic selection, builds the event document, and calls `export_event_layers_xmi()` from `inception_v2/event_xmi_export.py`. It creates one CAS whose sofa is the immutable event text, adds minimal segmentation, verifies every span, and writes both custom layers.
 
 The INCEpTION layers are:
 
@@ -225,11 +236,13 @@ Photometry features are mapped by `photometry_feature_values()` and include meas
 The event script writes:
 
 ```text
-data/inception/out/event_2026owq.xmi
-data/inception/out/event_2026owq_manifest.txt
+data/inception/out/<source_id>/event_<source_id>.xmi
+data/inception/out/<source_id>/event_<source_id>_manifest.txt
 ```
 
 The manifest lists the event hash, output path, summaries for both layers, and per-Circular contributions.
+
+The tracked flat pilot files under `data/inception/out/` are superseded. The current automatic build always uses the source-specific directory shown above.
 
 Finally, `event_layers_roundtrip_check()` reloads the XMI and verifies each layer independently:
 
@@ -240,20 +253,22 @@ all_features_ok
 n_original == n_roundtripped
 ```
 
-## Known Limitations And Decisions
-
-- **Aliases are manual.** `SOURCE_ID`, `TITLE`, and `ALIASES` are currently constants in the event scripts. Automatic use of the existing `event_search_terms` data is future work.
-- **Candidate selection is example-specific.** The current scripts use year 2026 and Circular IDs `44880..45050`. A general command-line interface has not yet replaced these constants.
-- **Two layers share one sofa.** Event identity, time, localization, instrument, and redshift remain in `ASTRO_EVIDENCE`; individual optical/NIR/UV measurements use `PHOTOMETRIC_MEASUREMENT`.
-- **Comments are review-only.** A comment is present only when human review is requested. It is not a general metadata or provenance field.
-- **Extraction remains Circular-local.** The five evidence extractors and both photometry paths do not reason across Circular boundaries. The event document only preserves and combines their outputs.
-- **No event summary is inferred yet.** Repeated or conflicting evidence is intentionally retained. Resolving it into `EVENT_SUMMARY` is future work built on this global offset map.
-
 ## Related Documents
 
 - [Canonical text](./02_canonical_text.md)
 - [Annotations and tagsets](./03_annotations_and_tagsets.md)
 - [INCEpTION export](./05_inception_export.md)
 - [Reproducing an event XMI](./11_reproduce_event_xmi.md)
+- [Automatic event selection](./13_event_selection.md)
 - [Status and roadmap](./07_status_and_roadmap.md)
 - [Photometric measurement layer](./12_photometry.md)
+
+## Known Limitations
+
+- **Selection starts in 2023.** The current identity index excludes older Circulars unless rebuilt with a lower `min_year`.
+- **Internal IDs are weak names.** Events whose only term is an internal trigger ID usually select no Circulars.
+- **Suffixless-only terms need review.** They can still match `.NN` day-fraction sibling names and are not automatically resolved with coordinates or trigger time.
+- **The export has two annotation layers.** All 13 evidence extractors write to `ASTRO_EVIDENCE`; individual optical/NIR/UV measurements use `PHOTOMETRIC_MEASUREMENT`.
+- **Comments are review-only.** A comment is present only when human review is requested. It is not a general metadata or provenance field.
+- **Extraction remains Circular-local.** The evidence extractors and both photometry paths do not reason across Circular boundaries. The event document only preserves and combines their outputs.
+- **No event summary is inferred.** Repeated or conflicting evidence is intentionally retained. Annotators fill `EVENT_SUMMARY` in INCEpTION's Document Metadata panel.

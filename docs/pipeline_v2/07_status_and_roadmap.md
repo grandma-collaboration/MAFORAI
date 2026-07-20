@@ -46,7 +46,7 @@ This document separates implemented, scale-tested components from future work. I
 | Table photometry extraction | Implemented | `tests/test_photometry_tables.py`, `tests/test_photometry_rows.py` |
 | Prose photometry extraction | Implemented | `tests/test_photometry_prose.py` |
 | Photometry XMI export and round-trip | Implemented | `tests/test_photometry_xmi.py` |
-| Event-level XMI deliverable | Implemented | `scripts/event_xmi_export.py`; both custom layers are checked independently during round-trip |
+| Event-level XMI deliverable | Implemented | `scripts/event_build.py --source-id <id>`; automatic selection and both custom layers are checked during the build |
 
 ## Implemented Infrastructure
 
@@ -60,6 +60,8 @@ This document separates implemented, scale-tested components from future work. I
 | Identity gaps | Missing identities are visible even though they produce no annotation alerts. |
 | Table-row detection | Avoids treating catalog rows as Circular-level event identity or redshift evidence. |
 | Event-to-document flow | Groups Circulars, builds immutable global text, translates both evidence and photometry offsets, and exports one event XMI. |
+| Automatic event selection | Builds `event_search_terms`, a deduplicated registry, and a reusable identity index; `select_event_candidates()` applies the verified membership hierarchy without a Circular-ID range. |
+| Selection audit | Every event build records included Circulars, subject conflicts, body-only matches, and far-in-time matches before XMI export. |
 | Photometry audit report | Audits table and prose extraction by source, format, rule, field, review reason, year, overlap, and uncovered format. |
 | Review and scientific-context comments | Qualitative comments are review-only; duration and high-energy comments preserve governing instrument and energy-band context. |
 
@@ -89,12 +91,12 @@ The `PHOTOMETRIC_MEASUREMENT` layer is implemented for magnitude-based optical, 
 
 Event document aggregation is implemented: related Circulars can be grouped into one immutable `EventCanonicalDocument`, and their annotations can be exported with global offsets. Scientific aggregation into `EVENT_SUMMARY` is still future work; the current flow deliberately preserves repeated and conflicting Circular evidence instead of resolving it automatically.
 
-Event aliases and candidate ranges are currently configured manually in the event scripts. Automatically loading aliases from the existing `event_search_terms` outputs is future work.
+Event aliases are loaded automatically from `event_search_terms` through the deduplicated event registry. Circular membership is selected over the reusable identity index with no manual Circular-ID range or event-specific date window.
 
 The pipeline still needs quantitative evaluation against human annotations. Round-trip success proves that offsets and features survive export; it does not prove scientific correctness.
 
 ## Recommended Next Step
 
-For event-level work, the next architectural step is automatic alias integration from `event_search_terms`, followed by a separately designed `EVENT_SUMMARY` model. For extraction work, the next step is quantitative evaluation against human annotations. Photometry maintenance and extension points are documented in [12_photometry.md](./12_photometry.md).
+For event-level work, the next architectural step is a separately designed automatic `EVENT_SUMMARY` model; annotators currently fill that document metadata layer in INCEpTION. For extraction work, the next step is quantitative evaluation against human annotations. Photometry maintenance and extension points are documented in [12_photometry.md](./12_photometry.md).
 
-See [10_event_flow.md](./10_event_flow.md) for the implemented architecture and [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) for the reproduction procedure.
+See [10_event_flow.md](./10_event_flow.md) for the implemented architecture, [13_event_selection.md](./13_event_selection.md) for automatic membership, and [11_reproduce_event_xmi.md](./11_reproduce_event_xmi.md) for the reproduction procedure.

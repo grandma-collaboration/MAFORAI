@@ -7,39 +7,57 @@ Pipeline v2 is a deterministic chain from raw Circular records to offset-verifie
 ## End-To-End Flow
 
 ```text
-data/raw or data/interim Circular record
-        |
-        | iter_real_circulars() or iter_stratified_circulars()
-        v
-dict: circular_id, subject, body, created_on, event_id, submitter, year
-        |
-        | render_canonical()
-        v
-CanonicalDocument
-  - rendered_text
-  - text_sha256
-  - header/body segments
-        |
-        | get_active_extractors()
-        v
+SkyPortal inventories                 GCN Circular archive
+        |                                      |
+        v                                      v
+gcn_grandma.json                    yearly Circular index
+        |                                      |
+        v                                      v
+event_search_terms                  identity_index.parquet
+        |                                      |
+        v                                      |
+event_registry.csv -----------------+
+        |                            |
+        +--> select_event_candidates()
+             boundary-aware membership decisions
+                    |
+                    v
+             selected Circulars
+                    |
+                    v
+             EventCanonicalDocument
+                    |
+          +---------+----------+
+          |                    |
+          v                    v
+get_active_extractors()   table + prose photometry
+13 evidence extractors    measurement extractors
+          |                    |
+          +---------+----------+
+                    |
+                    v
+event XMI + manifest + round-trip verification
+
+All indexed Circulars can also flow through render_canonical(),
+get_active_extractors(), sweep_report.py, and alerts_report.py.
+```
+
+The active evidence registry contains:
+
+```text
 EventIdentityExtractor
 TriggerTimeExtractor
 LocalizationExtractor
 TriggerInstrumentExtractor
 RedshiftExtractor
-        |
-        v
-list[EventEvidenceAnnotation]
-  - span_start/span_end
-  - exact text
-  - label/target/certainty
-  - extractor provenance
-        |
-        +--> sweep_report.py / alerts_report.py
-        |    corpus diagnostics, alert context, gaps, run_id
-        |
-        +--> export_document_to_xmi()
-             UIMA CAS XMI for INCEpTION
+DurationExtractor
+HighEnergyPropertyExtractor
+NegativeStatementExtractor
+LightcurveEvolutionExtractor
+CounterpartAssociationExtractor
+ClassificationInterpretationExtractor
+HostContextExtractor
+SpectroscopyExtractor
 ```
 
 ## Stages
@@ -48,6 +66,11 @@ list[EventEvidenceAnnotation]
 |---|---|---|---|
 | Circular loading | Yearly CSV/Parquet indexes or raw JSON | `dict` with Circular fields | `iter_real_circulars()` and `iter_stratified_circulars()` in `canonical/document.py` |
 | Canonical rendering | Circular fields | `CanonicalDocument` | `render_canonical()` in `canonical/document.py` |
+| Event term generation | `gcn_grandma.json` IDs, aliases, and TNS names | Search-term CSV/Parquet | `extraction/gcn_event_matching.py`, `scripts/gcn/03a_build_event_search_terms.py` |
+| Event registry | Event terms plus SkyPortal position/time metadata | Deduplicated `event_registry.csv` | `extraction_v2/event_registry.py`, `scripts/build_event_registry.py` |
+| Identity index | Circular corpus | Reusable subject/body identity Parquet plus metadata | `extraction_v2/identity_index.py`, `scripts/build_identity_index.py` |
+| Event selection | Registry row plus identity index | Included Circulars, conflicts, body-only evidence, and flags | `select_event_candidates()` in `extraction_v2/event_selection.py` |
+| Event document | Selected Circulars | Immutable `EventCanonicalDocument` and local/global segment map | `extraction_v2/event_document.py` |
 | Annotation model | Extracted spans | Validated `EventEvidenceAnnotation` | `extraction_v2/annotations.py` |
 | Tagset validation | Label, target, certainty strings | Accepted or rejected annotation | `extraction_v2/tagsets.py` |
 | Active extractor registry | Extractor classes | Sweep-ready extractor list | `get_active_extractors()` in `extraction_v2/sweep.py` |
@@ -56,8 +79,17 @@ list[EventEvidenceAnnotation]
 | Localization extraction | `CanonicalDocument` | `LOCALIZATION` annotations | `extraction_v2/localization.py` |
 | Trigger instrument extraction | `CanonicalDocument` | `TRIGGER_INSTRUMENT` annotations | `extraction_v2/trigger_instrument.py` |
 | Redshift extraction | `CanonicalDocument` | `REDSHIFT_EVENT` and `REDSHIFT_CONTEXT` annotations | `extraction_v2/redshift.py` |
+| Duration extraction | `CanonicalDocument` | `T90` and `DURATION_GENERAL` annotations | `extraction_v2/duration.py` |
+| High-energy extraction | `CanonicalDocument` | `HIGH_ENERGY_PROPERTY` annotations | `extraction_v2/high_energy.py` |
+| Negative-statement extraction | `CanonicalDocument` | `NEGATIVE_STATEMENT` annotations | `extraction_v2/negative_statement.py` |
+| Light-curve extraction | `CanonicalDocument` | `LIGHTCURVE_EVOLUTION` annotations | `extraction_v2/lightcurve_evolution.py` |
+| Counterpart extraction | `CanonicalDocument` | `COUNTERPART_ASSOCIATION` annotations | `extraction_v2/counterpart_association.py` |
+| Classification extraction | `CanonicalDocument` | `CLASSIFICATION_INTERPRETATION` annotations | `extraction_v2/classification_interpretation.py` |
+| Host extraction | `CanonicalDocument` | `HOST_CONTEXT` annotations | `extraction_v2/host_context.py` |
+| Spectroscopy extraction | `CanonicalDocument` | `SPECTROSCOPY` annotations | `extraction_v2/spectroscopy.py` |
 | Sweep diagnostics | Real Circular batches plus extractors | JSON report and text alert report | `extraction_v2/sweep.py`, `scripts/sweep_report.py`, `scripts/alerts_report.py` |
-| XMI export | Document plus annotations | UIMA CAS XMI file | `inception_v2/xmi_export.py` |
+| Event annotation translation | Event segments plus local annotations | Globally offset event evidence and photometry | `extraction_v2/event_annotations.py`, `extraction_v2/event_photometry.py` |
+| XMI export | Event document plus both layers | UIMA CAS XMI file | `inception_v2/event_xmi_export.py`, `scripts/event_build.py` |
 | Round-trip check | XMI plus original data | Verification dictionary | `inception_v2/xmi_roundtrip.py` |
 
 ## Module Map
@@ -73,8 +105,20 @@ list[EventEvidenceAnnotation]
 | `src/skyportal_corpus/extraction_v2/instruments_vocab.py` | Stores canonical trigger instruments and aliases. |
 | `src/skyportal_corpus/extraction_v2/trigger_instrument.py` | Finds trigger instruments using instrument vocabulary plus trigger/follow-up/reference gates. |
 | `src/skyportal_corpus/extraction_v2/redshift.py` | Finds redshift values and classifies them as event or context with conservative attribution. |
+| `src/skyportal_corpus/extraction_v2/duration.py` | Finds explicit T90 and general event durations with instrument/band context. |
+| `src/skyportal_corpus/extraction_v2/high_energy.py` | Finds fluence, peak flux, spectral parameters, peak/cutoff energies, and Eiso. |
+| `src/skyportal_corpus/extraction_v2/negative_statement.py` | Finds scientific rejections and negative findings while deferring photometric non-detections and light-curve behavior. |
+| `src/skyportal_corpus/extraction_v2/lightcurve_evolution.py` | Finds observed fading, rising, flattening, variability, and confirmed absence of evolution. |
+| `src/skyportal_corpus/extraction_v2/counterpart_association.py` | Finds explicit candidate or confirmed counterpart/afterglow associations. |
+| `src/skyportal_corpus/extraction_v2/classification_interpretation.py` | Finds GRB/transient classes and physical interpretations. |
+| `src/skyportal_corpus/extraction_v2/host_context.py` | Finds host candidates, offsets, ambiguity, and nearby-galaxy context. |
+| `src/skyportal_corpus/extraction_v2/spectroscopy.py` | Finds optical/NIR spectroscopy observations and spectral features. |
+| `src/skyportal_corpus/extraction_v2/event_registry.py` | Deduplicates SkyPortal events, merges terms, and records dropped/absorbed identifiers. |
+| `src/skyportal_corpus/extraction_v2/identity_index.py` | Runs event identity once per Circular and stores the reusable subject/body partition. |
+| `src/skyportal_corpus/extraction_v2/event_selection.py` | Scans the identity index, applies the membership hierarchy, and checks cached decisions against live grouping. |
 | `src/skyportal_corpus/extraction_v2/sweep.py` | Runs active extractors over batches, aggregates coverage/review/alerts, records gaps, and supports `only=` filtering. |
-| `src/skyportal_corpus/inception_v2/xmi_export.py` | Builds a CAS, adds optional Sentence/Token annotations, and writes INCEpTION-compatible XMI. |
+| `src/skyportal_corpus/inception_v2/xmi_export.py` | Provides shared CAS and TypeSystem helpers for INCEpTION-compatible XMI. |
+| `src/skyportal_corpus/inception_v2/event_xmi_export.py` | Writes event evidence and photometry over one event sofa and verifies both layers. |
 | `src/skyportal_corpus/inception_v2/xmi_roundtrip.py` | Loads exported XMI back and checks text, spans, and features. |
 
 ## Circular 33130 Walkthrough
