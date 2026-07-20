@@ -1,188 +1,167 @@
 # Reproducing An Event XMI
 
-For whom: developers and tutors who need to regenerate and inspect the event-level INCEpTION deliverable.
+For whom: developers and tutors who need to regenerate and inspect an event-level INCEpTION deliverable.
 
-This guide reproduces the verified `2026owq` flow from event grouping through XMI round-trip. The commands use the repository's Python virtual environment directly, so they do not depend on shell activation.
+The current flow selects Circulars automatically from the SkyPortal-derived event registry and reusable identity index. One command then builds the immutable event document, extracts both annotation layers, exports XMI, and verifies the round-trip.
 
 ## Prerequisites
 
-Run every command from the repository root:
+Run every command from the repository root with Python 3.10 or newer.
 
-```text
-MAFORAI/
+| Requirement | Expected path | How it is produced |
+|---|---|---|
+| Virtual environment | `.venv/bin/python` | `python -m venv .venv` and `.venv/bin/pip install -e ".[dev]"` |
+| INCEpTION TypeSystem | `data/inception/TypeSystem.xml` | Exported from the target INCEpTION project as UIMA CAS XMI XML 1.0 |
+| Circular index | `data/interim/gcn/circulars/` | `scripts/gcn/02_build_circulars_index.py` |
+| Event search terms | `data/interim/gcn/event_matching/event_search_terms.csv` | `scripts/gcn/03a_build_event_search_terms.py` |
+| Event registry | `data/interim/gcn/event_matching/event_registry.csv` | `scripts/build_event_registry.py` |
+| Identity index | `data/interim/gcn/event_matching/identity_index/identity_index.parquet` | `scripts/build_identity_index.py` |
+
+The TypeSystem must define `webanno.custom.ASTRO_EVIDENCE` and `webanno.custom.PHOTOMETRIC_MEASUREMENT`. It is currently ignored by the repository's final `/data/` rule and is not available in a fresh clone; place the matching exported file at the required path before generating XMI.
+
+For the complete upstream rebuild, use [the repository runbook](../RUNBOOK.md).
+
+## Refresh Selection Inputs
+
+After changing `gcn_grandma.json` or refreshing the Circular index, rebuild the dependent selection products in order:
+
+```bash
+.venv/bin/python scripts/gcn/03a_build_event_search_terms.py
+.venv/bin/python scripts/build_event_registry.py
+.venv/bin/python scripts/build_identity_index.py
 ```
 
-The required interpreter is:
+The identity-index metadata records the 2023-and-later corpus scope and the `EventIdentityExtractor` version. `event_build.py` refuses an incompatible extractor version or `min_year`.
 
-```text
-.venv/bin/python
+## Choose An Event
+
+Run the registry-wide viability report when the event is not already known:
+
+```bash
+.venv/bin/python scripts/event_viability_sweep.py
 ```
 
-The real INCEpTION TypeSystem must exist at:
+Inspect `data/interim/gcn/event_matching/event_viability.csv`. Events with `n_included >= 5` are usually the most useful dossier candidates, but counts alone do not validate membership. Review `suffixless_only`, body-only counts, conflict counts, and temporal range.
 
-```text
-data/inception/TypeSystem.xml
-```
-
-It must define `webanno.custom.ASTRO_EVIDENCE` with the six string features `label`, `target`, `certainty`, `value`, `unit`, and `comment`. The real Circular index or raw archive used by `iter_real_circulars()` must also be available under the repository's `data/` tree.
-
-## 1. Check The Event Definition
-
-The current example is defined manually in each event script:
-
-```python
-SOURCE_ID = "2026owq"
-TITLE = "GRB 260610B / AT2026owq"
-ALIASES = ["GRB 260610B", "AT2026owq", "2026owq"]
-MIN_CIRCULAR_ID = 44880
-MAX_CIRCULAR_ID = 45050
-```
-
-These constants appear in:
-
-```text
-scripts/event_grouping_demo.py
-scripts/event_document_demo.py
-scripts/event_xmi_export.py
-```
-
-The scripts currently request real Circulars from 2026 and then retain the configured Circular ID range. Keep the definitions aligned across all three scripts.
-
-## 2. Inspect Event Grouping
+## Build The Event
 
 Run:
 
 ```bash
-.venv/bin/python scripts/event_grouping_demo.py
+.venv/bin/python scripts/event_build.py --source-id 2026owq
 ```
 
-The command prints:
+Replace `2026owq` with a canonical or merged `source_id` from `event_registry.csv`. The command uses `select_event_candidates()`, builds the event document, runs every active evidence extractor plus both photometry paths, exports both layers, and performs an immediate round-trip check.
 
-```text
-SUMMARY
-INCLUDED
-EXCLUDED
-CHECK 44891
-```
-
-For each candidate, inspect the decision reason and evidence:
-
-- `confirmed_subject_match` means the authoritative subject identity matches an alias.
-- `body_mention` means no confirmed subject identity existed and the body supplied the match.
-- `confirmed_other_event` means the subject identified another event and overruled a body reference.
-- `no_match` means the candidate did not provide usable membership evidence.
-
-The final `CHECK 44891` must report exclusion as `confirmed_other_event`: its subject is `GRB 260610A`, not the requested `GRB 260610B`.
-
-This demo writes no report file automatically; its complete report is standard output.
-
-## 3. Verify The Event Canonical Document
-
-Run:
+To inspect membership without requiring a TypeSystem or writing XMI, use:
 
 ```bash
-.venv/bin/python scripts/event_document_demo.py
+.venv/bin/python scripts/event_build.py --source-id 2026owq --no-xmi
 ```
 
-The command groups the same candidates, keeps the included Circulars, and builds `EventCanonicalDocument`. It prints the event SHA-256, total text length, and every segment's global range.
+## Review The Selection Report
 
-The expected checks are:
+Every build writes:
 
 ```text
-segment_sha256_survives: OK
-local_global_inverse_offsets: OK
-segment_count_is_28: OK
+data/interim/gcn/event_matching/selections/selection_<source_id>.txt
 ```
 
-The first 800 characters show the immutable separator followed by the first Circular's canonical `SUBJECT`, `DATE`, `FROM`, and body.
+Read this file before importing the XMI.
 
-## 4. Generate The XMI And Manifest
+| Section | Review question |
+|---|---|
+| Header fields | Are the terms, merged IDs, trigger time, corpus scope, counts, and flags expected? |
+| `INCLUDED` | Does every selected Circular actually belong to the event? |
+| `EXCLUDED_CONFLICT` | Did a competing subject identity correctly suppress a body mention? |
+| `BODY_ONLY - IDENTITY ANNOTATION` | Is the extracted body identity sufficient membership evidence? |
+| `BODY_ONLY - BODY NAME MATCH` | Is the raw boundary-aware name match a legitimate event reference? |
+| `FAR_IN_TIME` | Is a selected Circular more than 365 days from the trigger still credible? |
 
-Run:
+`delta_days` and `FAR_IN_TIME` are visibility fields. They never remove a Circular automatically.
 
-```bash
-.venv/bin/python scripts/event_xmi_export.py
-```
+## Inspect The Outputs
 
-The script repeats grouping and event-document construction, runs all five active extractors on every included Circular, translates local offsets to global offsets, and exports the event CAS.
-
-The output files are:
+For source ID `2026owq`, the generated files are:
 
 ```text
-data/inception/out/event_2026owq.xmi
-data/inception/out/event_2026owq_manifest.txt
+data/inception/out/2026owq/event_2026owq.xmi
+data/inception/out/2026owq/event_2026owq_manifest.txt
 ```
 
-The verified summary is:
+The manifest reports the event title, Circular count, text hash and length, evidence and photometry totals, counts by extractor and label, and the ordered Circular list.
+
+## Verify The Round-Trip
+
+The console must report:
 
 ```text
-n_circulars: 28
-total_annotations: 120
-needs_review: 11
-annotations_with_comment: 11
-comments_only_when_needs_review: OK
-broken_global_offsets: 0
+broken_global_offsets_event_evidence: 0
+broken_global_offsets_photometry: 0
+text_matches: True
+all_spans_ok: True
+all_features_ok: True
+photometry_all_spans_ok: True
+photometry_all_features_ok: True
 FINAL: OK
 ```
 
-`FINAL: OK` requires an exact text match, valid round-tripped spans, identical exported features, and equal original/round-tripped annotation counts.
+For event evidence, `n_original` must equal `n_roundtripped`, and `discrepancies` must be empty. `FINAL: OK` requires both layers to preserve their text, spans, and exported features.
 
-The manifest is the human-readable companion to the XMI. Use it to inspect the Circular list and annotation distribution without parsing XML.
+Translation errors are printed under `TRANSLATION ERRORS`. Any such entry or `FINAL: FAIL` blocks import until diagnosed.
 
-## 5. Run The Focused Tests
-
-The event flow has synthetic tests that do not depend on the real `2026owq` data:
+## Run Focused Tests
 
 ```bash
 .venv/bin/python -m pytest \
   tests/test_event_grouping.py \
+  tests/test_event_selection.py \
+  tests/test_identity_index.py \
   tests/test_event_document.py \
   tests/test_event_annotations.py \
-  tests/test_xmi_roundtrip.py
+  tests/test_xmi_roundtrip.py -q
 ```
 
-These tests cover membership hierarchy, immutable segment slices, local/global offset translation, source-Circular provenance, XMI features, and round-trip integrity.
+These tests cover matching hierarchy, boundary-aware body names, registry/index selection agreement, immutable segment slices, local-to-global offsets, both XMI layers, and round-trip integrity.
 
-## 6. Import Into INCEpTION
+## Import Into INCEpTION
 
-1. Create an INCEpTION project, or import the existing project archive that owns the expected annotation layer.
-2. Import the TypeSystem corresponding to `data/inception/TypeSystem.xml` if the project does not already contain it.
+1. Open the INCEpTION project whose layer definitions match `data/inception/TypeSystem.xml`.
+2. If necessary, import that TypeSystem into the project.
 3. Add a document using the **UIMA CAS XMI XML 1.0** format.
-4. Select `data/inception/out/event_2026owq.xmi`.
-5. Open the imported document and select the `ASTRO_EVIDENCE` span layer.
-6. Review annotations with non-empty comments first; those are the machine proposals marked for human review.
+4. Select `data/inception/out/<source_id>/event_<source_id>.xmi`.
+5. Open the document and inspect both `ASTRO_EVIDENCE` and `PHOTOMETRIC_MEASUREMENT`.
+6. Review non-empty annotation comments first because comments encode machine review reasons.
 
-The XMI contains the event text and the six INCEpTION features. Internal fields such as `source_circular_id` and `needs_review` are not TypeSystem features.
+The XMI contains the immutable event text and the exported layer features. Internal fields such as `source_circular_id`, `needs_review`, and extractor provenance are not TypeSystem features.
 
-## Reproducing A Different Event
+## Event Summary
 
-Until a command-line event configuration is added, edit the same constants in all three event scripts:
+`EVENT_SUMMARY` is a document metadata layer, not a span layer emitted by this export pipeline. Annotators complete it in INCEpTION's **Document Metadata** panel after reviewing the event dossier. Automatic scientific aggregation remains outside the exporter.
+
+## Superseded Manual Demos
+
+These scripts remain historical, event-specific demos and are not the current build path:
 
 ```text
-SOURCE_ID
-TITLE
-ALIASES
-MIN_CIRCULAR_ID
-MAX_CIRCULAR_ID
+scripts/event_xmi_export.py
+scripts/event_grouping_demo.py
+scripts/event_document_demo.py
 ```
 
-Also update the `min_year` used by `_candidate_circulars()` and change `XMI_PATH` and `MANIFEST_PATH` in `scripts/event_xmi_export.py` so the new run does not overwrite the `2026owq` deliverable.
-
-Then run the three commands in order:
-
-```bash
-.venv/bin/python scripts/event_grouping_demo.py
-.venv/bin/python scripts/event_document_demo.py
-.venv/bin/python scripts/event_xmi_export.py
-```
-
-Do not skip the grouping review. Manual aliases and candidate ranges are temporary controls, and an incorrect event membership decision will propagate into the canonical event text and every global annotation offset.
-
-Automatic alias loading from `event_search_terms` is planned but not yet connected to this flow.
+They use pilot constants and manual candidate controls. Do not edit their `SOURCE_ID`, aliases, or Circular range to build a new event. Use `scripts/event_build.py --source-id <id>`.
 
 ## Related Documents
 
+- [Automatic event selection](./13_event_selection.md)
 - [Event-to-document flow](./10_event_flow.md)
 - [INCEpTION export](./05_inception_export.md)
 - [Canonical text](./02_canonical_text.md)
 - [Status and roadmap](./07_status_and_roadmap.md)
+
+## Known Limitations
+
+- A fresh clone still needs an externally supplied `data/inception/TypeSystem.xml` until its `.gitignore` exception is committed.
+- The automatic identity index currently covers Circulars from 2023 onward.
+- Events whose registry row contains only an internal trigger ID select no ordinary Circulars.
+- Round-trip success proves serialization integrity, not scientific correctness or event-membership correctness.
