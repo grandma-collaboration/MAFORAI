@@ -153,6 +153,23 @@ def extract_trigger_time(source: dict[str, Any]) -> float | None:
     return float(trigger_time)
 
 
+def extract_optional_text(source: dict[str, Any], field_name: str) -> str | None:
+    """Extract one trimmed optional string from a SkyPortal source row."""
+    value = source.get(field_name)
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
+
+
+def extract_optional_float(source: dict[str, Any], field_name: str) -> float | None:
+    """Extract one optional numeric value from a SkyPortal source row."""
+    value = source.get(field_name)
+    if not isinstance(value, (int, float)):
+        return None
+    return float(value)
+
+
 def extract_relevant_groups(source: dict[str, Any]) -> list[str]:
     """Keep only the workflow-relevant group names for one source."""
     relevant_names: list[str] = []
@@ -232,6 +249,9 @@ def build_gcn_grandma_event(source: dict[str, Any]) -> dict[str, Any] | None:
         "id": source_id,
         "gcn_source_type": source_type,
         "aliases": extract_aliases(source),
+        "tns_name": extract_optional_text(source, "tns_name"),
+        "ra": extract_optional_float(source, "ra"),
+        "dec": extract_optional_float(source, "dec"),
         "redshift": redshift,
         "trigger_time": extract_trigger_time(source),
         "comment_exists": bool(source.get("comment_exists")),
@@ -309,6 +329,10 @@ def merge_gcn_grandma_event(
         incoming.get("trigger_time"), (int, float)
     ):
         merged["trigger_time"] = incoming["trigger_time"]
+
+    for field_name in ("tns_name", "ra", "dec"):
+        if merged.get(field_name) is None and incoming.get(field_name) is not None:
+            merged[field_name] = incoming[field_name]
 
     existing_summary = existing.get("source_summary")
     incoming_summary = incoming.get("source_summary")

@@ -21,12 +21,18 @@ def make_source(
     spectrum_exists: bool = False,
     host_id: int | None = None,
     classifications: list[str] | None = None,
+    tns_name: str | None = None,
+    ra: float | None = None,
+    dec: float | None = None,
 ) -> dict:
     return {
         "id": source_id,
         "alias": alias,
         "redshift": redshift,
         "t0": t0,
+        "tns_name": tns_name,
+        "ra": ra,
+        "dec": dec,
         "comment_exists": comment_exists,
         "spectrum_exists": spectrum_exists,
         "host_id": host_id,
@@ -116,6 +122,9 @@ class SourceSelectionTests(unittest.TestCase):
                     make_source(
                         "2026owq",
                         alias=[" GRB 260610B", "SVOM#sb26061001"],
+                        tns_name="AT 2026owq",
+                        ra=218.159414,
+                        dec=27.004935,
                         redshift=1.2,
                         comment_exists=True,
                     ),
@@ -133,6 +142,9 @@ class SourceSelectionTests(unittest.TestCase):
         self.assertEqual(payload["sources"][0]["id"], "2026owq")
         self.assertEqual(payload["sources"][0]["gcn_source_type"], "grb")
         self.assertEqual(payload["sources"][0]["aliases"], ["GRB 260610B", "SVOM#sb26061001"])
+        self.assertEqual(payload["sources"][0]["tns_name"], "AT 2026owq")
+        self.assertEqual(payload["sources"][0]["ra"], 218.159414)
+        self.assertEqual(payload["sources"][0]["dec"], 27.004935)
 
     def test_gcn_grandma_contract_merges_trigger_time_and_spectrum_flag(self) -> None:
         inventory_runs = [
