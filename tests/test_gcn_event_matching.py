@@ -19,6 +19,7 @@ class GcnEventMatchingTests(unittest.TestCase):
     def test_normalize_search_term_compacts_grb_and_ep(self) -> None:
         self.assertEqual(normalize_search_term("GRB 250424A"), "GRB250424A")
         self.assertEqual(normalize_search_term("EP 250704a"), "EP250704A")
+        self.assertEqual(normalize_search_term("AT 2026owq"), "AT2026OWQ")
 
     def test_build_conservative_variants_for_grb_and_ep(self) -> None:
         grb_variants = build_conservative_variants("GRB250424A")
@@ -28,6 +29,10 @@ class GcnEventMatchingTests(unittest.TestCase):
         self.assertEqual(grb_variants[0]["variant_type"], "spaced_variant")
         self.assertEqual(ep_variants[0]["search_term"], "EP250704a")
         self.assertEqual(ep_variants[0]["variant_type"], "compact_variant")
+
+        tns_variants = build_conservative_variants("AT 2026owq")
+        self.assertEqual(tns_variants[0]["search_term"], "AT2026owq")
+        self.assertEqual(tns_variants[0]["variant_type"], "compact_variant")
 
     def test_confidence_level_from_score_uses_expected_buckets(self) -> None:
         self.assertEqual(confidence_level_from_score(100), "high_confidence")
@@ -159,6 +164,26 @@ class GcnEventMatchingTests(unittest.TestCase):
             dataframe.iloc[0]["groups"],
             "GRANDMA | GRANDMA/Kilonova-Catcher",
         )
+
+    def test_search_terms_include_source_id_alias_and_tns_name(self) -> None:
+        dataframe = build_event_search_terms_dataframe(
+            [
+                {
+                    "id": "2026owq",
+                    "gcn_source_type": "grb",
+                    "aliases": ["GRB 260610B"],
+                    "tns_name": "AT 2026owq",
+                    "groups": ["GRANDMA"],
+                }
+            ]
+        )
+
+        self.assertEqual(
+            set(dataframe["search_term"]),
+            {"2026owq", "GRB 260610B", "GRB260610B", "AT 2026owq", "AT2026owq"},
+        )
+        tns_rows = dataframe[dataframe["origin_field"] == "tns_name"]
+        self.assertEqual(set(tns_rows["search_term"]), {"AT 2026owq", "AT2026owq"})
 
 
 if __name__ == "__main__":

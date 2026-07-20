@@ -126,6 +126,10 @@ CANONICAL_EVENT_PATTERN = re.compile(
     r"^(GRB|EP|GW)[\s_-]*([0-9]{6}(?:\.[0-9]+)?[A-Za-z]?(?:-[A-Za-z0-9]+)?)$",
     re.IGNORECASE,
 )
+TNS_EVENT_PATTERN = re.compile(
+    r"^(AT|SN)[\s_-]*(2[0-9]{3}[A-Za-z]{2,4})$",
+    re.IGNORECASE,
+)
 TRIGGER_LIKE_PATTERN = re.compile(
     r"^(GRB|GCN|EP|GW)[-_][0-9]{6}_[0-9]{6}$",
     re.IGNORECASE,
@@ -171,15 +175,20 @@ def normalize_search_term(text: str) -> str:
     match = CANONICAL_EVENT_PATTERN.match(upper)
     if match is not None:
         return f"{match.group(1)}{match.group(2)}"
+    tns_match = TNS_EVENT_PATTERN.match(upper)
+    if tns_match is not None:
+        return f"{tns_match.group(1)}{tns_match.group(2)}"
     return upper
 
 
 def build_conservative_variants(term: str) -> list[dict[str, Any]]:
-    """Build a small set of conservative GRB/EP/GW formatting variants."""
+    """Build conservative event-name formatting variants."""
     cleaned = normalize_whitespace(term)
     match = CANONICAL_EVENT_PATTERN.match(cleaned)
     if match is None:
-        return []
+        match = TNS_EVENT_PATTERN.match(cleaned)
+        if match is None:
+            return []
 
     prefix = match.group(1)
     code = match.group(2)
@@ -380,6 +389,9 @@ def build_event_search_term_rows(event: dict[str, Any]) -> list[dict[str, Any]]:
     for alias in aliases:
         if isinstance(alias, str) and alias.strip():
             candidate_origins.append(("alias", normalize_whitespace(alias)))
+    tns_name = event.get("tns_name")
+    if isinstance(tns_name, str) and tns_name.strip():
+        candidate_origins.append(("tns_name", normalize_whitespace(tns_name)))
 
     rows: list[dict[str, Any]] = []
     for origin_field, origin_value in candidate_origins:
