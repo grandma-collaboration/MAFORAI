@@ -237,7 +237,11 @@ __marimo__/
 !/data/raw/skyportal/source_bundles/.gitkeep
 /data/interim
 /data/raw/inception
-/data/
+!/data/
+/data/*
+!/data/inception/
+/data/inception/*
+!/data/inception/TypeSystem.xml
 
 AUDIT_MAFORAI.md
 CANONICAL_README.md
