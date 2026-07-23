@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from skyportal_corpus.canonical.document import CanonicalDocument
 from skyportal_corpus.extraction_v2.annotations import EventEvidenceAnnotation
+from skyportal_corpus.extraction_v2.photometry_rows import is_photometry_table
+from skyportal_corpus.extraction_v2.photometry_tables import detect_table_blocks
 
 
 TRIGGER_TIME_REVIEW_COMMENT = (
@@ -16,12 +18,25 @@ TRIGGER_TIME_MISSING_DATE_REVIEW_COMMENT = (
 )
 
 _TRIGGER_CONTEXT_RE = re.compile(
-    r"\b(?:trigger(?:ed)?|T0|burst onset|onset of|GBM trigger|BAT trigger)\b"
+    r"\b(?:trigger(?:ed)?|trigger\s+time|detection\s+time|T0|"
+    r"burst\s+onset|onset\s+of|the\s+burst\s+occurred|"
+    r"GBM\s+trigger|BAT\s+trigger)\b"
     r"|\bdetected\b.{0,80}\bat\b",
     re.IGNORECASE | re.DOTALL,
 )
-_COORDINATE_PREFIX_RE = re.compile(
-    r"(?:R\.?\s*A\.?|RA|Dec\.?|DEC|Decl)\s*[=:]?\s*[+\-]?\s*$",
+_TRIGGER_GOVERNING_PREFIX_RE = re.compile(
+    r"(?:"
+    r"\btriggered\b[^.!?;\n]{0,40}\b(?:at|on)\b|"
+    r"\btrigger(?:\s+time)?\s*(?:was|is|=|:|at|on)\b|"
+    r"\btrigger\s+time\b|\bdetection\s+time\b|"
+    r"\bthe\s+burst\s+occurred\b|"
+    r"\bdetected\b[^.!?;\n]{0,80}\bat\b"
+    r")",
+    re.IGNORECASE,
+)
+_COORDINATE_MARKER_RE = re.compile(
+    r"(?:\bR\.?\s*A\.?\b|\bRA\b|\bDec\.?\b|\bdeclination\b|"
+    r"\bright\s+ascension\b|\((?:J2000|B1950)\))",
     re.IGNORECASE,
 )
 _AFTER_TRIGGER_PREFIX_RE = re.compile(
@@ -33,10 +48,52 @@ _AFTER_TRIGGER_PREFIX_RE = re.compile(
 _OBSERVATION_PREFIX_RE = re.compile(
     r"\b("
     r"began observing|started observing|started observations|started the observation|"
-    r"observations started|we started|started on|we observed|we observed the burst|"
-    r"observed the|observation was done|exposures were obtained|carried out from|"
-    r"scanned|starting at|starting on"
+    r"observations started|observation started|observations were started|"
+    r"we started|started on|we observed|we observed the burst|observed the|"
+    r"observation was done|exposures were obtained|carried out from|"
+    r"scanned|starting at|starting on|continued through to|obtained at|"
+    r"images taken at"
     r")\b",
+    re.IGNORECASE,
+)
+_OBSERVATION_GOVERNING_PREFIX_RE = re.compile(
+    r"(?:"
+    r"\bobservations?\b[^.!?;\n]{0,100}?"
+    r"\b(?:started|began|commenced|were\s+started)\s+(?:at|on)|"
+    r"\b(?:we|the\s+team|the\s+telescope)\s+observed\b[^.!?;\n]{0,100}?"
+    r"(?:\bat\b|\bon\b)|"
+    r"\bcarried\s+out\b[^.!?;\n]{0,100}?\bstarting\b|"
+    r"\b(?:images?|exposures?)\s+(?:were\s+)?(?:taken|obtained)\s+(?:at|on)|"
+    r"\bour\s+(?:first|second|third|fourth)\s+exposure\b[^.!?;\n]{0,60}?"
+    r"(?:\bat\b|\bon\b)|"
+    r"\bcontinued\s+through\s+to\b|"
+    r"\bstarting\s+(?:at|on)\b|"
+    r"\bobtained\s+(?:at|on)\b"
+    r")",
+    re.IGNORECASE,
+)
+_OBSERVATION_ACTION_RE = re.compile(
+    r"\b(?:observ(?:e|ed|ing|ations?)|imag(?:e|ed|es|ing)|"
+    r"exposures?|photometr(?:y|ic))\b",
+    re.IGNORECASE,
+)
+_OBSERVATION_PARAGRAPH_CUE_RE = re.compile(
+    r"\b(?:"
+    r"observations?\s+(?:started|began|commenced|were\s+carried\s+out|were\s+made)|"
+    r"we\s+observed|"
+    r"(?:first|second|third|fourth)\s+exposure|"
+    r"exposures?|"
+    r"images?\s+(?:were\s+)?(?:taken|obtained)|"
+    r"stack(?:ed|ing)?|coadd(?:ed|ing)?|epochs?|"
+    r"mid[- ]?time|central\s+time|start\s+of\s+the\s+observation|"
+    r"photometr(?:y|ic)"
+    r")\b",
+    re.IGNORECASE,
+)
+_OPTICAL_OBSERVATION_RE = re.compile(
+    r"\b(?:magnitudes?|mag|filters?|forced\s+photometry|"
+    r"[ugrizyJHKBRVI](?:c)?[- ]band)\b|"
+    r"[<>]?\s*\d{1,2}(?:\.\d+)?\s*(?:\+/-|\+-|±)\s*\d+(?:\.\d+)?",
     re.IGNORECASE,
 )
 _RELATIVE_AFTER_SUFFIX_RE = re.compile(
@@ -156,10 +213,20 @@ class TriggerTimeExtractor:
 
     def extract(self, doc: CanonicalDocument) -> list[EventEvidenceAnnotation]:
         accepted: list[tuple[TimeCandidate, DateMatch | None, str]] = []
+        photometry_table_spans = tuple(
+            (block.start_offset, block.end_offset)
+            for block in detect_table_blocks(doc.rendered_text)
+            if is_photometry_table(block)
+        )
         for candidate in resolve_overlaps(find_time_candidates(doc.rendered_text)):
             if _is_in_header(doc, candidate.span_start, candidate.span_end):
                 continue
-            if is_observation_context(doc.rendered_text, candidate.span_start, candidate.span_end):
+            if is_observation_context(
+                doc.rendered_text,
+                candidate.span_start,
+                candidate.span_end,
+                photometry_table_spans=photometry_table_spans,
+            ):
                 continue
             if not has_trigger_context(doc.rendered_text, candidate.span_start, candidate.span_end):
                 continue
@@ -180,6 +247,7 @@ class TriggerTimeExtractor:
                 target="event",
                 certainty="confirmed",
                 value=value,
+                unit="mjd" if candidate.rule_id == "trigger_time.mjd" else None,
                 extractor_id=self.extractor_id,
                 extractor_version=self.extractor_version,
                 method="regex",
@@ -228,9 +296,24 @@ def find_time_candidates(text: str) -> list[TimeCandidate]:
     return candidates
 
 
-def is_observation_context(text: str, span_start: int, span_end: int) -> bool:
-    if _has_coordinate_prefix(text, span_start):
+def is_observation_context(
+    text: str,
+    span_start: int,
+    span_end: int,
+    *,
+    photometry_table_spans: tuple[tuple[int, int], ...] = (),
+) -> bool:
+    if _has_coordinate_context(text, span_start):
         return True
+
+    if any(
+        span_start < table_end and table_start < span_end
+        for table_start, table_end in photometry_table_spans
+    ):
+        return True
+
+    if text[span_start:span_end].lstrip().lower().startswith("t0"):
+        return False
 
     previous_45 = text[max(0, span_start - 45) : span_start]
     if _AFTER_TRIGGER_PREFIX_RE.search(previous_45):
@@ -240,8 +323,39 @@ def is_observation_context(text: str, span_start: int, span_end: int) -> bool:
     if _OBSERVATION_PREFIX_RE.search(previous_120):
         return True
 
+    sentence_start, sentence_end = _sentence_bounds(text, span_start, span_end)
+    prefix = text[max(sentence_start, span_start - 240) : span_start]
+    if _OBSERVATION_GOVERNING_PREFIX_RE.search(prefix):
+        return True
+
+    paragraph_start = _paragraph_start(text, span_start)
+    paragraph_prefix = text[max(paragraph_start, span_start - 1200) : span_start]
+    observation_matches = list(_OBSERVATION_PARAGRAPH_CUE_RE.finditer(paragraph_prefix))
+    if observation_matches:
+        trigger_matches = list(_TRIGGER_GOVERNING_PREFIX_RE.finditer(paragraph_prefix))
+        last_observation = observation_matches[-1]
+        if not trigger_matches or trigger_matches[-1].end() <= last_observation.end():
+            return True
+
+    sentence = text[sentence_start:sentence_end]
+    if (
+        _OBSERVATION_ACTION_RE.search(sentence)
+        and _OPTICAL_OBSERVATION_RE.search(sentence)
+    ):
+        return True
+
     next_80 = text[span_end : min(len(text), span_end + 80)]
     return bool(_RELATIVE_AFTER_SUFFIX_RE.search(next_80))
+
+
+def _sentence_bounds(text: str, start: int, end: int) -> tuple[int, int]:
+    left = start
+    while left > 0 and text[left - 1] not in ".!?\n":
+        left -= 1
+    right = end
+    while right < len(text) and text[right] not in ".!?\n":
+        right += 1
+    return left, right
 
 
 def has_trigger_context(text: str, span_start: int, span_end: int) -> bool:
@@ -280,7 +394,7 @@ def find_adjacent_date(text: str, time_span_start: int, time_span_end: int) -> D
 def normalize_to_iso(raw_time: str, date_match: DateMatch | None) -> str:
     if _is_mjd_text(raw_time):
         match = re.search(r"\bMJD\s?(\d{5}(\.\d+)?)\b", raw_time, re.IGNORECASE)
-        return f"MJD {match.group(1)}" if match else raw_time.strip()
+        return match.group(1) if match else raw_time.strip()
 
     if date_match is None:
         return raw_time.strip()
@@ -335,9 +449,20 @@ def _has_valid_clock_range(rule_id: str, text: str) -> bool:
     return 0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second < 60
 
 
-def _has_coordinate_prefix(rendered_text: str, start: int) -> bool:
-    previous_text = rendered_text[max(0, start - 15) : start]
-    return bool(_COORDINATE_PREFIX_RE.search(previous_text))
+def _has_coordinate_context(rendered_text: str, start: int) -> bool:
+    if start > 0 and rendered_text[start - 1] in "+-":
+        sign_prefix = rendered_text[start - 2] if start > 1 else ""
+        if not (sign_prefix.isdigit() or sign_prefix in "+-"):
+            return True
+
+    line_start = rendered_text.rfind("\n", 0, start) + 1
+    immediate_prefix = rendered_text[max(line_start, start - 80) : start]
+    return bool(_COORDINATE_MARKER_RE.search(immediate_prefix))
+
+
+def _paragraph_start(text: str, start: int) -> int:
+    boundary = text.rfind("\n\n", 0, start)
+    return boundary + 2 if boundary >= 0 else 0
 
 
 def _overlaps(left: TimeCandidate, right: TimeCandidate) -> bool:

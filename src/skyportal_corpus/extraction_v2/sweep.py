@@ -235,7 +235,10 @@ def flag_suspicious(
             flags.append("span_too_long")
         if label == "EVENT_IDENTITY" and not _looks_like_event_identity(value):
             flags.append("identity_value_weird")
-        if label == "TRIGGER_TIME" and not _looks_like_trigger_value(value):
+        if label == "TRIGGER_TIME" and not _looks_like_trigger_value(
+            value,
+            annotation.get("unit"),
+        ):
             flags.append("trigger_value_not_iso")
         if label == "LOCALIZATION" and _localization_out_of_range(value):
             flags.append("localization_out_of_range")
@@ -591,11 +594,13 @@ def _looks_like_event_identity(value: str) -> bool:
     return is_canonical_identity(value)
 
 
-def _looks_like_trigger_value(value: str) -> bool:
+def _looks_like_trigger_value(value: str, unit: Any = None) -> bool:
     if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", value):
         return True
     if re.match(r"^MJD\s+\d{5}(?:\.\d+)?$", value):
         return True
+    if str(unit or "").lower() == "mjd":
+        return bool(re.fullmatch(r"\d{5}(?:\.\d+)?", value))
 
     clock_match = re.match(
         r"^(?P<hour>\d{1,2}):(?P<minute>\d{2})(?::(?P<second>\d{2}(?:\.\d+)?))?(?:\s?(?:UT|UTC))?$",

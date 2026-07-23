@@ -930,10 +930,18 @@ def test_flag_suspicious_rejects_out_of_range_clock_value() -> None:
 
 
 @pytest.mark.parametrize(
-    "value",
-    ["2023-01-01T02:16:38", "MJD 59945.1", "02:16:38", "02:16:38 UT"],
+    ("value", "unit"),
+    [
+        ("2023-01-01T02:16:38", None),
+        ("59945.1", "mjd"),
+        ("02:16:38", None),
+        ("02:16:38 UT", None),
+    ],
 )
-def test_flag_suspicious_accepts_expected_trigger_value_formats(value: str) -> None:
+def test_flag_suspicious_accepts_expected_trigger_value_formats(
+    value: str,
+    unit: str | None,
+) -> None:
     assert (
         flag_suspicious(
             [
@@ -942,6 +950,7 @@ def test_flag_suspicious_accepts_expected_trigger_value_formats(value: str) -> N
                     "extractor": "trigger_time",
                     "label": "TRIGGER_TIME",
                     "value": value,
+                    "unit": unit,
                     "text": value,
                     "needs_review": False,
                 }

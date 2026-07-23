@@ -92,6 +92,83 @@ def test_trigger_time_without_trigger_context_is_ignored() -> None:
     assert TriggerTimeExtractor().extract(doc) == []
 
 
+def test_real_2026owq_observation_times_are_not_trigger_times() -> None:
+    bodies = (
+        (
+            "Observations covering the localisation area began at "
+            "2026-06-10 23:58:04 UT, (+0.2h post trigger) and continued "
+            "through to 2026-06-11 00:31:39 UT (+0.76h post trigger)."
+        ),
+        (
+            "Photometric observations were carried out in BVRcIc filters "
+            "starting June 11, 19:43:01 UT, 1.4 days after trigger."
+        ),
+        (
+            "The observation started at 2026-06-11T13:05:40 UTC, i.e., "
+            "13.32 hours post trigger in the VT_B and VT_R channels."
+        ),
+        (
+            "The observations were started on 2026-06-15 at 16:53:40 UT, "
+            "i.e., about 4.71 days after trigger."
+        ),
+    )
+
+    for body in bodies:
+        doc = render_canonical(
+            circular_id=44903,
+            subject="GRB 260610B optical observations",
+            body=body,
+        )
+        assert TriggerTimeExtractor().extract(doc) == []
+
+
+def test_real_2026owq_trigger_time_remains_captured() -> None:
+    doc = render_canonical(
+        circular_id=44901,
+        subject="GRB 260610B: Fermi GBM Final Real-time Localization",
+        body=(
+            "At 23:46:14.25 UT on 10 June 2026, the Fermi Gamma-ray "
+            "Burst Monitor (GBM) triggered and located GRB 260610B."
+        ),
+    )
+
+    annotations = TriggerTimeExtractor().extract(doc)
+
+    assert len(annotations) == 1
+    annotation = annotations[0]
+    assert annotation.text == "23:46:14.25 UT on 10 June 2026"
+    assert annotation.value == "2026-06-10T23:46:14.25"
+    assert annotation.unit is None
+    assert annotation.certainty == "confirmed"
+    assert annotation.needs_review is False
+    assert annotation.verify(doc.rendered_text)
+
+
+def test_mjd_trigger_time_is_captured_but_observation_mjds_are_not() -> None:
+    doc = render_canonical(
+        circular_id=44910,
+        subject="GRB 260610B / AT2026owq: Early ATLAS observations",
+        body=(
+            "ATLAS-Teide observed the sky location of AT2026owq four times "
+            "on MJDs 61201.96762, 61201.98177, 61201.99593 and 61202.01008. "
+            "Fermi/GBM reported the detection time of GRB 260610B "
+            "(GCN 44901) to be MJD 61201.99044."
+        ),
+    )
+
+    annotations = TriggerTimeExtractor().extract(doc)
+
+    assert len(annotations) == 1
+    annotation = annotations[0]
+    assert annotation.rule_id == "trigger_time.mjd"
+    assert annotation.text == "MJD 61201.99044"
+    assert annotation.value == "61201.99044"
+    assert annotation.unit == "mjd"
+    assert annotation.certainty == "confirmed"
+    assert annotation.needs_review is False
+    assert annotation.verify(doc.rendered_text)
+
+
 def test_trigger_number_is_not_trigger_time_even_with_context() -> None:
     doc = render_canonical(
         circular_id=7,
@@ -573,3 +650,144 @@ def test_resolve_overlaps_keeps_longest_candidate() -> None:
     )
 
     assert resolve_overlaps([short, long]) == [long]
+
+
+def test_real_39097_sexagesimal_coordinates_are_not_trigger_times() -> None:
+    doc = render_canonical(
+        circular_id=39097,
+        subject="GRB 250129A: optical counterpart position",
+        body=(
+            "R.A. (J2000): 13:14:42.40\n\n"
+            "Dec. (J2000): +05:01:50.4\n"
+            "The position was derived after the Swift trigger."
+        ),
+    )
+
+    assert TriggerTimeExtractor().extract(doc) == []
+
+
+def test_signed_sexagesimal_value_is_not_a_trigger_time() -> None:
+    doc = render_canonical(
+        circular_id=39097,
+        subject="Coordinate report",
+        body="The trigger report gives the declination -05:01:50.4.",
+    )
+
+    assert TriggerTimeExtractor().extract(doc) == []
+
+
+def test_real_observation_governed_times_are_not_trigger_times() -> None:
+    bodies = (
+        (
+            "Observations began on 2025-10-13 at 19:09:11 UT "
+            "(approximately 1.5 hours after the trigger) and ended at 22:19:55 UT."
+        ),
+        (
+            "We observed the afterglow of GRB 251013C with the Chandra X-ray "
+            "Observatory starting on 2025-11-09 at 03:09:42 UT "
+            "(i.e., T0+27.396 d), for a total of 40 ks exposure."
+        ),
+        (
+            "We observed the field of GRB 250129A with the SAO RAS 1-m telescope "
+            "on January 30, 23:46:43 -- January 31, 00:19:22 UT "
+            "(t_mid - T0 = 43.298 hours)."
+        ),
+        (
+            "The observations began on 2025-01-30 at 22:16:50 UT, "
+            "i.e. approximately 1.76 days since trigger."
+        ),
+        (
+            "In 1200 seconds of exposure from 2024-10-31 01:46:50 to "
+            "02:10:56 UTC (0.83 to 0.85 days after the trigger), we detect "
+            "the optical counterpart with an AB magnitude of 20.1."
+        ),
+        (
+            "We observed the field of GRB 241030A with the 1-m telescope "
+            "on October 31, 17:49:28--18:22:41 UT "
+            "(t_mid - T0 = 1.5125 days)."
+        ),
+        (
+            "The earliest detection (20x20 s coadd) is confirmed at "
+            "2025-10-13 18:10:27 UTC (T - T0 = 0.51 h) with AB mag "
+            "16.14 +/- 0.02."
+        ),
+        (
+            "Preliminary automated photometry shows a rise to 15.20 +/- 0.01 "
+            "mag at 18:32:15 UTC (T - T0 = 0.87 h)."
+        ),
+        (
+            "The central time of the resulting stack was 13 Oct., 20:54:57 UTC, "
+            "that is about 3.25 hours after the burst."
+        ),
+    )
+
+    for circular_id, body in enumerate(bodies, start=42333):
+        doc = render_canonical(
+            circular_id=circular_id,
+            subject="Optical follow-up observation",
+            body=body,
+        )
+        assert TriggerTimeExtractor().extract(doc) == []
+
+
+def test_times_inside_real_photometry_tables_are_not_trigger_times() -> None:
+    bodies = (
+        (
+            "date       UT_start--UT_end    t_mid-T0, h  exp., s   R_mag\n"
+            "Oct. 30    17:21:38--17:26:38  11.8392       6 x 300  18.72 +/- 0.04\n"
+            "Oct. 30    20:40:51--21:44:59  15.4145       6 x 600  19.09 +/- 0.06\n"
+            "Oct. 30/31 23:18:20--02:14:51  18.9756      15 x 600  19.36 +/- 0.04"
+        ),
+        (
+            "Date        UTstart-end          t-T0 (hours)  Exp (sec)  Filter  Magnitude\n"
+            "2024-10-30  19:55:20--20:05:50  14.21          2 x 300    B       B = 19.52 +/- 0.14\n"
+            "2024-10-30  19:48:10--20:08:18  14.17          2 x 600    V       V = 19.51 +/- 0.14\n"
+            "2024-10-30  20:07:31--20:17:59  14.41          2 x 300    R       R = 19.10 +/- 0.04"
+        ),
+    )
+
+    for circular_id, body in zip((38016, 38220), bodies):
+        doc = render_canonical(
+            circular_id=circular_id,
+            subject="GRB optical photometry",
+            body=body,
+        )
+        assert TriggerTimeExtractor().extract(doc) == []
+
+
+def test_real_36016_detection_time_survives_earlier_coordinate_context() -> None:
+    doc = render_canonical(
+        circular_id=36016,
+        subject="X-ray transient LXT 240402A: LEIA detection",
+        body=(
+            "The position of the source is R.A. = 245.438 deg, DEC = 25.800 deg "
+            "with an uncertainty of 1.5 arcmin. The source was detected by LEIA "
+            "at 2024-04-02T08:47:41 (UTC)."
+        ),
+    )
+
+    annotations = TriggerTimeExtractor().extract(doc)
+
+    assert [(item.rule_id, item.text) for item in annotations] == [
+        ("trigger_time.iso", "2024-04-02T08:47:41")
+    ]
+    assert annotations[0].verify(doc.rendered_text)
+
+
+def test_real_44324_explicit_t0_survives_followup_observation_language() -> None:
+    doc = render_canonical(
+        circular_id=44324,
+        subject="EP260416a: refined WXT analysis",
+        body=(
+            "The refined analysis of the WXT data shows that the event was "
+            "detected at the beginning of the observation starting at "
+            "T0=2026-04-16T05:25:24 (UTC), and lasted for about 250 s."
+        ),
+    )
+
+    annotations = TriggerTimeExtractor().extract(doc)
+
+    assert [(item.rule_id, item.text) for item in annotations] == [
+        ("trigger_time.t0_explicit", "T0=2026-04-16T05:25:24")
+    ]
+    assert annotations[0].verify(doc.rendered_text)
