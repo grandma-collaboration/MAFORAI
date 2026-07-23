@@ -51,8 +51,15 @@ OBS_TIME_REFERENCES = frozenset(
 
 PHOTOMETRIC_SYSTEMS = frozenset({"AB", "Vega", "unknown"})
 
+# Internal-only provenance for the ``instrument`` field. Not an INCEpTION
+# feature; it exists to audit attribution and support Round 2 safely.
+INSTRUMENT_PROVENANCES = frozenset(
+    {"explicit_column", "inferred_column", "prose_same_sentence"}
+)
+
 __all__ = [
     "CERTAINTIES",
+    "INSTRUMENT_PROVENANCES",
     "MEASUREMENT_TYPES",
     "OBS_TIME_REFERENCES",
     "OBS_TIME_TYPES",
