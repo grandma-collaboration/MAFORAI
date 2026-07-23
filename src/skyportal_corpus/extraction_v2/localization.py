@@ -9,6 +9,7 @@ from skyportal_corpus.extraction_v2.annotations import EventEvidenceAnnotation
 
 _RA_LABEL = r"(?:R\.?\s*A\.?)"
 _DEC_LABEL = r"(?:Dec\.?|Decl\.?|Declination)"
+_REFERENCE_FRAME = r"(?:\s*\(\s*J2000\s*\))?"
 _RA_SEXAGESIMAL = (
     r"[+\-]?\d{1,2}\s*(?::\s*\d{1,2}\s*(?::\s*\d{1,2}(?:\.\d+)?)?"
     r"|h\s*\d{1,2}\s*m\s*(?:\d{1,2}(?:\.\d+)?\s*s?)?)"
@@ -46,12 +47,23 @@ class LocalizationExtractor:
     extractor_id = "localization-v1"
     extractor_version = "0.1"
 
+    _combined_decimal_sexagesimal_rule = _Rule(
+        "localization.radec_decimal_sexagesimal",
+        re.compile(
+            rf"\b{_RA_LABEL}\s*,\s*{_DEC_LABEL}{_REFERENCE_FRAME}\s*[=:]\s*"
+            rf"(?P<ra>[+\-]?\d{{1,3}}(?:\.\d+)?)\s*,\s*"
+            rf"(?P<dec>[+\-]?\d{{1,2}}(?:\.\d+)?)\s*,\s*"
+            rf"(?P<ra_sexagesimal>{_RA_SEXAGESIMAL})\s*,\s*"
+            rf"(?P<dec_sexagesimal>{_DEC_SEXAGESIMAL})",
+            re.IGNORECASE,
+        ),
+    )
     _decimal_rule = _Rule(
         "localization.radec_decimal",
         re.compile(
-            rf"\b{_RA_LABEL}\s*[=:]\s*"
+            rf"\b{_RA_LABEL}{_REFERENCE_FRAME}\s*[=:]\s*"
             rf"(?P<ra>[+\-]?\d{{1,3}}(?:\.\d+)?)(?:\s*(?P<ra_unit>degrees|deg|d))?\s*"
-            rf"(?:,|\s)\s*{_DEC_LABEL}\s*[=:]\s*"
+            rf"(?:,|\s)\s*{_DEC_LABEL}{_REFERENCE_FRAME}\s*[=:]\s*"
             rf"(?P<dec>[+\-]?\d{{1,2}}(?:\.\d+)?)(?:\s*(?P<dec_unit>degrees|deg|d))?",
             re.IGNORECASE,
         ),
@@ -59,8 +71,10 @@ class LocalizationExtractor:
     _sexagesimal_rule = _Rule(
         "localization.radec_sexagesimal",
         re.compile(
-            rf"\b{_RA_LABEL}\s*[=:]\s*(?P<ra>{_RA_SEXAGESIMAL})\s*(?:,|\s)\s*"
-            rf"{_DEC_LABEL}\s*[=:]\s*(?P<dec>{_DEC_SEXAGESIMAL})",
+            rf"\b{_RA_LABEL}{_REFERENCE_FRAME}\s*[=:]\s*"
+            rf"(?P<ra>{_RA_SEXAGESIMAL})\s*(?:,|\s)\s*"
+            rf"{_DEC_LABEL}{_REFERENCE_FRAME}\s*[=:]\s*"
+            rf"(?P<dec>{_DEC_SEXAGESIMAL})",
             re.IGNORECASE,
         ),
     )
@@ -76,6 +90,27 @@ class LocalizationExtractor:
     def extract(self, doc: CanonicalDocument) -> list[EventEvidenceAnnotation]:
         accepted_decimal_spans: list[tuple[int, int]] = []
         candidates: list[_Candidate] = []
+
+        for match in self._combined_decimal_sexagesimal_rule.pattern.finditer(
+            doc.rendered_text
+        ):
+            accepted_decimal_spans.append((match.start(), match.end()))
+            candidates.append(
+                _Candidate(
+                    rule_id=self._combined_decimal_sexagesimal_rule.rule_id,
+                    start=match.start(),
+                    end=match.end(),
+                    text=doc.rendered_text[match.start() : match.end()],
+                    value=_position_value(match),
+                    unit="",
+                    comment=None,
+                    target=_target_from_context(
+                        doc.rendered_text,
+                        match.start(),
+                        match.end(),
+                    ),
+                )
+            )
 
         for match in self._decimal_rule.pattern.finditer(doc.rendered_text):
             accepted_decimal_spans.append((match.start(), match.end()))

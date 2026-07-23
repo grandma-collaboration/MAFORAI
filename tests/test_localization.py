@@ -33,6 +33,54 @@ def test_localization_decimal_position() -> None:
     assert annotation.verify(doc.rendered_text)
 
 
+def test_localization_captures_multiline_sexagesimal_block_from_44941() -> None:
+    block = "RA (J2000) = 14:32:38.2\nDec (J2000) = +27:00:17.6"
+    doc = render_canonical(
+        circular_id=44941,
+        subject="GRB 260610B: optical observations",
+        body=f"The source is located at:\n{block}\nThe uncertainty is small.",
+    )
+
+    annotations = LocalizationExtractor().extract(doc)
+
+    positions = [
+        annotation
+        for annotation in annotations
+        if annotation.rule_id == "localization.radec_sexagesimal"
+    ]
+    assert len(positions) == 1
+    assert positions[0].text == block
+    assert positions[0].value == "RA=14:32:38.2, Dec=+27:00:17.6"
+    assert positions[0].verify(doc.rendered_text)
+
+
+def test_localization_combined_decimal_and_sexagesimal_block_is_one_annotation() -> None:
+    block = (
+        "RA,DEC (J2000) = 218.159414, 27.004935,\n"
+        "                    14:32:38.26, +27:00:17.76"
+    )
+    doc = render_canonical(
+        circular_id=44903,
+        subject="GRB 260610B: GOTO optical counterpart candidate",
+        body=f"The candidate position is:\n{block}\nPhotometry follows.",
+    )
+
+    annotations = LocalizationExtractor().extract(doc)
+    positions = [
+        annotation
+        for annotation in annotations
+        if annotation.rule_id.startswith("localization.radec_")
+    ]
+
+    assert len(positions) == 1
+    annotation = positions[0]
+    assert annotation.rule_id == "localization.radec_decimal_sexagesimal"
+    assert annotation.text == block
+    assert annotation.value == "RA=218.159414, Dec=27.004935"
+    assert annotation.unit == ""
+    assert annotation.verify(doc.rendered_text)
+
+
 def test_localization_decimal_position_deduplicates_nearby_sexagesimal() -> None:
     doc = render_canonical(
         circular_id=2,
