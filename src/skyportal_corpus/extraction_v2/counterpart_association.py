@@ -193,7 +193,7 @@ class CounterpartAssociationExtractor:
                 label="COUNTERPART_ASSOCIATION",
                 target="counterpart",
                 certainty=candidate.certainty,
-                value=None,
+                value=normalized_counterpart_value(candidate.raw),
                 unit=None,
                 comment=None,
                 extractor_id=self.extractor_id,
@@ -316,6 +316,21 @@ def _certainty(raw: str) -> str:
     return "confirmed" if _CONFIRMED_RE.search(raw) else "candidate"
 
 
+def normalized_counterpart_value(raw: str) -> str:
+    role = "afterglow" if re.search(r"\bafterglow\b", raw, re.IGNORECASE) else "counterpart"
+    modality_patterns = (
+        ("optical", r"\boptical\b"),
+        ("X-ray", r"\bX[- ]?ray\b"),
+        ("radio", r"\bradio\b"),
+        ("NIR", r"\b(?:NIR|near[- ]infrared)\b"),
+        ("UV", r"\b(?:UV|ultraviolet)\b"),
+    )
+    for modality, pattern in modality_patterns:
+        if re.search(pattern, raw, re.IGNORECASE):
+            return f"{modality} {role}"
+    return role
+
+
 def _is_not_telescope_subject(text: str, start: int, prefix: str) -> bool:
     line_start = text.rfind("\n", 0, start) + 1
     line_prefix = text[line_start:start]
@@ -350,5 +365,6 @@ __all__ = [
     "find_counterpart_association_candidates",
     "is_event_identity_linking_context",
     "is_negated_counterpart_context",
+    "normalized_counterpart_value",
     "resolve_counterpart_association_overlaps",
 ]

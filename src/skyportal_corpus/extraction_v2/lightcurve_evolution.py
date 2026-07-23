@@ -72,6 +72,13 @@ _FADE_NEGATION_CUE_RE = re.compile(
     re.IGNORECASE,
 )
 _FADE_NEGATION_WINDOW = 15
+_NORMALIZED_VALUES = {
+    "lightcurve_evolution.fade_decline": "fading",
+    "lightcurve_evolution.rise_brightening": "rebrightening",
+    "lightcurve_evolution.flatten_plateau": "plateau",
+    "lightcurve_evolution.variability": "variable",
+    "lightcurve_evolution.negative": "no evolution",
+}
 
 
 @dataclass(frozen=True)
@@ -171,7 +178,7 @@ class LightcurveEvolutionExtractor:
                 label="LIGHTCURVE_EVOLUTION",
                 target="counterpart",
                 certainty="confirmed",
-                value=None,
+                value=_NORMALIZED_VALUES[candidate.rule_id],
                 unit=None,
                 comment=None,
                 extractor_id=self.extractor_id,

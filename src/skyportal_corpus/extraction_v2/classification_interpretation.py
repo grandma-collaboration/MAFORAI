@@ -212,6 +212,31 @@ _CALL_FOR_CLASSIFICATION_RE = re.compile(
     r")\s+(?:the\s+)?nature\s+of\b",
     re.IGNORECASE,
 )
+_CLASS_EXCLUSION_OBJECT = (
+    r"(?:(?:an?|the)\s+)?"
+    r"(?:(?:emergence|presence)\s+of\s+(?:(?:an?|the)\s+)?)?"
+    r"(?:(?:typical|emerging|ordinary)\s+)?"
+    r"(?:"
+    r"(?:GRB[- ]?)?supernovae?(?:\s+signal)?|"
+    r"SN(?:\s+(?:Ia|Ib|Ic(?:-BL)?|II(?:b|n|P|L)?|IIn))?|"
+    r"kilonovae?|TDE|tidal\s+disruption(?:\s+event)?|"
+    r"magnetar(?:\s+giant\s+flare)?|GRB\s+afterglow|afterglow"
+    r")"
+)
+_CLASS_EXCLUSION_RE = re.compile(
+    rf"(?P<span>\b(?:"
+    rf"(?:this|the|such)\s+"
+    rf"(?:excess|emission|signal|transient|source|event)\s+"
+    rf"(?:is|was)\s+too\s+bright\s+to\s+be\s+powered\s+by\s+"
+    rf"{_CLASS_EXCLUSION_OBJECT}|"
+    rf"inconsistent\s+with\s+expectations\s+for\s+"
+    rf"{_CLASS_EXCLUSION_OBJECT}|"
+    rf"cannot\s+be\s+explained\s+by\s+{_CLASS_EXCLUSION_OBJECT}|"
+    rf"disfavou?rs?\s+{_CLASS_EXCLUSION_OBJECT}|"
+    rf"rules?\s+out\s+{_CLASS_EXCLUSION_OBJECT}"
+    rf"))",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -233,6 +258,11 @@ class _ClassificationRule:
 
 
 _RULES = (
+    _ClassificationRule(
+        "classification_interpretation.class_exclusion",
+        _CLASS_EXCLUSION_RE,
+        0,
+    ),
     _ClassificationRule(
         "classification_interpretation.firm_classification",
         re.compile(
@@ -438,7 +468,7 @@ _RULES = (
     _ClassificationRule(
         "classification_interpretation.grb_class",
         re.compile(
-            rf"(?P<span>\b{_GRB_CLASS_TERM}\s+{_GRB_EVENT_NAME}\b)",
+            rf"(?P<span>\b{_GRB_CLASS_TERM})\s+{_GRB_EVENT_NAME}\b",
             re.IGNORECASE,
         ),
         3,
@@ -504,7 +534,10 @@ class ClassificationInterpretationExtractor:
                 label="CLASSIFICATION_INTERPRETATION",
                 target="event",
                 certainty=candidate.certainty,
-                value=None,
+                value=normalized_classification_value(
+                    candidate.raw,
+                    rejected=candidate.certainty == "rejected",
+                ),
                 unit=None,
                 comment=None,
                 extractor_id=self.extractor_id,
@@ -537,12 +570,20 @@ def find_classification_interpretation_candidates(
             if span_start >= span_end:
                 continue
             raw = text[span_start:span_end]
+            is_class_exclusion = (
+                rule.rule_id == "classification_interpretation.class_exclusion"
+            )
             if (
-                _is_negated_claim(text, span_start)
-                or is_rejected_classification_context(
-                    text,
-                    span_start,
-                    span_end,
+                (
+                    not is_class_exclusion
+                    and (
+                        _is_negated_claim(text, span_start)
+                        or is_rejected_classification_context(
+                            text,
+                            span_start,
+                            span_end,
+                        )
+                    )
                 )
                 or _is_classification_call_context(
                     text,
@@ -562,12 +603,16 @@ def find_classification_interpretation_candidates(
                     span_start=span_start,
                     span_end=span_end,
                     raw=raw,
-                    certainty=_candidate_certainty(
-                        text,
-                        span_start,
-                        span_end,
-                        raw,
-                        rule.rule_id,
+                    certainty=(
+                        "rejected"
+                        if is_class_exclusion
+                        else _candidate_certainty(
+                            text,
+                            span_start,
+                            span_end,
+                            raw,
+                            rule.rule_id,
+                        )
                     ),
                     rule_id=rule.rule_id,
                     priority=rule.priority,
@@ -668,6 +713,50 @@ def _certainty(raw: str) -> str:
     return "confirmed" if _FIRM_MARKER_RE.search(raw) else "tentative"
 
 
+def normalized_classification_value(
+    raw: str,
+    *,
+    rejected: bool = False,
+) -> str | None:
+    concepts = (
+        ("ultra-long GRB", r"\bultra[- ]long\s+GRB\b"),
+        ("long GRB", r"\b(?:long[- ]duration|long\s+soft|long)\s+GRB\b"),
+        ("short GRB", r"\b(?:short[- ]duration|short\s+hard|short)\s+GRB\b"),
+        ("long GRB", r"\blong\s+burst\b"),
+        ("short GRB", r"\bshort\s+burst\b"),
+        ("Type II GRB", r"\bType\s+II\s+GRB"),
+        ("Type I GRB", r"\bType\s+I\s+GRB"),
+        ("GRB afterglow", r"\bGRB[- ]afterglow\b"),
+        ("shock breakout", r"\bshock\s+breakout\b"),
+        ("shock cooling", r"\bshock\s+cooling\b"),
+        ("reverse shock", r"\breverse\s+shock\b"),
+        ("forward shock", r"\bforward\s+shock\b"),
+        ("external shock", r"\bexternal\s+shock\b"),
+        ("internal shock", r"\binternal\s+shock\b"),
+        ("refreshed shock", r"\brefreshed\s+shock\b"),
+        ("jet break", r"\bjet\s+break\b"),
+        ("late jet activity", r"\blate\s+jet\s+activity\b"),
+        ("off-axis jet activity", r"\boff[- ]axis\s+jet\s+activity\b"),
+        ("energy injection", r"\benergy\s+(?:re[- ]?)?injection\b"),
+        ("central engine activity", r"\bcentral\s+engine\s+activity\b"),
+        ("magnetar giant flare", r"\bmagnetar\s+giant\s+flare\b"),
+        ("magnetar", r"\bmagnetar\b"),
+        ("collapsar", r"\bcollapsar\b"),
+        ("compact binary merger", r"\bcompact\s+binary\s+merger\b"),
+        ("merger", r"\bmerger\b"),
+        ("tidal disruption", r"\btidal\s+disruption\b|\bTDE\b"),
+        ("blazar flare", r"\bblazar(?:\s+flare)?\b"),
+        ("AGN flare", r"\bAGN\s+flare\b"),
+        ("synchrotron emission", r"\bsynchrotron(?:\s+emission)?\b"),
+        ("supernova", r"\b(?:GRB[- ]?)?supernovae?\b|\bSNe?\b"),
+        ("kilonova", r"\bkilonovae?\b"),
+    )
+    for value, pattern in concepts:
+        if re.search(pattern, raw, re.IGNORECASE):
+            return f"not a {value}" if rejected else value
+    return None
+
+
 def _candidate_certainty(
     text: str,
     start: int,
@@ -740,6 +829,7 @@ __all__ = [
     "find_classification_interpretation_candidates",
     "is_negated_physical_cause_context",
     "is_rejected_classification_context",
+    "normalized_classification_value",
     "resolve_classification_interpretation_overlaps",
     "sentence_bounds",
 ]

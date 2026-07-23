@@ -55,6 +55,7 @@ def _assert_annotation(
     annotation: EventEvidenceAnnotation,
     *,
     text: str,
+    value: str,
     certainty: str = "tentative",
     rule_id: str | None = None,
 ) -> None:
@@ -62,7 +63,7 @@ def _assert_annotation(
     assert annotation.label == "CLASSIFICATION_INTERPRETATION"
     assert annotation.target == "event"
     assert annotation.certainty == certainty
-    assert annotation.value is None
+    assert annotation.value == value
     assert annotation.unit is None
     assert annotation.comment is None
     assert annotation.needs_review is False
@@ -76,26 +77,30 @@ def _assert_annotation(
 
 
 @pytest.mark.parametrize(
-    ("body", "expected_text", "rule_id"),
+    ("body", "expected_text", "expected_value", "rule_id"),
     [
         (
             "The evidence favors a likely long GRB.",
             "likely long GRB",
+            "long GRB",
             "classification_interpretation.qualified_class",
         ),
         (
             "The event belongs to the Type II GRB population.",
+            "Type II GRB",
             "Type II GRB",
             "classification_interpretation.type_grb",
         ),
         (
             "The excess may represent a possible supernova.",
             "possible supernova",
+            "supernova",
             "classification_interpretation.qualified_class",
         ),
         (
             "This rebrightening may be due to late jet activity.",
             "This rebrightening may be due to late jet activity",
+            "late jet activity",
             "classification_interpretation.physical_cause",
         ),
     ],
@@ -103,6 +108,7 @@ def _assert_annotation(
 def test_real_classification_and_interpretation_phrasings_are_captured(
     body: str,
     expected_text: str,
+    expected_value: str,
     rule_id: str,
 ) -> None:
     doc, annotations = _extract(body)
@@ -112,6 +118,7 @@ def test_real_classification_and_interpretation_phrasings_are_captured(
         doc,
         annotations[0],
         text=expected_text,
+        value=expected_value,
         rule_id=rule_id,
     )
 
@@ -126,6 +133,7 @@ def test_firm_classification_marker_sets_confirmed_certainty() -> None:
         doc,
         annotations[0],
         text="spectroscopically classified as a Type Ic supernova",
+        value="supernova",
         certainty="confirmed",
     )
 
@@ -146,42 +154,49 @@ def test_descriptors_positions_and_observed_evolution_are_excluded(
 
 
 @pytest.mark.parametrize(
-    ("body", "expected_text"),
+    ("body", "expected_text", "expected_value"),
     [
         (
             "We suggest that SN 2025ulz is a type II supernova "
             "(of unconfirmed subtype at this point).",
             "We suggest that SN 2025ulz is a type II supernova",
+            "supernova",
         ),
         (
             "The observations make a kilonova the most likely interpretation.",
             "make a kilonova the most likely interpretation",
+            "kilonova",
         ),
         (
             "The spectrum is consistent with those of very young supernovae "
             "that demonstrate flash-ionisation features.",
             "is consistent with those of very young supernovae",
+            "supernova",
         ),
         (
             "This would be consistent with Huang et al. (GCN 44075) "
             "interpretaiton of the EP260321a as shock breakout signature.",
             "interpretaiton of the EP260321a as shock breakout signature",
+            "shock breakout",
         ),
         (
             "The source exhibits a brightness similar to that of an "
             "AT2017gfo-like kilonova.",
             "AT2017gfo-like kilonova",
+            "kilonova",
         ),
         (
             "The LOT optical lightcurve could be explained by shock cooling "
             "and a rise from a supernovae.",
             "could be explained by shock cooling and a rise from a supernovae",
+            "shock cooling",
         ),
     ],
 )
 def test_real_interpretation_structures_are_captured(
     body: str,
     expected_text: str,
+    expected_value: str,
 ) -> None:
     doc, annotations = _extract(body)
 
@@ -190,40 +205,46 @@ def test_real_interpretation_structures_are_captured(
         doc,
         annotations[0],
         text=expected_text,
+        value=expected_value,
         certainty="tentative",
         rule_id="classification_interpretation.interpretation",
     )
 
 
 @pytest.mark.parametrize(
-    ("body", "expected_text", "certainty"),
+    ("body", "expected_text", "certainty", "expected_value"),
     [
         (
             "The long-duration GRB 230114A was detected by Fermi/GBM.",
-            "long-duration GRB 230114A",
+            "long-duration GRB",
             "confirmed",
+            "long GRB",
         ),
         (
             "The long GRB 240205B was observed by Konus-Wind.",
-            "long GRB 240205B",
+            "long GRB",
             "confirmed",
+            "long GRB",
         ),
         (
             "The analysis showed the detection of a short-duration "
             "GRB 240123C.",
-            "short-duration GRB 240123C",
+            "short-duration GRB",
             "confirmed",
+            "short GRB",
         ),
         (
             "The subject describes a short hard GRB detected by IBAS.",
             "short hard GRB",
             "confirmed",
+            "short GRB",
         ),
         (
             "This burst has a typical brightness, duration, and hardness "
             "of a long GRB.",
             "long GRB",
             "tentative",
+            "long GRB",
         ),
     ],
 )
@@ -231,6 +252,7 @@ def test_real_grb_class_statements_are_captured(
     body: str,
     expected_text: str,
     certainty: str,
+    expected_value: str,
 ) -> None:
     doc, annotations = _extract(body)
 
@@ -239,6 +261,7 @@ def test_real_grb_class_statements_are_captured(
         doc,
         annotations[0],
         text=expected_text,
+        value=expected_value,
         certainty=certainty,
         rule_id="classification_interpretation.grb_class",
     )
@@ -278,6 +301,7 @@ def test_observed_evolution_and_physical_cause_are_separated() -> None:
         doc,
         annotations[0],
         text="This rebrightening may be due to late jet activity",
+        value="late jet activity",
     )
 
 
@@ -291,6 +315,32 @@ def test_physical_class_after_presence_phrase_is_captured() -> None:
         doc,
         annotations[0],
         text="are consistent with the presence of a kilonova",
+        value="kilonova",
+    )
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        (
+            "this excess is too bright to be powered by the emergence of "
+            "a typical GRB-supernova signal."
+        ),
+        "inconsistent with expectations for an emerging supernova.",
+    ],
+)
+def test_real_physical_class_exclusions_are_captured(body: str) -> None:
+    doc, annotations = _extract(body)
+
+    assert len(annotations) == 1
+    annotation = annotations[0]
+    _assert_annotation(
+        doc,
+        annotation,
+        text=body.rstrip("."),
+        value="not a supernova",
+        certainty="rejected",
+        rule_id="classification_interpretation.class_exclusion",
     )
 
 

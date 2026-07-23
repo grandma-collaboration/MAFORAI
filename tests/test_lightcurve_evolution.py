@@ -57,11 +57,18 @@ def _assert_annotation(
     text: str,
     rule_id: str,
 ) -> None:
+    normalized_values = {
+        "lightcurve_evolution.fade_decline": "fading",
+        "lightcurve_evolution.rise_brightening": "rebrightening",
+        "lightcurve_evolution.flatten_plateau": "plateau",
+        "lightcurve_evolution.variability": "variable",
+        "lightcurve_evolution.negative": "no evolution",
+    }
     assert annotation.text == text
     assert annotation.label == "LIGHTCURVE_EVOLUTION"
     assert annotation.target == "counterpart"
     assert annotation.certainty == "confirmed"
-    assert annotation.value is None
+    assert annotation.value == normalized_values[rule_id]
     assert annotation.unit is None
     assert annotation.comment is None
     assert annotation.needs_review is False

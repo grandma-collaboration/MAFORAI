@@ -56,12 +56,13 @@ def _assert_annotation(
     *,
     text: str,
     certainty: str,
+    value: str,
 ) -> None:
     assert annotation.text == text
     assert annotation.label == "COUNTERPART_ASSOCIATION"
     assert annotation.target == "counterpart"
     assert annotation.certainty == certainty
-    assert annotation.value is None
+    assert annotation.value == value
     assert annotation.unit is None
     assert annotation.comment is None
     assert annotation.needs_review is False
@@ -72,27 +73,31 @@ def _assert_annotation(
 
 
 @pytest.mark.parametrize(
-    ("body", "expected_text", "certainty"),
+    ("body", "expected_text", "certainty", "expected_value"),
     [
         (
             "We report an optical counterpart.",
             "optical counterpart",
             "candidate",
+            "optical counterpart",
         ),
         (
             "We detected a candidate optical afterglow.",
             "candidate optical afterglow",
             "candidate",
+            "optical afterglow",
         ),
         (
             "The temporal decay strongly suggest this is the optical counterpart.",
             "strongly suggest this is the optical counterpart",
             "candidate",
+            "optical counterpart",
         ),
         (
             "This is the spectroscopically confirmed optical counterpart.",
             "spectroscopically confirmed optical counterpart",
             "confirmed",
+            "optical counterpart",
         ),
     ],
 )
@@ -100,6 +105,7 @@ def test_association_establishing_phrases_are_captured(
     body: str,
     expected_text: str,
     certainty: str,
+    expected_value: str,
 ) -> None:
     doc, annotations = _extract(body)
 
@@ -109,6 +115,7 @@ def test_association_establishing_phrases_are_captured(
         annotations[0],
         text=expected_text,
         certainty=certainty,
+        value=expected_value,
     )
 
 
@@ -137,6 +144,7 @@ def test_unrelated_without_clause_does_not_gate_a_possible_counterpart() -> None
         annotations[0],
         text="possible counterpart",
         certainty="candidate",
+        value="counterpart",
     )
 
 
@@ -152,6 +160,7 @@ def test_not_telescope_acronym_in_subject_is_not_a_negation() -> None:
         annotations[0],
         text="optical counterpart candidate",
         certainty="candidate",
+        value="optical counterpart",
     )
 
 
@@ -167,6 +176,7 @@ def test_explicit_detection_with_an_adverb_establishes_the_afterglow_role() -> N
         annotations[0],
         text="optical afterglow",
         certainty="candidate",
+        value="optical afterglow",
     )
 
 
