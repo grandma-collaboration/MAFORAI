@@ -10,6 +10,7 @@ from skyportal_corpus.extraction_v2.event_document import (
 )
 from skyportal_corpus.extraction_v2.photometry_annotations import (
     PhotometricMeasurementAnnotation,
+    merge_photometry_measurements,
 )
 from skyportal_corpus.extraction_v2.photometry_prose import ProsePhotometryExtractor
 from skyportal_corpus.extraction_v2.photometry_rows import parse_table_to_measurements
@@ -62,10 +63,13 @@ def extract_event_photometry(
             )
             continue
 
-        local_measurements: list[PhotometricMeasurementAnnotation] = []
+        row_measurements: list[PhotometricMeasurementAnnotation] = []
         for block in detect_table_blocks(circular_doc.rendered_text):
-            local_measurements.extend(parse_table_to_measurements(block, circular_doc))
-        local_measurements.extend(prose_extractor.extract(circular_doc))
+            row_measurements.extend(parse_table_to_measurements(block, circular_doc))
+        local_measurements = merge_photometry_measurements(
+            row_measurements,
+            prose_extractor.extract(circular_doc),
+        )
 
         for measurement in local_measurements:
             global_start = local_to_global(

@@ -25,6 +25,10 @@ from skyportal_corpus.extraction_v2.photometry_rows import (  # noqa: E402
     is_photometry_table,
     parse_table_to_measurements,
 )
+from skyportal_corpus.extraction_v2.photometry_annotations import (  # noqa: E402
+    photometry_measurement_key,
+    suppress_prose_overlapping_rows,
+)
 from skyportal_corpus.extraction_v2.photometry_prose import (  # noqa: E402
     ProsePhotometryExtractor,
     is_optical_circular,
@@ -170,6 +174,8 @@ def collect_photometry_measurements(
         doc = _render_circular(circular)
         blocks = detect_table_blocks(doc.rendered_text)
         has_table_measurements = False
+        table_annotations = []
+        seen_table_measurements: set[tuple[object, ...]] = set()
         if blocks:
             circulars_with_tables.add(int(circular["circular_id"]))
             year_stats[year_int]["with_tables"] += 1
@@ -202,6 +208,11 @@ def collect_photometry_measurements(
                     }
                 )
             for annotation in block_measurements:
+                key = photometry_measurement_key(annotation)
+                if key in seen_table_measurements:
+                    continue
+                seen_table_measurements.add(key)
+                table_annotations.append(annotation)
                 item = annotation.model_dump()
                 item.update(
                     {
@@ -222,6 +233,10 @@ def collect_photometry_measurements(
         prefilter_key = "optical_prefilter_passed" if optical_passed else "optical_prefilter_discarded"
         year_stats[year_int][prefilter_key] += 1
         prose_annotations = prose_extractor.extract(doc) if optical_passed else []
+        prose_annotations = suppress_prose_overlapping_rows(
+            table_annotations,
+            prose_annotations,
+        )
         if prose_annotations:
             circular_id = int(circular["circular_id"])
             circulars_with_prose.add(circular_id)
@@ -245,8 +260,6 @@ def collect_photometry_measurements(
                     "system_source": system_source(item),
                 }
             )
-            if has_table_measurements:
-                item = mark_prose_table_overlap(item)
             measurements.append(item)
         if per_year is None and n_processed >= limit:
             break

@@ -8,6 +8,10 @@ from skyportal_corpus.canonical.document import CanonicalDocument, render_canoni
 from skyportal_corpus.extraction_v2.event_annotations import extract_event_annotations
 from skyportal_corpus.extraction_v2.event_document import build_event_document
 from skyportal_corpus.extraction_v2.event_photometry import extract_event_photometry
+from skyportal_corpus.extraction_v2.photometry_annotations import (
+    deduplicate_photometry_measurements,
+)
+from skyportal_corpus.extraction_v2.photometry_prose import ProsePhotometryExtractor
 from skyportal_corpus.inception_v2.event_xmi_export import (
     event_layers_roundtrip_check,
     export_event_layers_xmi,
@@ -148,6 +152,54 @@ def test_event_xmi_uses_valid_defaults_for_missing_photometry_tagsets(
     assert recovered[0].obs_time_reference == "unknown"
     assert recovered[0].photometric_system == "unknown"
     assert str(recovered[0].obs_time_raw or "") == ""
+
+
+def test_event_photometry_suppresses_prose_measurements_inside_table_rows() -> None:
+    circulars = [
+        {
+            "circular_id": 38220,
+            "subject": "GRB 241030A: optical photometry",
+            "body": (
+                "Photometry is reported in AB magnitudes.\n"
+                "Date        UTstart-end          t-T0 (hours)  Exp (sec)  Filter  Magnitude\n"
+                "2024-10-30  19:55:20--20:05:50  14.21          2 x 300    B       B = 19.52 +/- 0.14\n"
+                "2024-10-30  19:48:10--20:08:18  14.17          2 x 600    V       V = 19.51 +/- 0.14\n"
+                "2024-10-30  20:07:31--20:17:59  14.41          2 x 300    R       R = 19.10 +/- 0.04\n"
+            ),
+            "created_on": "2024-10-31T00:00:00Z",
+            "submitter": "Observer",
+        }
+    ]
+    event_doc = build_event_document("GRB241030", "GRB 241030A", circulars)
+    circular_docs = _canonical_documents(circulars)
+
+    prose = ProsePhotometryExtractor().extract(circular_docs[38220])
+    measurements = extract_event_photometry(event_doc, circular_docs)
+
+    assert {item.photometric_band for item in prose} >= {"B", "V", "R"}
+    assert len(measurements) == 3
+    assert {item.rule_id for item in measurements} == {"photometry_row.whitespace"}
+    assert [item.magnitude_or_limit for item in measurements] == ["19.52", "19.51", "19.10"]
+    assert all(item.verify(event_doc.event_rendered_text) for item in measurements)
+
+
+def test_defensive_photometry_dedup_is_field_aware() -> None:
+    circulars = _circulars()
+    doc = _canonical_documents(circulars)[1]
+    original = ProsePhotometryExtractor().extract(doc)[0]
+    duplicate = original.model_copy()
+    distinct = original.model_copy(
+        update={
+            "magnitude_or_limit": "20.2",
+            "photometric_band": "I",
+        }
+    )
+
+    deduplicated = deduplicate_photometry_measurements(
+        [original, duplicate, distinct]
+    )
+
+    assert deduplicated == [original, distinct]
 
 
 def _circulars() -> list[dict[str, object]]:
