@@ -48,6 +48,7 @@ class CompanionFields:
     obs_time_reference: str | None
     exposure_time_raw: str | None
     instrument: str | None
+    instrument_provenance: str | None
     ambiguous_time: bool
     ambiguous_exposure: bool
 
@@ -406,6 +407,7 @@ def find_companion_fields(
     exposures = _find_exposure_fields(text)
     primary_time, ambiguous_time = _select_observation_time(text, times, start, end)
     primary_exposure = _nearest_field(exposures, start, end)
+    instrument = _nearest_instrument(text, start, end)
 
     return {
         "photometric_band": band,
@@ -414,7 +416,8 @@ def find_companion_fields(
         "obs_time_type": primary_time.kind if primary_time else None,
         "obs_time_reference": _time_reference(primary_time.kind) if primary_time else None,
         "exposure_time_raw": primary_exposure.raw if primary_exposure else None,
-        "instrument": _nearest_instrument(text, start, end),
+        "instrument": instrument,
+        "instrument_provenance": "prose_same_sentence" if instrument is not None else None,
         "ambiguous_time": ambiguous_time,
         "ambiguous_exposure": len(exposures) > 1,
     }
@@ -474,6 +477,7 @@ class ProsePhotometryExtractor:
                 obs_time_reference=companions.obs_time_reference,
                 exposure_time_raw=companions.exposure_time_raw,
                 instrument=companions.instrument,
+                instrument_provenance=companions.instrument_provenance,
                 comment=" ".join(review_reasons) if needs_review else None,
                 provenance_inherited=[],
                 extractor_id=self.extractor_id,
@@ -814,13 +818,102 @@ def _nearest_field(
 
 
 def _nearest_instrument(text: str, start: int, end: int) -> str | None:
+    """Return the instrument attached to a measurement, same-sentence only.
+
+    An instrument may only be sourced from the sentence containing the
+    measurement. Hits inside a citation/attribution to another team,
+    calibration/catalog language, or the circular's author/affiliation block
+    are never eligible, even when they occur in that same sentence.
+    """
+
+    sentence_start, sentence_end = _sentence_bounds(text, start, end)
+    search_start = max(sentence_start, _author_block_end(text))
+    if search_start >= sentence_end:
+        return None
+
     matches: list[tuple[int, str]] = []
     for pattern in _INSTRUMENT_PATTERNS:
-        for match in pattern.finditer(text):
+        for match in pattern.finditer(text, search_start, sentence_end):
             raw = match.group(0)
-            if _is_valid_instrument_name(raw):
-                matches.append((_distance_to_span(match.start(), match.end(), start, end), raw))
+            if not _is_valid_instrument_name(raw):
+                continue
+            if _is_instrument_citation_context(text, match.start(), match.end()):
+                continue
+            if _is_instrument_calibration_context(text, match.start(), match.end()):
+                continue
+            matches.append((_distance_to_span(match.start(), match.end(), start, end), raw))
     return min(matches, key=lambda item: item[0])[1] if matches else None
+
+
+_INSTRUMENT_CITATION_PREFIX_RE = re.compile(
+    r"\b(?:discovered\s+by|reported\s+by|as\s+reported\s+in|see\s+also)\s*$",
+    re.IGNORECASE,
+)
+_INSTRUMENT_CITATION_SUFFIX_RE = re.compile(
+    r"^[^.!?]{0,50}?\b(?:et\s+al\.|GCN\s*\d+)",
+    re.IGNORECASE,
+)
+_INSTRUMENT_CALIBRATION_PREFIX_RE = re.compile(
+    r"\bcalibrat(?:ed|ion)\s+(?:with|against)\s*$",
+    re.IGNORECASE,
+)
+_INSTRUMENT_CALIBRATION_SUFFIX_RE = re.compile(
+    r"^\s*(?:catalog(?:ue)?|reference\s+images?|templates?)\b",
+    re.IGNORECASE,
+)
+_INSTRUMENT_CALIBRATION_NEARBY_RE = re.compile(
+    r"\bphotometric\s+calibration\b",
+    re.IGNORECASE,
+)
+
+
+def _is_instrument_citation_context(text: str, start: int, end: int) -> bool:
+    """Reject a hit that credits or cites another team rather than reporting data."""
+
+    window_before = text[max(0, start - 60) : start]
+    window_after = text[end : min(len(text), end + 60)]
+    if _INSTRUMENT_CITATION_PREFIX_RE.search(window_before):
+        return True
+    if _INSTRUMENT_CITATION_SUFFIX_RE.search(window_after):
+        return True
+    return False
+
+
+def _is_instrument_calibration_context(text: str, start: int, end: int) -> bool:
+    """Reject a hit naming a calibration source, template, or catalog."""
+
+    window_before = text[max(0, start - 40) : start]
+    window_after = text[end : min(len(text), end + 40)]
+    nearby = text[max(0, start - 60) : min(len(text), end + 60)]
+    if _INSTRUMENT_CALIBRATION_PREFIX_RE.search(window_before):
+        return True
+    if _INSTRUMENT_CALIBRATION_SUFFIX_RE.search(window_after):
+        return True
+    if _INSTRUMENT_CALIBRATION_NEARBY_RE.search(nearby):
+        return True
+    return False
+
+
+def _author_block_end(text: str) -> int:
+    """Return the offset past the circular's FROM line and author-list paragraph.
+
+    Real circulars place the FROM line, then a blank line, then the author
+    list as the first body paragraph, then another blank line before the
+    observation report. When that second paragraph break cannot be found,
+    there is no reliable way to separate an author list from the report body,
+    so no offset is excluded.
+    """
+
+    if not text.startswith("SUBJECT:"):
+        return 0
+    header_end = text.find("\n\n")
+    if header_end < 0:
+        return 0
+    body_start = header_end + 2
+    boundary = re.search(r"\n\s*\n", text[body_start:])
+    if boundary is None:
+        return 0
+    return body_start + boundary.end()
 
 
 def _is_valid_instrument_name(value: str) -> bool:

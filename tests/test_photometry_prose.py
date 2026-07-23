@@ -323,3 +323,158 @@ def test_atlas_enumerated_limits_and_detections_are_all_captured() -> None:
     assert [annotation.limit_sigma for annotation in annotations] == ["5", "5", None, None]
     assert all(annotation.photometric_band == "w" for annotation in annotations)
     assert all(annotation.photometric_system == "AB" for annotation in annotations)
+    # GOTO occurs only in "discovered by GOTO" in a different sentence; the true
+    # owner, ATLAS-Teide, is not in _INSTRUMENT_PATTERNS.
+    assert all(annotation.instrument is None for annotation in annotations)
+    assert all(annotation.instrument_provenance is None for annotation in annotations)
+
+
+def test_atlas_teide_full_circular_44910_stays_empty_not_goto_citation() -> None:
+    _doc, annotations = _extract(
+        "Here we report ATLAS-Teide (the Tenerife unit) observations of the "
+        "optical counterpart (AT2026owq; discovered by GOTO; O'Neill et al., "
+        "GCN 44903; see also Watson et al., GCN 44905 and Zhu et al., GCN 44909) "
+        "to GRB 260610B (detected by Fermi/GBM; GCN 44901).\n\n"
+        "ATLAS-Teide observed the sky location of AT2026owq four times on MJDs "
+        "61201.96762, 61201.98177, 61201.99593 and 61202.01008 as part of "
+        "regular survey operations. Each exposure lasted 30s and was acquired "
+        "with the wide w-band filter. The first and second exposures returned "
+        "5-sigma upper limits of >20.20 and >20.35 AB mag, respectively. The "
+        "third and fourth exposures detected the transient, with magnitudes of "
+        "w = 16.26+/-0.02 and w = 16.29+/-0.02 AB mag, respectively."
+    )
+
+    assert len(annotations) == 4
+    assert all(annotation.instrument is None for annotation in annotations)
+
+
+def test_ztf_p48_and_lt_measurements_33226_stay_empty_across_sentences() -> None:
+    _doc, annotations = _extract(
+        "We report the discovery of a fast-evolving red transient in Zwicky "
+        "Transient Facility (ZTF) partnership data and Liverpool Telescope (LT) "
+        "data.\n\n"
+        "ZTF23aaarlti (AT2023avj) was discovered at the position (J2000)\n"
+        "on 2023 January 22 by ZTF at i = 19.27 +/- 0.27 (MJD=59966.29) and g = "
+        "20.02 +/- 0.20 (MJD=59966.32). Forced photometry on P48 images revealed "
+        "an additional r-band detection (r=20.14+/-0.19; MJD 59966.39) as well "
+        "as limits the previous night of g > 20.18 mag (MJD 59965.37) and r > "
+        "21.14 mag (MJD 59965.35).\n\n"
+        "LT griz imaging at 4.7 days after the first ZTF detection confirmed the "
+        "red colors. With a detection at r=23.08 +/- 0.25 (MJD=59971.05), the "
+        "implied average fading rate is 0.46 mag/day in r-band."
+    )
+
+    assert len(annotations) == 6
+    # ZTF/P48 are not in _INSTRUMENT_PATTERNS; LT is only in the sentence
+    # before the r=23.08 measurement, not the same sentence, so it does not
+    # transfer. This is the accepted Round-1 coverage loss for that point.
+    assert all(annotation.instrument is None for annotation in annotations)
+
+
+def test_sao_ras_measurement_34060_stays_empty_not_goto_discovery_citation() -> None:
+    _doc, annotations = _extract(
+        "We observed the field of the fast red optical transient "
+        "ZTF23aaoohpy/AT2023lcr with the 1-m telescope of SAO RAS "
+        "Zeiss-1000/CCD-photometer. We obtained 8 x 300 sec images in Rc band "
+        "on 2023.06.21, 21:06:39--21:52:39 UT, 3.8347 days after GOTO detection "
+        "(Gompertz et al., GCN 34023) or 3.7432 days after ZTF detection (Swain "
+        "et al., GCN 34022).\n\n"
+        "The OT (Swain et al., GCN 34022; Gompertz et al., GCN 34023; Kumar et "
+        "al., GCN 34025) is clearly detected in the stacked frame with the "
+        "brightness of R = 21.51 +/- 0.09 (based on stars mentioned in Belkin "
+        "et al., GCN 34047)."
+    )
+
+    assert len(annotations) == 1
+    assert annotations[0].instrument is None
+
+
+def test_bootes_limit_34291_stays_empty_not_other_teams_limit_list() -> None:
+    _doc, annotations = _extract(
+        "Following the detection of GRB 230728A by Swift, the 0.3m BOOTES-1B "
+        "robotic telescope automatically responded to this burst. In the "
+        "co-added frame (60 x 10 s, clear filter), no source is detected within "
+        "the enhanced XRT position (Evans et al., GCNC 34286) down to 19.9 "
+        "mag.\n\n"
+        "This non-detection is consistent with the upper limits reported by "
+        "MASTER (Lipunov et al. GCNC 34281), NOT (Xu et al. GCNC 34285), UVOT "
+        "(Oates et al. GCNC 34288) and LCOGT (Strausbaugh et al. GCNC 34289)."
+    )
+
+    assert len(annotations) == 1
+    assert annotations[0].instrument is None
+
+
+def test_las_cumbres_limits_34836_stay_empty_not_author_affiliation() -> None:
+    _doc, annotations = _extract(
+        "M. Shrestha, D. Sand, J. Andrews (Gemini), K. Bostroem report on "
+        "behalf of a wider Global Supernova Project collaboration:\n\n"
+        "We observed the field of GRB 231017A with the 1-m telescope, using the "
+        "Sinistro instrument in V, g, r, i bands. We do not detect any new "
+        "optical counterpart within the error region with upper limit of:\n\n"
+        "g> 22.5\nr> 21.2\ni> 20.9\n\n"
+        "These values were calculated with respect to a reference catalog and "
+        "are not corrected for galactic extinction."
+    )
+
+    assert len(annotations) == 3
+    assert all(annotation.instrument is None for annotation in annotations)
+
+
+def test_lulin_slt_lot_bands_35083_stay_empty_not_later_goto_non_detection() -> None:
+    _doc, annotations = _extract(
+        "We obtained the following magnitudes (in the AB system):\n\n"
+        "SLT r = 20.94 +/- 0.10 mag (exposure time of 300sec*14)\n"
+        "LOT g = 20.90 +/- 0.10 mag (300sec*1),\n"
+        "LOT r = 20.77 +/- 0.07 mag (300sec*7),\n"
+        "LOT i = 20.52 +/- 0.11 mag (300sec*1) and,\n"
+        "LOT z = 20.00 +/- 0.18 mag (SNR=2; 300sec*1).\n\n"
+        "Our detection magnitudes are deeper than those non-detection reports "
+        "from the GOTO (Godson et al., GCN 35073), MITSuME (Takei et al., GCN "
+        "35076) and ATLAS (Gillanders et al., GCN 35080)."
+    )
+
+    assert len(annotations) == 5
+    assert all(annotation.instrument is None for annotation in annotations)
+
+
+def test_instrument_citation_within_same_sentence_is_still_rejected() -> None:
+    _doc, annotations = _extract(
+        "The afterglow magnitude reported by GOTO et al., GCN 41000 was "
+        "R = 18.2 mag (AB), observed independently on 2025-03-18T21:33:00 UT."
+    )
+
+    assert len(annotations) == 1
+    assert annotations[0].instrument is None
+
+
+def test_instrument_calibration_within_same_sentence_is_still_rejected() -> None:
+    _doc, annotations = _extract(
+        "The magnitude was calibrated with GOTO templates and found to be "
+        "R = 18.2 mag (AB) on 2025-03-18T21:33:00 UT."
+    )
+
+    assert len(annotations) == 1
+    assert annotations[0].instrument is None
+
+
+def test_instrument_named_only_in_author_block_is_never_sourced() -> None:
+    _doc, annotations = _extract(
+        "Andrews team (Gemini) reports the following upper limit\n\n"
+        "no counterpart was found down to R = 18.2 mag (AB) on "
+        "2025-03-18T21:33:00 UT."
+    )
+
+    assert len(annotations) == 1
+    assert annotations[0].instrument is None
+
+
+def test_instrument_provenance_is_prose_same_sentence_when_populated() -> None:
+    _doc, annotations = _extract(
+        "The NOT observed on 2025-03-18T21:33:00 UT and measured "
+        "R = 20.1 +/- 0.1 mag (AB)."
+    )
+
+    assert len(annotations) == 1
+    assert annotations[0].instrument == "NOT"
+    assert annotations[0].instrument_provenance == "prose_same_sentence"
