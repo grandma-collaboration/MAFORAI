@@ -3275,16 +3275,6 @@
                                 
                 <featureDescription>
                                         
-                    <name>corpus_value</name>
-                                        
-                    <description/>
-                                        
-                    <rangeTypeName>uima.cas.String</rangeTypeName>
-                                    
-                </featureDescription>
-                                
-                <featureDescription>
-                                        
                     <name>review_priority</name>
                                         
                     <description/>
