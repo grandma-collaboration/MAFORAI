@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from skyportal_corpus.canonical.document import render_canonical
 from skyportal_corpus.extraction_v2.photometry_rows import (
     PhotometryRowParser,
@@ -96,6 +98,7 @@ def test_knc_row_prefers_mjd_over_relative_time_from_36326() -> None:
     assert first.magnitude_or_limit == "16.7"
     assert first.photometric_band == "Johnson V"
     assert first.instrument == "KNC"
+    assert first.instrument_provenance == "explicit_column"
     assert first.exposure_time_raw == "10x180s"
     assert first.obs_time_raw == "60426.477894"
     assert first.obs_time_type == "mjd"
@@ -120,10 +123,49 @@ def test_vega_system_from_cell_and_observer_column_is_skipped_from_36050() -> No
     first = annotations[0]
     assert first.photometric_system == "Vega"
     assert first.instrument == "Montarrenti 0.53m"
+    assert first.instrument_provenance == "explicit_column"
     assert first.photometric_band == "Rc"
     assert first.magnitude_or_limit == "18.9"
     assert "S. Leonini" not in (first.instrument or "")
     assert first.verify(doc.rendered_text)
+
+
+def test_headerless_position_and_catalog_column_is_not_instrument_from_33351() -> None:
+    doc, blocks, annotations = _measurements(
+        "We did not detect any optical source within the best-fit position. "
+        "The upper limits of magnitudes are given as follows.\n"
+        "\n"
+        "Sources | Tmid-T0 (day) | UT (start) | Upper Limit (error) | Exposure Time | Filter\n"
+        "--------------------------------------------------------------------------------------------------------------\n"
+        "Best-fit position| 0.797 | 23-02-18 15:57:25.28 | 19.96 (0.11) | 2*350s (co-added) | Clear\n"
+        "J0817.1+1955 | 0.725 | 23-02-18 14:14:38.47 | 19.44 (0.07) | 350s | Clear\n"
+    )
+
+    assert len(blocks) == 1
+    roles = infer_column_roles(blocks[0])
+    assert roles[0].role != "instrument"
+    assert len(annotations) == 2
+    assert all(annotation.instrument is None for annotation in annotations)
+    assert all(annotation.instrument_provenance is None for annotation in annotations)
+    assert all(annotation.verify(doc.rendered_text) for annotation in annotations)
+
+
+def test_headerless_transient_designation_column_is_not_instrument_from_33784() -> None:
+    doc, blocks, annotations = _measurements(
+        "Two sources were found within the localization region.\n"
+        "\n"
+        "| id           | alias      |       ra |     dec | mjd        | mag         |filter |\n"
+        "|--------------+------------+----------+---------+------------+-------------+-------|\n"
+        "| ZTF23aajfoed | AT 2023ibn | 295.8501 | 51.5420 | 60076.4041 | 18.89+/-0.08| g     |\n"
+        "| ZTF23aajfilx | AT 2023ibo | 267.5692 | 40.7678 | 60076.3839 | 20.22+/-0.19| g     |\n"
+    )
+
+    assert len(blocks) == 1
+    roles = infer_column_roles(blocks[0])
+    assert roles[1].role != "instrument"
+    assert len(annotations) == 2
+    assert all(annotation.instrument is None for annotation in annotations)
+    assert all(annotation.verify(doc.rendered_text) for annotation in annotations)
 
 
 def test_magnitude_sanity_marks_row_for_review() -> None:
@@ -537,7 +579,7 @@ def test_goto_abmag_rows_with_blank_lines_from_44837() -> None:
     assert first.verify(doc.rendered_text)
 
 
-def test_grandma_detection_and_limit_columns_emit_two_measurements_per_row_from_34887() -> None:
+def test_grandma_detection_and_depth_columns_emit_detection_only_from_34887() -> None:
     doc, blocks, annotations = _measurements(
         "Magnitudes and upper limits are reported in the AB and Vega system "
         "depending on the filter set.\n"
@@ -550,28 +592,23 @@ def test_grandma_detection_and_limit_columns_emit_two_measurements_per_row_from_
     roles = infer_column_roles(blocks[0])
     assert roles[5].role == "magnitude"
     assert roles[6].role == "magnitude"
-    assert len(annotations) == 4
+    assert len(annotations) == 2
 
     first_row = [annotation for annotation in annotations if annotation.text.startswith("15.5|")]
     assert [(annotation.measurement_type, annotation.magnitude_or_limit) for annotation in first_row] == [
         ("detection", "20.5"),
-        ("upper_limit", "22.0"),
     ]
     assert first_row[0].magnitude_error == "0.1"
     assert first_row[0].limit_sigma is None
-    assert first_row[1].magnitude_error is None
-    assert first_row[1].limit_sigma == "5"
     assert all(annotation.photometric_system == "AB" for annotation in first_row)
     assert all(annotation.photometric_band == "i" for annotation in first_row)
 
     second_row = [annotation for annotation in annotations if annotation.text.startswith("15.8|")]
     assert [(annotation.measurement_type, annotation.magnitude_or_limit) for annotation in second_row] == [
         ("detection", "19.5"),
-        ("upper_limit", "20"),
     ]
     assert second_row[0].magnitude_error == "0.15"
     assert second_row[0].limit_sigma is None
-    assert second_row[1].limit_sigma == "5"
     assert all(annotation.photometric_system == "Vega" for annotation in second_row)
     assert all(annotation.photometric_band == "Rc" for annotation in second_row)
     assert all("photometric_system=context" not in annotation.provenance_inherited for annotation in annotations)
@@ -628,7 +665,7 @@ def test_context_sigma_applies_only_to_uvot_upper_limits() -> None:
     assert upper_limit.limit_sigma == "3"
 
 
-def test_iki_row_emits_detection_and_three_sigma_limit_with_combined_time() -> None:
+def test_iki_row_emits_detection_only_with_combined_time() -> None:
     doc, blocks, annotations = _measurements(
         "The observational properties and preliminary photometry are provided below:\n\n"
         "Date,      UTstart, t-T0,   Exp., Filter, Mag, Err., UL\n"
@@ -637,16 +674,12 @@ def test_iki_row_emits_detection_and_three_sigma_limit_with_combined_time() -> N
     )
 
     assert len(blocks) == 1
-    assert len(annotations) == 2
-    detection, upper_limit = annotations
+    assert len(annotations) == 1
+    detection = annotations[0]
     assert detection.measurement_type == "detection"
     assert detection.magnitude_or_limit == "19.73"
     assert detection.magnitude_error == "0.03"
     assert detection.limit_sigma is None
-    assert upper_limit.measurement_type == "upper_limit"
-    assert upper_limit.magnitude_or_limit == "22.6"
-    assert upper_limit.magnitude_error is None
-    assert upper_limit.limit_sigma == "3"
     assert all(annotation.photometric_band == "Rc" for annotation in annotations)
     assert all(annotation.exposure_time_raw == "2*300" for annotation in annotations)
     assert all(annotation.obs_time_raw == "2026-06-11 19:43:01" for annotation in annotations)
@@ -654,6 +687,71 @@ def test_iki_row_emits_detection_and_three_sigma_limit_with_combined_time() -> N
     assert all(annotation.obs_time_reference == "absolute_time" for annotation in annotations)
     assert all("time value does not match" not in (annotation.comment or "") for annotation in annotations)
     assert all(annotation.verify(doc.rendered_text) for annotation in annotations)
+
+
+@pytest.mark.parametrize(
+    ("row", "magnitude", "error"),
+    [
+        (
+            "2026-06-11 19:43:01 1.40315 2*300 Rc      19.73 0.03 22.6",
+            "19.73",
+            "0.03",
+        ),
+        (
+            "2026-06-12 19:21:03 2.41821 5*300 Rc      20.61 0.03 23.5",
+            "20.61",
+            "0.03",
+        ),
+        (
+            "2026-06-11 21:33:51 1.48481  3x120+12x90   R     19.81 0.06   22.4",
+            "19.81",
+            "0.06",
+        ),
+        (
+            "2026-06-12 19:46:19 2.40802  9x120         R     20.70 0.13   22.3",
+            "20.70",
+            "0.13",
+        ),
+        (
+            "2026-06-14 23:15:23 4.56847 15*180 Rc      21.14 0.12 22.3",
+            "21.14",
+            "0.12",
+        ),
+        (
+            "2026-06-15 23:42:44 5.57617  8*180 Rc      20.98 0.17 21.8",
+            "20.98",
+            "0.17",
+        ),
+        (
+            "2026-06-16 20:30:40 6.44388  3*600 Rc      21.06 0.18 21.9",
+            "21.06",
+            "0.18",
+        ),
+        (
+            "2026-06-12 20:18:50 1.88931  96x60  R      20.59 0.10  22.0",
+            "20.59",
+            "0.10",
+        ),
+    ],
+)
+def test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit(
+    row: str,
+    magnitude: str,
+    error: str,
+) -> None:
+    doc, blocks, annotations = _measurements(
+        "Date,      UTstart, t-T0,   Exp., Filter, Mag, Err., UL\n"
+        "                    (mid,d) (n*s)                    (3-sigma)\n"
+        f"{row}\n"
+    )
+
+    assert len(blocks) == 1
+    assert len(annotations) == 1
+    annotation = annotations[0]
+    assert annotation.measurement_type == "detection"
+    assert annotation.magnitude_or_limit == magnitude
+    assert annotation.magnitude_error == error
+    assert annotation.verify(doc.rendered_text)
 
 
 def test_separate_date_and_clock_columns_are_combined_from_44919() -> None:
@@ -730,3 +828,96 @@ def test_misaligned_uvot_header_does_not_emit_exposure_as_second_magnitude() -> 
         "22.09",
         "22.25",
     ]
+
+
+def test_real_39129_compact_header_keeps_depth_out_of_measurements() -> None:
+    doc, blocks, annotations = _measurements(
+        "Photometry is reported in the AB system.\n\n"
+        "Filter Mag  Mag_err Date-obs[UT]        Exp.time[s] Depth(5sigma) Note\n"
+        "m425   17.3 0.0     2025-01-29T05:59:21 300         19.9\n"
+        "m450   17.2 0.0     2025-01-29T05:53:51 300         19.2\n"
+    )
+
+    assert len(blocks) == 1
+    assert len(annotations) == 2
+    first = annotations[0]
+    assert first.measurement_type == "detection"
+    assert first.magnitude_or_limit == "17.3"
+    assert first.magnitude_error == "0.0"
+    assert first.photometric_band == "m425"
+    assert first.obs_time_raw == "2025-01-29T05:59:21"
+    assert first.exposure_time_raw == "300"
+    assert all(annotation.magnitude_or_limit not in {"19.9", "19.2"} for annotation in annotations)
+    assert all(annotation.verify(doc.rendered_text) for annotation in annotations)
+
+
+@pytest.mark.parametrize(
+    ("header", "row", "expected_magnitude", "expected_error", "expected_exposure"),
+    [
+        (
+            "Date       UT start  t-T0         Exp.    Filter   OT        Err.       UL(3sigma) Telescope\n"
+            "                     (mid, days)  (s)",
+            "2025-01-30 22:16:50  1.76610      103*60  R        19.46     0.21       22.0         AS-32",
+            "19.46",
+            "0.21",
+            "103*60",
+        ),
+        (
+            "Date        UT start  t-T0       Exp.   Filter  OT     Err.  UL\n"
+            "                      (mid,days) (n*s)                       (3sigma)",
+            "2025-10-13  21:40:38  0.17290    15*60  Clear   16.75  0.10  18.0",
+            "16.75",
+            "0.10",
+            "15*60",
+        ),
+    ],
+)
+def test_real_iki_ot_headers_keep_depth_out_of_measurements(
+    header: str,
+    row: str,
+    expected_magnitude: str,
+    expected_error: str,
+    expected_exposure: str,
+) -> None:
+    doc, blocks, annotations = _measurements(f"{header}\n{row}\n")
+
+    assert len(blocks) == 1
+    assert len(annotations) == 1
+    annotation = annotations[0]
+    assert annotation.magnitude_or_limit == expected_magnitude
+    assert annotation.magnitude_error == expected_error
+    assert annotation.exposure_time_raw == expected_exposure
+    assert annotation.verify(doc.rendered_text)
+
+
+def test_real_42256_texp_column_is_exposure_not_magnitude() -> None:
+    doc, _blocks, annotations = _measurements(
+        "tc-t0(s)  texp  i'(mag)  err(mag)\n"
+        "-------- ------ -------  --------\n"
+        "185      30.0   14.69     0.06\n"
+        "245      30.0   14.96     0.06\n"
+        "305      30.0   15.16     0.06\n"
+    )
+
+    assert len(annotations) == 3
+    assert [annotation.magnitude_or_limit for annotation in annotations] == [
+        "14.69",
+        "14.96",
+        "15.16",
+    ]
+    assert all(annotation.exposure_time_raw == "30.0" for annotation in annotations)
+    assert all(annotation.verify(doc.rendered_text) for annotation in annotations)
+
+
+def test_real_44939_multiband_row_keeps_both_distinct_measurements() -> None:
+    doc, _blocks, annotations = _measurements(
+        "| date-obs (UTC) | mid-time | exposure | VT_B mag(AB) | VT_R mag(AB) |\n"
+        "| 2026-06-14T13:54:16 | 2026-06-14T13:56:46 | 6x50s | 19.25 +/- 0.01 | 16.35 +/- 0.01 |\n"
+    )
+
+    assert len(annotations) == 2
+    assert [(item.photometric_band, item.magnitude_or_limit) for item in annotations] == [
+        ("VT_B", "19.25"),
+        ("VT_R", "16.35"),
+    ]
+    assert all(annotation.verify(doc.rendered_text) for annotation in annotations)

@@ -159,8 +159,8 @@ class _HeaderRole:
 
 
 _IKI_HEADER_RE = re.compile(
-    r"\bdate,?.*\butstart\b.*\bt\s*-\s*t0\b.*\bexp\.?\b.*\bfilter\b.*"
-    r"\bmag\b.*\berr\.?\b.*\bul\b",
+    r"\bdate,?.*\but\s*start\b.*\bt\s*-\s*t0\b.*\bexp\.?\b.*\bfilter\b.*"
+    r"\b(?:mag|ot)\b.*\berr\.?\b.*\bul\b",
     re.IGNORECASE,
 )
 _DFOT_HEADER_RE = re.compile(
@@ -177,7 +177,8 @@ _IKI_DATA_ROW_RE = re.compile(
     r"(?P<mag>\d+(?:\.\d+)?(?:\s*(?:\+/-|±)\s*\d+(?:\.\d+)?)?"
     r"(?:\s*\((?:AB|Vega)\))?)\s+"
     r"(?P<err>\d+(?:\.\d+)?)\s+"
-    r"(?P<ul>\d+(?:\.\d+)?(?:\s*\(\s*\d+(?:\.\d+)?\s*sig(?:ma)?\.?\s*\))?)\s*$",
+    r"(?P<ul>\d+(?:\.\d+)?(?:\s*\(\s*\d+(?:\.\d+)?\s*sig(?:ma)?\.?\s*\))?)"
+    r"(?:\s+(?P<instrument>\S+))?\s*$",
     re.IGNORECASE,
 )
 _DFOT_DATA_ROW_RE = re.compile(
@@ -188,6 +189,21 @@ _DFOT_DATA_ROW_RE = re.compile(
     r"(?P<exposure>\d+(?:\.\d+)?\s*(?:s|sec)?\s*[xX*]\s*\d+(?:\.\d+)?"
     r"(?:\s*(?:s|sec))?)\s+"
     r"(?P<mag>\d+(?:\.\d+)?(?:\s*(?:\+/-|±)\s*\d+(?:\.\d+)?)?)\s*$",
+    re.IGNORECASE,
+)
+_FILTER_MAG_DEPTH_HEADER_RE = re.compile(
+    r"\bfilter\b.*\bmag\b.*\bmag[_ -]?err\b.*\bdate[-_ ]?obs\b.*"
+    r"\bexp(?:\.?\s*time)?\b.*\bdepth\b",
+    re.IGNORECASE,
+)
+_FILTER_MAG_DEPTH_DATA_ROW_RE = re.compile(
+    r"^\s*(?P<filter>\S+)\s+"
+    r"(?P<mag>[<>]?[+-]?\d+(?:\.\d+)?)\s+"
+    r"(?P<err>[+-]?\d+(?:\.\d+)?)\s+"
+    r"(?P<date>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+"
+    r"(?P<exposure>\d+(?:\.\d+)?)\s+"
+    r"(?P<depth>[<>]?[+-]?\d+(?:\.\d+)?)"
+    r"(?:\s+(?P<note>.*\S))?\s*$",
     re.IGNORECASE,
 )
 
@@ -642,7 +658,10 @@ def _structured_whitespace_ranges(lines: list[_Line]) -> list[tuple[int, int]]:
 
 def _known_whitespace_header_cells(line: str) -> list[str] | None:
     if _IKI_HEADER_RE.search(line):
-        return ["Date", "UTstart", "t-T0", "Exp.", "Filter", "Mag", "Err.", "UL"]
+        cells = ["Date", "UTstart", "t-T0", "Exp.", "Filter", "Mag", "Err.", "UL"]
+        if re.search(r"\b(?:telescope|instrument|facility)\b", line, re.IGNORECASE):
+            cells.append("Telescope")
+        return cells
     if _DFOT_HEADER_RE.search(line):
         return [
             "Date",
@@ -651,6 +670,16 @@ def _known_whitespace_header_cells(line: str) -> list[str] | None:
             "Filter",
             "Exp time (s)",
             "Magnitude",
+        ]
+    if _FILTER_MAG_DEPTH_HEADER_RE.search(line):
+        return [
+            "Filter",
+            "Mag",
+            "Mag_err",
+            "Date-obs[UT]",
+            "Exp.time[s]",
+            "Depth(5sigma)",
+            "Note",
         ]
     return None
 
@@ -667,7 +696,7 @@ def _combine_header_continuation(
     header_cells: list[str],
     continuation: str | None,
 ) -> list[str]:
-    if continuation is None or len(header_cells) != 8:
+    if continuation is None or len(header_cells) < 8:
         return header_cells
     combined = list(header_cells)
     for fragment in re.findall(r"\([^)]*\)", continuation):
@@ -684,7 +713,7 @@ def _combine_header_continuation(
 def _split_structured_whitespace_data_row(line: str) -> list[str] | None:
     iki_match = _IKI_DATA_ROW_RE.fullmatch(line)
     if iki_match is not None:
-        return [
+        cells = [
             iki_match.group("date"),
             iki_match.group("clock"),
             iki_match.group("relative"),
@@ -694,6 +723,10 @@ def _split_structured_whitespace_data_row(line: str) -> list[str] | None:
             iki_match.group("err"),
             iki_match.group("ul"),
         ]
+        instrument = iki_match.group("instrument")
+        if instrument:
+            cells.append(instrument)
+        return cells
 
     dfot_match = _DFOT_DATA_ROW_RE.fullmatch(line)
     if dfot_match is not None:
@@ -705,6 +738,20 @@ def _split_structured_whitespace_data_row(line: str) -> list[str] | None:
             dfot_match.group("exposure"),
             dfot_match.group("mag"),
         ]
+    filter_mag_depth_match = _FILTER_MAG_DEPTH_DATA_ROW_RE.fullmatch(line)
+    if filter_mag_depth_match is not None:
+        cells = [
+            filter_mag_depth_match.group("filter"),
+            filter_mag_depth_match.group("mag"),
+            filter_mag_depth_match.group("err"),
+            filter_mag_depth_match.group("date"),
+            filter_mag_depth_match.group("exposure"),
+            filter_mag_depth_match.group("depth"),
+        ]
+        note = filter_mag_depth_match.group("note")
+        if note:
+            cells.append(note)
+        return cells
     return None
 
 
@@ -722,9 +769,11 @@ def _role_from_header(cell: str) -> _HeaderRole:
         return _HeaderRole("coordinate")
     if re.search(r"\b(name|object|source|id)\b", normalized):
         return _HeaderRole("name")
+    if re.search(r"\bdepth\b", normalized):
+        return _HeaderRole("comment")
     if re.search(r"\b(comment|comments|note|notes)\b", normalized):
         return _HeaderRole("comment")
-    if re.search(r"\b(exp|expt|exposure|exp\(s\))\b", normalized):
+    if re.search(r"\b(exp|expt|exposure|exp\(s\)|texp)\b", normalized):
         return _HeaderRole("exposure")
     if re.search(r"\b(filter|band|filt|passband)\b", normalized):
         return _HeaderRole("filter")
@@ -909,6 +958,22 @@ def _looks_like_coordinate(value: str) -> bool:
     )
 
 
+_TRANSIENT_DESIGNATION_RE = re.compile(
+    r"^(?:AT|SN)\s?2\d{3}[A-Za-z]{1,4}$"
+    r"|^GRB\s?\d{6}[A-Za-z]?$"
+    r"|^EP\s?\d{6}[A-Za-z]?$"
+    r"|^ZTF\d{2}[a-z]{7}$"
+    r"|^IceCube-?\d{6}[A-Za-z]?$"
+    r"|^GW\d{6}[A-Za-z]?$",
+    re.IGNORECASE,
+)
+_CATALOG_DESIGNATION_RE = re.compile(r"^J\d{4}", re.IGNORECASE)
+_INSTRUMENT_FREE_TEXT_RE = re.compile(
+    r"\bposition\b|\bcomment\b|\bupper\s*limit\b|\bnote\b|\bremark\b",
+    re.IGNORECASE,
+)
+
+
 def _looks_like_instrument(value: str) -> bool:
     stripped = value.strip()
     if not stripped or stripped in {"not", "the", "and", "with"}:
@@ -918,6 +983,21 @@ def _looks_like_instrument(value: str) -> bool:
     if re.fullmatch(r"[+-]?\d+(?:\.\d+)?", stripped):
         return False
     if re.fullmatch(r"\d+(?:\.\d+)?\s*x\s*\d+(?:\.\d+)?", stripped, re.IGNORECASE):
+        return False
+    # A candidate cell that is itself a transient/source/catalog designation, a
+    # position, a date/time value, a filter/magnitude/exposure token, or a
+    # generic free-text label is metadata about the row, not an observing
+    # facility, even though it may superficially look like one (mixed case,
+    # digits, or a hyphen).
+    if _TRANSIENT_DESIGNATION_RE.search(stripped) or _CATALOG_DESIGNATION_RE.match(stripped):
+        return False
+    if _looks_like_coordinate(stripped):
+        return False
+    if _looks_like_utc_datetime(stripped) or _looks_like_mjd(stripped) or _looks_like_jd(stripped):
+        return False
+    if _looks_like_filter(stripped) or _looks_like_magnitude(stripped) or _looks_like_exposure(stripped):
+        return False
+    if _INSTRUMENT_FREE_TEXT_RE.search(stripped):
         return False
     return bool(
         re.search(r"[A-Z]", stripped)

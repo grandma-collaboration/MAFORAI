@@ -77,6 +77,11 @@ _PHOTOMETRY_CONTEXT_RE = re.compile(
     re.IGNORECASE,
 )
 _DIMENSION_RE = re.compile(r"^\s*\d+(?:\.\d+)?\s*x\s*\d+(?:\.\d+)?\s*$", re.IGNORECASE)
+# Header-derived column roles are always scored at 0.96 confidence; content-
+# inferred instrument columns are scored at 0.65 (see photometry_tables.py
+# _role_from_content). This threshold distinguishes the two provenance paths
+# without re-deriving the role.
+_EXPLICIT_INSTRUMENT_ROLE_CONFIDENCE = 0.9
 CLEAR_UNFILTERED_BANDS = frozenset({"C", "clear", "Clear", "CR", "P", "P-", "P/", "P\\", "W", "N"})
 _MONTH_DATE_RE = re.compile(
     r"\b\d{1,2}\s+"
@@ -139,6 +144,7 @@ def parse_table_to_measurements(
         photometric_band: str | None = None
         exposure_time_raw: str | None = None
         instrument: str | None = None
+        instrument_provenance: str | None = None
         mag_error_raw: str | None = None
         time_candidates: list[tuple[int, TimeParse]] = []
         provenance: list[str] = []
@@ -155,8 +161,6 @@ def parse_table_to_measurements(
                 magnitude = _parse_magnitude_cell_details(cell, header_cell=header_cell)
                 if magnitude.magnitude_or_limit is not None:
                     magnitude_candidates.append((column_index, magnitude))
-                if photometric_band is None:
-                    photometric_band = _band_from_magnitude_header(header_cell)
             elif role.role == "mag_error":
                 mag_error_raw = cell.strip() or None
             elif role.role == "time":
@@ -169,6 +173,11 @@ def parse_table_to_measurements(
                 stripped_cell = cell.strip()
                 if _is_valid_instrument_value(stripped_cell):
                     instrument = stripped_cell
+                    instrument_provenance = (
+                        "explicit_column"
+                        if role.confidence >= _EXPLICIT_INSTRUMENT_ROLE_CONFIDENCE
+                        else "inferred_column"
+                    )
             # coordinate, observer, name, comment, and unknown columns are
             # intentionally skipped. They describe the row but are not the
             # measurement value itself.
@@ -182,6 +191,7 @@ def parse_table_to_measurements(
             )
 
         magnitude_candidates = _discard_spurious_parallel_magnitude_columns(magnitude_candidates)
+        magnitude_candidates = _drop_depth_limits_for_detected_rows(magnitude_candidates)
         if not magnitude_candidates:
             continue
         if not _row_has_minimum_photometry_signal(block, roles, header_cells, photometric_band):
@@ -199,16 +209,13 @@ def parse_table_to_measurements(
                 f"{secondary_time.obs_time_raw}({secondary_time.obs_time_type or 'unknown'})"
             )
 
-        if not photometric_band:
-            review_reasons.append("missing photometric band")
         if is_catalog_table:
             review_reasons.append(
                 "Photometry from a multi-object catalog table; verify association with the event."
             )
 
-        # A row may contain both a measured magnitude and a separate upper-limit
-        # column. Each non-empty magnitude cell is a distinct measurement over the
-        # same observation metadata and therefore produces its own annotation.
+        # A trailing limiting-magnitude column describes image depth. It is not a
+        # second source measurement when this row already contains a detection.
         row_systems = {
             magnitude.system_in_cell
             for _column_index, magnitude in magnitude_candidates
@@ -217,7 +224,18 @@ def parse_table_to_measurements(
         shared_row_system = next(iter(row_systems)) if len(row_systems) == 1 else None
 
         for _column_index, magnitude in magnitude_candidates:
+            magnitude_header = (
+                header_cells[_column_index]
+                if _column_index < len(header_cells)
+                else None
+            )
+            candidate_band = (
+                photometric_band
+                or _band_from_magnitude_header(magnitude_header)
+            )
             candidate_review_reasons = [*review_reasons, *magnitude.review_reasons]
+            if not candidate_band:
+                candidate_review_reasons.append("missing photometric band")
             candidate_provenance = list(provenance)
             magnitude_error = magnitude.magnitude_error
             if magnitude.measurement_type == "detection" and magnitude_error is None:
@@ -235,7 +253,7 @@ def parse_table_to_measurements(
             photometric_system, system_review, system_provenance = _resolve_photometric_system(
                 measurement_system,
                 block.context_before,
-                photometric_band,
+                candidate_band,
             )
             candidate_provenance.extend(system_provenance)
             candidate_review_reasons.extend(system_review)
@@ -255,13 +273,14 @@ def parse_table_to_measurements(
                 magnitude_error=magnitude_error,
                 limit_sigma=limit_sigma,
                 unit="mag",
-                photometric_band=photometric_band,
+                photometric_band=candidate_band,
                 photometric_system=photometric_system,
                 obs_time_raw=primary_time.obs_time_raw if primary_time else None,
                 obs_time_type=primary_time.obs_time_type if primary_time else None,
                 obs_time_reference=primary_time.obs_time_reference if primary_time else None,
                 exposure_time_raw=exposure_time_raw,
                 instrument=instrument,
+                instrument_provenance=instrument_provenance,
                 comment=comment,
                 provenance_inherited=candidate_provenance,
                 extractor_id=PhotometryRowParser.extractor_id,
@@ -686,10 +705,15 @@ def _band_from_magnitude_header(header_cell: str | None) -> str | None:
     normalized = re.sub(r"\s+", "", header_cell.strip())
     if re.fullmatch(r"AB_?mag|ABmag|Magnitude\(AB\)|Brightness", normalized, re.IGNORECASE):
         return None
-    match = re.fullmatch(r"([A-Za-z][A-Za-z0-9']{0,5})[_-]?(?:mag|magnitude)", normalized, re.IGNORECASE)
+    match = re.fullmatch(
+        r"([A-Za-z][A-Za-z0-9_']{0,10})[_-]?(?:mag|magnitude)"
+        r"(?:\((?:AB|Vega)\))?",
+        normalized,
+        re.IGNORECASE,
+    )
     if match is None:
         return None
-    band = match.group(1)
+    band = match.group(1).rstrip("_.-")
     return band if band in FILTER_VALUES else band.rstrip(".")
 
 
@@ -712,6 +736,25 @@ def _discard_spurious_parallel_magnitude_columns(
     # When parallel candidates exist, retain the optically plausible values. A
     # single out-of-range magnitude is still emitted for human review as before.
     return plausible or candidates
+
+
+def _drop_depth_limits_for_detected_rows(
+    candidates: list[tuple[int, MagnitudeParse]],
+) -> list[tuple[int, MagnitudeParse]]:
+    if len(candidates) <= 1:
+        return candidates
+
+    has_detection = any(
+        magnitude.measurement_type == "detection"
+        for _column_index, magnitude in candidates
+    )
+    if not has_detection:
+        return candidates
+    return [
+        candidate
+        for candidate in candidates
+        if candidate[1].measurement_type == "detection"
+    ]
 
 
 def _is_valid_instrument_value(value: str) -> bool:
