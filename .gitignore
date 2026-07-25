@@ -252,3 +252,5 @@ PRE_2026/
 
 
 .claude/
+
+!notebooks/evidence/*.csv
