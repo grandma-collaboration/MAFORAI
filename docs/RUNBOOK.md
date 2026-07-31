@@ -17,7 +17,7 @@ This runbook is the ordered from-zero path. Run every command from the repositor
 | Identity index | No | No | About 10 seconds for about 12,000 Circulars. |
 | Viability sweep | No | No | About 400 seconds for 574 events. |
 | One event build | No | No | Event-size-dependent; normally seconds. |
-| Full tests | No | No | About 7 seconds for 664 tests on the current development machine. |
+| Full tests | No | No | About 21 seconds for 727 tests on the current development machine. |
 
 ## Gitignored Data
 
@@ -30,9 +30,8 @@ This runbook is the ordered from-zero path. Run every command from the repositor
 | `data/interim/gcn/event_matching/` | Terms, registry, identity index, selections, and viability output. | Steps 4-8 |
 | `data/interim/gcn/sweep/` | Extractor sweep and alert reports. | Step 9 |
 | `data/inception/out/<source_id>/` | Generated event XMI and manifests. | Step 8 |
-| `data/inception/TypeSystem.xml` | Required INCEpTION schema, currently ignored and not tracked. | External prerequisite before Step 8 |
-
-`data/inception/TypeSystem.xml` is required for every XMI export.
+`data/inception/TypeSystem.xml` is required for every XMI export and is tracked
+through a narrow `.gitignore` exception, so it is present in a fresh clone.
 
 ```text
 data/inception/TypeSystem.xml
@@ -227,7 +226,7 @@ Run the complete test suite:
 .venv/bin/python -m pytest tests/ -q
 ```
 
-The current suite contains 664 passing tests.
+The current suite contains 727 passing tests.
 
 Run a stratified extractor sweep and synchronize its alert report:
 
