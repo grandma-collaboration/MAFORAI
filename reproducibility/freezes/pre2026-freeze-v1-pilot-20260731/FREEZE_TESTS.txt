@@ -1,0 +1,768 @@
+FREEZE TEST EVIDENCE
+====================
+freeze_id: pre2026-freeze-v1-pilot-20260731
+freeze_created_at: 2026-07-31T20:07:21+02:00
+git_source_commit: 3d8b23ec77b0f4ae107921784c068f35ac98b9ff
+python: Python 3.10.12
+collected: 727
+passed: 727
+failed: 0
+skipped: 0
+warnings: 0
+collection_duration_seconds: 12.51
+test_duration_seconds: 12.87
+
+COMMAND 1
+=========
+/home/meneses/project_astronomical/MAFORAI/.venv/bin/python -m pytest --collect-only -q
+
+FULL OUTPUT 1
+=============
+tests/test_alerts_report.py::test_alerts_report_groups_and_counts
+tests/test_alerts_report.py::test_alerts_report_rule_filter
+tests/test_alerts_report.py::test_alerts_report_writes_file_with_context
+tests/test_alerts_report.py::test_alerts_report_writes_filtered_file
+tests/test_canonical_document.py::test_canonical_document_invariants
+tests/test_canonical_document.py::test_render_canonical_is_deterministic
+tests/test_canonical_document.py::test_newlines_are_normalized_to_lf
+tests/test_canonical_document.py::test_illegal_xml_control_character_is_removed
+tests/test_classification_interpretation.py::test_real_classification_and_interpretation_phrasings_are_captured[The evidence favors a likely long GRB.-likely long GRB-long GRB-classification_interpretation.qualified_class]
+tests/test_classification_interpretation.py::test_real_classification_and_interpretation_phrasings_are_captured[The event belongs to the Type II GRB population.-Type II GRB-Type II GRB-classification_interpretation.type_grb]
+tests/test_classification_interpretation.py::test_real_classification_and_interpretation_phrasings_are_captured[The excess may represent a possible supernova.-possible supernova-supernova-classification_interpretation.qualified_class]
+tests/test_classification_interpretation.py::test_real_classification_and_interpretation_phrasings_are_captured[This rebrightening may be due to late jet activity.-This rebrightening may be due to late jet activity-late jet activity-classification_interpretation.physical_cause]
+tests/test_classification_interpretation.py::test_firm_classification_marker_sets_confirmed_certainty
+tests/test_classification_interpretation.py::test_descriptors_positions_and_observed_evolution_are_excluded[The source is consistent with the Swift-XRT position.]
+tests/test_classification_interpretation.py::test_descriptors_positions_and_observed_evolution_are_excluded[The light curve shows a rebrightening.]
+tests/test_classification_interpretation.py::test_real_interpretation_structures_are_captured[We suggest that SN 2025ulz is a type II supernova (of unconfirmed subtype at this point).-We suggest that SN 2025ulz is a type II supernova-supernova]
+tests/test_classification_interpretation.py::test_real_interpretation_structures_are_captured[The observations make a kilonova the most likely interpretation.-make a kilonova the most likely interpretation-kilonova]
+tests/test_classification_interpretation.py::test_real_interpretation_structures_are_captured[The spectrum is consistent with those of very young supernovae that demonstrate flash-ionisation features.-is consistent with those of very young supernovae-supernova]
+tests/test_classification_interpretation.py::test_real_interpretation_structures_are_captured[This would be consistent with Huang et al. (GCN 44075) interpretaiton of the EP260321a as shock breakout signature.-interpretaiton of the EP260321a as shock breakout signature-shock breakout]
+tests/test_classification_interpretation.py::test_real_interpretation_structures_are_captured[The source exhibits a brightness similar to that of an AT2017gfo-like kilonova.-AT2017gfo-like kilonova-kilonova]
+tests/test_classification_interpretation.py::test_real_interpretation_structures_are_captured[The LOT optical lightcurve could be explained by shock cooling and a rise from a supernovae.-could be explained by shock cooling and a rise from a supernovae-shock cooling]
+tests/test_classification_interpretation.py::test_real_grb_class_statements_are_captured[The long-duration GRB 230114A was detected by Fermi/GBM.-long-duration GRB-confirmed-long GRB]
+tests/test_classification_interpretation.py::test_real_grb_class_statements_are_captured[The long GRB 240205B was observed by Konus-Wind.-long GRB-confirmed-long GRB]
+tests/test_classification_interpretation.py::test_real_grb_class_statements_are_captured[The analysis showed the detection of a short-duration GRB 240123C.-short-duration GRB-confirmed-short GRB]
+tests/test_classification_interpretation.py::test_real_grb_class_statements_are_captured[The subject describes a short hard GRB detected by IBAS.-short hard GRB-confirmed-short GRB]
+tests/test_classification_interpretation.py::test_real_grb_class_statements_are_captured[This burst has a typical brightness, duration, and hardness of a long GRB.-long GRB-tentative-long GRB]
+tests/test_classification_interpretation.py::test_consistency_retraction_and_nature_call_boundaries_are_excluded[The Fermi GBM on-ground location is consistent with the Swift/BAT-GUANO position.]
+tests/test_classification_interpretation.py::test_consistency_retraction_and_nature_call_boundaries_are_excluded[Our upper limits are consistent with Perez-Garcia et al. (GCN 43364).]
+tests/test_classification_interpretation.py::test_consistency_retraction_and_nature_call_boundaries_are_excluded[GRB 230209A, tentatively classified as GRB 230209A, is in fact not a GRB.]
+tests/test_classification_interpretation.py::test_consistency_retraction_and_nature_call_boundaries_are_excluded[These sources have been ruled out as kilonovae candidates.]
+tests/test_classification_interpretation.py::test_consistency_retraction_and_nature_call_boundaries_are_excluded[We obtained spectroscopy to explore the nature of EP260321a.]
+tests/test_classification_interpretation.py::test_consistency_retraction_and_nature_call_boundaries_are_excluded[Further observations are needed to determine the nature of this transient.]
+tests/test_classification_interpretation.py::test_observed_evolution_and_physical_cause_are_separated
+tests/test_classification_interpretation.py::test_physical_class_after_presence_phrase_is_captured
+tests/test_classification_interpretation.py::test_real_physical_class_exclusions_are_captured[this excess is too bright to be powered by the emergence of a typical GRB-supernova signal.]
+tests/test_classification_interpretation.py::test_real_physical_class_exclusions_are_captured[inconsistent with expectations for an emerging supernova.]
+tests/test_classification_interpretation.py::test_negated_physical_consistency_is_not_a_positive_interpretation
+tests/test_classification_interpretation.py::test_real_circular_35037_has_physical_interpretation
+tests/test_config.py::SkyPortalConfigTests::test_default_config_path_exists
+tests/test_config.py::SkyPortalConfigTests::test_yaml_loads_into_structured_config
+tests/test_counterpart_association.py::test_association_establishing_phrases_are_captured[We report an optical counterpart.-optical counterpart-candidate-optical counterpart]
+tests/test_counterpart_association.py::test_association_establishing_phrases_are_captured[We detected a candidate optical afterglow.-candidate optical afterglow-candidate-optical afterglow]
+tests/test_counterpart_association.py::test_association_establishing_phrases_are_captured[The temporal decay strongly suggest this is the optical counterpart.-strongly suggest this is the optical counterpart-candidate-optical counterpart]
+tests/test_counterpart_association.py::test_association_establishing_phrases_are_captured[This is the spectroscopically confirmed optical counterpart.-spectroscopically confirmed optical counterpart-confirmed-optical counterpart]
+tests/test_counterpart_association.py::test_negative_and_identity_linking_boundaries_are_excluded[No optical counterpart consistent with the INTEGRAL position was found.]
+tests/test_counterpart_association.py::test_negative_and_identity_linking_boundaries_are_excluded[GOTO26fua / AT2026owq]
+tests/test_counterpart_association.py::test_unrelated_without_clause_does_not_gate_a_possible_counterpart
+tests/test_counterpart_association.py::test_not_telescope_acronym_in_subject_is_not_a_negation
+tests/test_counterpart_association.py::test_explicit_detection_with_an_adverb_establishes_the_afterglow_role
+tests/test_counterpart_association.py::test_bare_non_associative_mentions_are_not_captured[We fit the afterglow model with a broken power law.]
+tests/test_counterpart_association.py::test_bare_non_associative_mentions_are_not_captured[The afterglow emission is consistent with synchrotron radiation.]
+tests/test_counterpart_association.py::test_bare_non_associative_mentions_are_not_captured[The counterpart was discussed in the previous circular.]
+tests/test_counterpart_association.py::test_real_circular_34681_has_counterpart_association
+tests/test_duration.py::test_t90_duration_parenthetical_with_approximation_and_band
+tests/test_duration.py::test_t90_with_symmetric_error
+tests/test_duration.py::test_paired_t90_and_t50_produce_distinct_labels
+tests/test_duration.py::test_t90_with_asymmetric_error
+tests/test_duration.py::test_t90_with_parenthesized_asymmetric_error
+tests/test_duration.py::test_general_duration_without_t90
+tests/test_duration.py::test_t90_allows_band_and_verb_before_value[T90 (15-350 keV) is 0.62 +- 0.05 sec (estimated error including systematics).-0.62 +/- 0.05-15-350 keV]
+tests/test_duration.py::test_t90_allows_band_and_verb_before_value[The T90 (50-300 keV) is 31.00 + - 6.32 sec.-31.00 +/- 6.32-50-300 keV]
+tests/test_duration.py::test_t90_allows_band_and_verb_before_value[The T90 in the 10-1000 keV band was measured to be 4.2 +/- 0.3 s.-4.2 +/- 0.3-10-1000 keV]
+tests/test_duration.py::test_t90_direct_value_is_not_rejected_by_nearby_relative_time
+tests/test_duration.py::test_t90_without_connector
+tests/test_duration.py::test_lasted_event_duration_variants[The event lasted about 1400 seconds.-about 1400-seconds]
+tests/test_duration.py::test_lasted_event_duration_variants[The burst lasted for 200 seconds.-200-seconds]
+tests/test_duration.py::test_lasted_event_duration_variants[The prompt emission was lasting approximately 3 minutes.-approximately 3-minutes]
+tests/test_duration.py::test_adjectival_duration_classification_is_not_a_measurement[The long-duration GRB was detected by Fermi/GBM.]
+tests/test_duration.py::test_adjectival_duration_classification_is_not_a_measurement[This is a short-duration burst candidate.]
+tests/test_duration.py::test_non_event_durations_are_rejected[We obtained 4x90s exposures of the field.]
+tests/test_duration.py::test_non_event_durations_are_rejected[The exposure time of 600 s was used.]
+tests/test_duration.py::test_non_event_durations_are_rejected[The observations lasted 2 hours.]
+tests/test_duration.py::test_non_event_durations_are_rejected[The source was detected 130.9 seconds after the BAT trigger.]
+tests/test_duration.py::test_shared_instrument_band_comment_format[Fermi/GBM-50-300 keV-Fermi/GBM, 50-300 keV]
+tests/test_duration.py::test_shared_instrument_band_comment_format[Konus-Wind-None-Konus-Wind]
+tests/test_duration.py::test_shared_instrument_band_comment_format[None-15-150 keV-15-150 keV]
+tests/test_duration.py::test_shared_instrument_band_comment_format[None-None-None]
+tests/test_duration.py::test_fermi_t90_comment_remains_exact
+tests/test_duration.py::test_konus_general_duration_uses_reporting_instrument
+tests/test_duration.py::test_reporting_instrument_wins_over_neighboring_episode_instrument
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 231215A-The burst light curve has a duration of ~25 s.-~ 25]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 230309A-The burst light curve has a duration of ~68.9 s.-~ 68.9]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 230818A-The burst light curve has a duration of ~10 s.-~ 10]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 240809A-The burst light curve has a duration of ~36.9 s.-~ 36.9]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 250215A / EP250215a-The burst light curve has a duration of ~22 s.-~ 22]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 251118A-The burst light curve has a duration of about 25.8 s.-about 25.8]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 250226A-The burst light curve has a duration of ~32 s.-~ 32]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 260601B/EP260601a-The burst light curve has a duration of ~230 s.-~ 230]
+tests/test_duration.py::test_konus_duration_reporting_instrument_regressions[Konus-Wind detection of GRB 260511B-The duration of the burst is ~43.4 s.-~ 43.4]
+tests/test_duration.py::test_fermi_t90_reporting_instrument_regressions[GRB 240527B: Fermi GBM Observation-The GBM light curve consists of multiple peaks with a duration (T90) of about 24.8 s (50-300 keV).-about 24.8]
+tests/test_duration.py::test_fermi_t90_reporting_instrument_regressions[GRB 260207B: Fermi GBM Detection of a Short Burst with Extended Emission-The GBM light curve consists of multiple episodes with a duration (T90) of about 56 s (50-300 keV).-about 56]
+tests/test_duration.py::test_same_clause_measurement_instrument_overrides_reporter
+tests/test_event_annotations.py::test_event_annotations_translate_local_offsets_and_keep_provenance
+tests/test_event_annotations.py::test_global_annotations_match_expected_local_to_global_positions
+tests/test_event_document.py::test_build_event_document_segments_have_correct_offsets
+tests/test_event_document.py::test_event_document_preserves_each_canonical_text_slice_and_sha
+tests/test_event_document.py::test_local_to_global_and_global_to_circular_are_exact_inverses
+tests/test_event_document.py::test_build_event_document_is_deterministic
+tests/test_event_document.py::test_global_to_circular_returns_none_for_separator_offsets
+tests/test_event_grouping.py::test_normalize_for_match_collapses_event_names
+tests/test_event_grouping.py::test_grouping_includes_confirmed_subject_match
+tests/test_event_grouping.py::test_grouping_excludes_confirmed_other_event_even_with_body_mention
+tests/test_event_grouping.py::test_grouping_includes_body_mention_when_subject_has_no_confirmed_identity
+tests/test_event_grouping.py::test_nonstandard_alias_matches_by_boundary_aware_body_text
+tests/test_event_grouping.py::test_body_name_match_is_separator_flexible_and_suffix_safe[GRB240912-The event is GRb 240912.-True]
+tests/test_event_grouping.py::test_body_name_match_is_separator_flexible_and_suffix_safe[GRB240912-The event is GRB240912.-True]
+tests/test_event_grouping.py::test_body_name_match_is_separator_flexible_and_suffix_safe[GRB240912-The event is GRB 240912A.-False]
+tests/test_event_grouping.py::test_body_name_match_is_separator_flexible_and_suffix_safe[GRB240912-The event is GRB240912C.-False]
+tests/test_event_grouping.py::test_body_name_match_is_separator_flexible_and_suffix_safe[GRB 240912A-The event is GRB240912A.-True]
+tests/test_event_grouping.py::test_body_name_match_is_separator_flexible_and_suffix_safe[GRB 240912A-The event is GRB 240912.-False]
+tests/test_event_grouping.py::test_canonical_aliases_marks_unrecognized_aliases
+tests/test_event_grouping.py::test_circular_matches_event_supports_normalized_subject_identity
+tests/test_event_grouping.py::test_grouping_includes_format_variation_via_canonical_identity
+tests/test_event_grouping.py::test_grouping_excludes_unrelated_circular_without_event_mention_as_no_match
+tests/test_event_identity.py::test_event_identity_positive_subject_and_body_only
+tests/test_event_identity.py::test_event_identity_grb_dayfraction_preserves_fraction[GRB230101.09-GRB 230101.09]
+tests/test_event_identity.py::test_event_identity_grb_dayfraction_preserves_fraction[GRB230110.65-GRB 230110.65]
+tests/test_event_identity.py::test_event_identity_grb_dayfraction_does_not_emit_truncated_grb
+tests/test_event_identity.py::test_event_identity_grb_with_letter_still_uses_normal_grb_rule
+tests/test_event_identity.py::test_event_identity_ep_wxt_trigger_phrase_requires_review
+tests/test_event_identity.py::test_event_identity_ep_wxt_compact_trigger_requires_review
+tests/test_event_identity.py::test_event_identity_ep_dayfraction_requires_review
+tests/test_event_identity.py::test_event_identity_epw_transient_uses_ep_wxt_rule_without_truncation
+tests/test_event_identity.py::test_event_identity_normalizes_value_by_family[AT2023bic-AT 2023bic-event_identity.at_sn]
+tests/test_event_identity.py::test_event_identity_normalizes_value_by_family[ZTF23aaarlti-ZTF23aaarlti-event_identity.ztf]
+tests/test_event_identity.py::test_event_identity_normalizes_value_by_family[GRB230101A-GRB 230101A-event_identity.grb]
+tests/test_event_identity.py::test_event_identity_normalizes_value_by_family[EP240315a-EP 240315a-event_identity.ep]
+tests/test_event_identity.py::test_event_identity_suppresses_at_sn_inside_candidate_table_row
+tests/test_event_identity.py::test_event_identity_suppresses_at_and_ztf_inside_photometry_table_row
+tests/test_event_identity.py::test_event_identity_keeps_legitimate_at_alias_in_prose
+tests/test_event_identity.py::test_event_identity_keeps_sn_comparison_in_prose
+tests/test_event_identity.py::test_event_identity_does_not_apply_table_filter_to_grb
+tests/test_event_identity.py::test_event_identity_negative_without_names
+tests/test_event_identity.py::test_body_identity_repeated_from_subject_does_not_need_review
+tests/test_event_identity.py::test_explicit_counterpart_alias_of_subject_event_does_not_need_review
+tests/test_event_identity.py::test_unlinked_body_alias_absent_from_subject_still_needs_review
+tests/test_event_identity.py::test_event_identity_does_not_match_gcn_reference_number
+tests/test_event_identity.py::test_event_evidence_target_tagset_rejects_other_event
+tests/test_event_identity.py::test_event_evidence_certainty_tagset
+tests/test_event_photometry.py::test_event_photometry_translates_local_offsets_and_keeps_provenance
+tests/test_event_photometry.py::test_event_xmi_contains_both_layers_and_roundtrips
+tests/test_event_photometry.py::test_event_xmi_uses_valid_defaults_for_missing_photometry_tagsets
+tests/test_event_photometry.py::test_event_photometry_suppresses_prose_measurements_inside_table_rows
+tests/test_event_photometry.py::test_defensive_photometry_dedup_is_field_aware
+tests/test_event_selection.py::test_registry_prefers_trigger_like_id_and_merges_all_aliases
+tests/test_event_selection.py::test_gcn_250706_record_keeps_both_grb_designations
+tests/test_event_selection.py::test_registry_prefers_same_date_suffixed_event_term[GRB241030-GRB241030A-GRB241030]
+tests/test_event_selection.py::test_registry_prefers_same_date_suffixed_event_term[EP250704-EP 250704a-EP250704]
+tests/test_event_selection.py::test_registry_keeps_event_with_only_a_suffixless_term
+tests/test_event_selection.py::test_index_scan_matches_live_grouping_without_id_or_event_date_filter
+tests/test_gcn_circulars_archive.py::GcnCircularsArchiveTests::test_extract_archive_file_returns_extracted_members
+tests/test_gcn_circulars_archive.py::GcnCircularsArchiveTests::test_run_download_creates_run_directory_and_manifest
+tests/test_gcn_circulars_index.py::GcnCircularsIndexTests::test_build_row_normalizes_expected_fields
+tests/test_gcn_circulars_index.py::GcnCircularsIndexTests::test_infer_archive_run_id_from_input_dir
+tests/test_gcn_circulars_index.py::GcnCircularsIndexTests::test_run_build_writes_outputs_and_collects_errors
+tests/test_gcn_circulars_index.py::GcnCircularsIndexTests::test_safe_timestamp_to_iso_handles_milliseconds
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_build_evidence_text_keeps_a_short_fragment
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_counterpart_type_is_emitted_for_positive_detection_line
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_counterpart_type_is_not_emitted_for_negative_afterglow_line
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_counterpart_type_is_not_emitted_for_negative_counterpart_line
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_counterpart_type_is_not_emitted_for_spurious_afterglow_line
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_do_not_extract_redshift_from_z_band_magnitude
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_extract_non_detection_from_negative_phrase
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_extract_redshift_with_strong_context
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_extract_simple_t90
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_extract_simple_upper_limit
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_normalize_json_safe_record_replaces_nan_with_null
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_redshift_method_becomes_spectroscopic_when_spectrum_context_exists
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_redshift_rejects_z_band_value_inside_multiband_photometry
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_removed_false_trigger_detection_rule_is_not_emitted
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_summary_includes_events_without_claims
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_t90_does_not_capture_start_offset_instead_of_duration
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_t90_extracts_main_value_when_uncertainty_is_present
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_discards_konus_seconds_of_day_when_only_clock_time_exists
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_discards_relative_t0_offsets
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_keeps_explicit_t0_but_not_later_observation_time
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_keeps_iso_and_strips_trailing_text
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_keeps_mjd_when_trigger_context_is_explicit
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_keeps_ut_time_when_explicit_date_is_present
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_rejects_followup_mjd_started_after_trigger
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_rejects_followup_observation_start
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_rejects_followup_starting_on_post_t0
+tests/test_gcn_core_claims.py::GcnCoreClaimsTests::test_trigger_time_rejects_observation_time_when_line_only_says_after_trigger
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_baseline_union_uses_summary_and_tags
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_best_redshift_prefers_photoz_rule_within_same_method
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_best_redshift_prioritizes_spectroscopic_over_photometric
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_best_t90_prefers_high_confidence_claim
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_best_trigger_time_prefers_full_timestamp_over_less_complete_values
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_comparison_counts_non_detection_and_upper_limit_as_enrichment_fields
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_comparison_marks_gcn_adds_redshift
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_comparison_only_keeps_events_with_match
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_comparison_uses_summary_and_tags_before_marking_gcn_as_new
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_compute_enrichment_priority_uses_expected_rules
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_count_enrichment_fields_includes_detection_upper_limit_and_non_detection
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_detection_flags_capture_detection_and_non_detection
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_instruments_found_are_unique
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_missing_summary_and_tags_are_handled_as_empty
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_no_optical_only_affects_counterpart_context
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_skyportal_baseline_extracts_summary_claims
+tests/test_gcn_event_enrichment.py::GcnEventEnrichmentTests::test_skyportal_baseline_normalizes_only_allowed_tag_families
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_build_conservative_variants_for_grb_and_ep
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_build_event_gcn_associations_keeps_best_score
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_confidence_level_from_score_uses_expected_buckets
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_filter_match_summary_to_matched_keeps_only_matched_rows
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_match_summary_orders_matched_before_no_match
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_normalize_search_term_compacts_grb_and_ep
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_search_terms_build_uses_top_level_aliases_and_groups
+tests/test_gcn_event_matching.py::GcnEventMatchingTests::test_search_terms_include_source_id_alias_and_tns_name
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_counterpart_no_optical_vs_positive_candidate_is_complementary_context
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_counterpart_source_summary_extracted
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_counterpart_source_tag_normalized
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_counterpart_subset_is_same_or_consistent
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_counterpart_superset_is_complementary_context
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_duration_class_difference_is_possible_conflict
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_duration_class_missing_value_is_missing_in_skyportal
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_duration_class_overlap_is_same_or_consistent
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_duration_class_source_summary_and_tag_normalized
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_duration_class_source_tag_normalized
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_host_candidate_source_native
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_host_candidate_source_summary_extracted
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_redshift_difference_becomes_possible_conflict
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_redshift_source_native
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_redshift_source_native_and_summary_extracted
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_redshift_source_summary_extracted
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_counterpart_subset_is_same_or_consistent
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_counterpart_uses_union_of_claims
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_counterpart_with_only_no_optical_is_complementary
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_schema_matches_expected_output
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_sorting_prioritizes_status_then_field
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_trigger_time_uses_best_absolute_candidate
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_review_table_without_counterpart_claim_has_no_counterpart_row
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_spectroscopy_source_native
+tests/test_gcn_event_review.py::GcnEventReviewTests::test_spectroscopy_source_summary_extracted
+tests/test_gcn_event_review_export.py::GcnEventReviewExportTests::test_editorial_filters_keep_only_requested_status_field_pairs
+tests/test_gcn_event_review_export.py::GcnEventReviewExportTests::test_export_keeps_skyportal_value_source_values
+tests/test_gcn_event_review_export.py::GcnEventReviewExportTests::test_export_order_respects_status_priority_and_groups_rows_by_event
+tests/test_gcn_event_review_export.py::GcnEventReviewExportTests::test_exported_dataframe_has_expected_columns
+tests/test_gcn_event_review_export.py::GcnEventReviewExportTests::test_same_or_consistent_rows_are_excluded
+tests/test_gcn_event_review_export.py::GcnEventReviewExportTests::test_workbook_contains_review_and_legend_sheets
+tests/test_gcn_inception_dossiers.py::GcnInceptionDossiersTests::test_build_default_title_uses_first_alias_when_available
+tests/test_gcn_inception_dossiers.py::GcnInceptionDossiersTests::test_choose_best_association_rows_keeps_best_score_per_circular
+tests/test_gcn_inception_dossiers.py::GcnInceptionDossiersTests::test_load_selected_sources_lookup_supports_sources_and_selected_sources
+tests/test_gcn_inception_dossiers.py::GcnInceptionDossiersTests::test_resolve_circular_body_falls_back_to_year_index
+tests/test_gcn_inception_dossiers.py::GcnInceptionDossiersTests::test_run_build_writes_dossier_and_manifest
+tests/test_gcn_inception_dossiers.py::GcnInceptionDossiersTests::test_safe_source_id_sanitizes_for_output_paths
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_build_context_fields_marks_evidence_text
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_build_preannotation_candidates_marks_direct_claim_ready_when_dossier_offsets_exist
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_find_offsets_returns_exact_match_positions
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_map_claim_to_inception_for_trigger_time_is_direct_and_low_risk
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_pilot_review_table_contains_manual_columns_and_empty_reviewer_fields
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_pilot_review_table_marks_44891_as_identity_warning
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_resolve_dossier_offsets_uses_circular_block_to_disambiguate
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_resolve_selected_source_ids_defaults_to_available_dossiers_only
+tests/test_gcn_preannotation_candidates.py::GcnPreannotationCandidatesTests::test_resolve_selected_source_ids_supports_source_and_document_filters
+tests/test_high_energy.py::test_epeak_from_parameterized_cutoff_energy
+tests/test_high_energy.py::test_fluence_preserves_scientific_notation_and_energy_band
+tests/test_high_energy.py::test_power_law_index_is_dimensionless
+tests/test_high_energy.py::test_alpha_and_beta_are_separate_properties
+tests/test_high_energy.py::test_eiso_about_is_tentative
+tests/test_high_energy.py::test_peak_photon_flux
+tests/test_high_energy.py::test_peak_flux_stops_at_first_value_and_not_column_density
+tests/test_high_energy.py::test_times_ten_scientific_notation[The peak flux is 2.5 x 10^-7 erg/cm^2/s.-peak energy flux = 2.5 x 10^-7-erg/cm^2/s]
+tests/test_high_energy.py::test_times_ten_scientific_notation[The fluence is 1.3 x 10^-5 erg/cm^2.-fluence = 1.3 x 10^-5-erg/cm^2]
+tests/test_high_energy.py::test_times_ten_scientific_notation[The isotropic energy Eiso is 8.8 x 10^51 erg.-Eiso = 8.8 x 10^51-erg]
+tests/test_high_energy.py::test_plus_hyphen_error_and_alternate_photon_flux_unit
+tests/test_high_energy.py::test_photon_and_spectral_index_aliases[The spectrum is described by a powerlaw model with a photon index of 2.-photon index = 2]
+tests/test_high_energy.py::test_photon_and_spectral_index_aliases[The fitted photon index 2.5(+1.7/-1.2), and the unabsorbed flux follows.-photon index = 2.5(+1.7/-1.2)]
+tests/test_high_energy.py::test_photon_and_spectral_index_aliases[The average X-ray spectrum has a photon index of 1.7.-photon index = 1.7]
+tests/test_high_energy.py::test_photon_and_spectral_index_aliases[The X-ray spectral index is -1.8 +/- 0.2.-spectral index = -1.8 +/- 0.2]
+tests/test_high_energy.py::test_photon_and_spectral_index_aliases[The X-ray spectrum has Gamma = 1.7.-photon index = 1.7]
+tests/test_high_energy.py::test_index_bridge_variants[The power law index of the time-averaged\nspectrum is 1.77 +- 0.08.-power law index = 1.77 +/- 0.08]
+tests/test_high_energy.py::test_index_bridge_variants[The X-ray model has photon index fixed at 2.-photon index = 2]
+tests/test_high_energy.py::test_index_bridge_variants[The X-ray spectrum has a photon index of approximately 4.2.-photon index = 4.2]
+tests/test_high_energy.py::test_radio_spectral_index_is_rejected
+tests/test_high_energy.py::test_column_density_is_not_a_high_energy_property
+tests/test_high_energy.py::test_konus_fluence_with_parenthesized_error_and_multiplier
+tests/test_high_energy.py::test_bat_fluence_with_plus_minus_and_times_ten_notation
+tests/test_high_energy.py::test_fluence_with_star_e_exponent
+tests/test_high_energy.py::test_non_high_energy_values_are_rejected[The optical counterpart has r = 21.3 +/- 0.2 mag.]
+tests/test_high_energy.py::test_non_high_energy_values_are_rejected[The host redshift is z = 0.473.]
+tests/test_high_energy.py::test_non_high_energy_values_are_rejected[We measure a flux density of approximately 0.3 mJy.]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[with alpha = -1.00(-0.23,+0.27) and Ep = 251(-49,+81) keV.\nwith alpha = -0.40(-0.44,+0.56) and Ep = 259(-45,+64) keV.-expected_values0]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[and Ep = 1000(-16,+15) keV.\nand Ep = 1321(-62,+60) keV.-expected_values1]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[the peak energy Ep = 202(-6,+6) keV\nand Ep = 782(-52,+55) keV.-expected_values2]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[and Ep = 634(-181,+393) keV.\nand Ep = 361(-118,+292) keV.\nand Ep = 187(-74,+228) keV.-expected_values3]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[and Ep < 41 keV.\nthe peak energy Ep = 154(-5,+5) keV\nthe peak energy Ep = 251(-12,+12) keV-expected_values4]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[with alpha = -1.38(-0.13,+0.14) and Ep = 56(-5,+4) keV.\nwith alpha = -1.16(-0.17,+0.19) and Ep = 68(-9,+8) keV.-expected_values5]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[and Ep = 495(-60,+72) keV.\nand Ep = 44 (-19,+11) keV.-expected_values6]
+tests/test_high_energy.py::test_konus_ep_is_normalized_to_epeak[and Ep = 354(-47,+64) keV.\nand Ep = 350(-85,+147) keV.-expected_values7]
+tests/test_high_energy.py::test_konus_ep_excludes_model_formula_and_rest_frame_quantities
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[an upper limit on the high energy photon index beta of -2.5.\nan upper limit on the high energy photon index beta of -2.7.-expected_values0]
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[an upper limit on the high energy photon index: beta < -5.4\nan upper limit on the high energy photon index: beta < -4.3-expected_values1]
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[an upper limit on the high energy photon index: beta < -3.3-expected_values2]
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[an upper limit on the high energy photon index: beta < -1.7\nan upper limit on the high energy photon index: beta < -1.7\nan upper limit on the high energy photon index: beta < -1.7-expected_values3]
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[only an upper limit on the high energy photon index\nbeta of -2.8-expected_values4]
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[an upper limit on the high energy photon index: beta <= -3.1\nbeta < -3.0-expected_values5]
+tests/test_high_energy.py::test_beta_upper_limits_are_not_photon_index_measurements[an upper limit on the high energy photon index: beta < -2.2\nan upper limit on the high energy photon index: beta < -2.8-expected_values6]
+tests/test_high_energy.py::test_power_law_and_photon_indices_remain_point_estimates
+tests/test_high_energy.py::test_existing_beta_measurements_remain_point_estimates
+tests/test_high_energy.py::test_eiso_notation_variants[Using z=2.702, we find Eiso = 1.5e+53 erg.-Eiso = 1.5e+53]
+tests/test_high_energy.py::test_eiso_notation_variants[we estimate the burst isotropic energy release E_iso to (6.95 \xb1 2.49)x10^52 erg-Eiso = (6.95 +/- 2.49)x10^52]
+tests/test_high_energy.py::test_eiso_notation_variants[we estimate the burst isotropic energy release E_iso to (4.60 \xb1 0.14)x10^53 erg-Eiso = (4.60 +/- 0.14)x10^53]
+tests/test_high_energy.py::test_eiso_notation_variants[the burst isotropic equivalent radiated energy, parameterized as Eiso, is (1.76 +/- 0.76)E+53 erg-Eiso = (1.76 +/- 0.76)E+53]
+tests/test_high_energy.py::test_eiso_notation_variants[The inferred Eiso of 8.8e+51 erg is preliminary.-Eiso = 8.8e+51]
+tests/test_high_energy.py::test_liso_is_out_of_scope
+tests/test_high_energy.py::test_real_peak_flux_formats[a 64-ms peak energy flux, measured from T0,\nof (3.08 \xb1 0.90)x10^-6 erg/cm^2/s-peak energy flux = (3.08 +/- 0.90)x10^-6-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[a 64-ms peak flux, measured from T0+6.224 s,\nof 6.66(-0.42,+0.46)x10^-4 erg/cm2/s-peak energy flux = 6.66(-0.42,+0.46)x10^-4-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[a 64-ms peak flux, measured from T0+0.106s,\nof 4.16(-0.52,+0.54)x10^-5 erg/cm2/s-peak energy flux = 4.16(-0.52,+0.54)x10^-5-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[a 64-ms peak flux, measured from T0+0.262 s,\nof 1.14(-0.24,+0.35)x10^-5 erg/cm2/s-peak energy flux = 1.14(-0.24,+0.35)x10^-5-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[the 64-ms peak flux, measured from T0+35.776 s,\nof 2.03(-0.15,+0.15)x10^-5 erg/cm2/s-peak energy flux = 2.03(-0.15,+0.15)x10^-5-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[a 64-ms peak energy flux, measured from T0 + 0.832 s,\nof (1.78 \xb1 0.22)x10^-6 erg/cm^2/s-peak energy flux = (1.78 +/- 0.22)x10^-6-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[the 16-ms peak flux, measured from T0+0.104 s,\nof 4.41(-0.54,+0.58)x10^-5 erg/cm2/s-peak energy flux = 4.41(-0.54,+0.58)x10^-5-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[the 64-ms peak flux, measured from T0-0.224 s,\nof 2.51(-0.71,+0.80)x10^-6 erg/cm2/s-peak energy flux = 2.51(-0.71,+0.80)x10^-6-erg/cm^2/s]
+tests/test_high_energy.py::test_real_peak_flux_formats[The 1-sec peak photon flux measured\nstarting from T0+14 s in the 10-1000 keV band is 10.9 +/- 0.3 ph/s/cm^2.-peak photon flux = 10.9 +/- 0.3-ph/s/cm^2]
+tests/test_high_energy.py::test_real_peak_flux_formats[The 64-ms peak photon flux measured\nstarting from T0-0.19 s in the 10-1000 keV band is 11 +/- 3 ph/s/cm^2.-peak photon flux = 11 +/- 3-ph/s/cm^2]
+tests/test_high_energy.py::test_real_peak_flux_formats[The 1-sec peak photon flux measured starting from T0+0.0024 s in the 10-1000 keV band\nis 16.6 +/- 0.3 ph/s/cm^2.-peak photon flux = 16.6 +/- 0.3-ph/s/cm^2]
+tests/test_high_energy.py::test_circular_without_peak_flux_does_not_invent_one
+tests/test_high_energy.py::test_multiline_and_single_line_fluences_are_all_captured
+tests/test_high_energy.py::test_konus_comments_use_each_governing_clause_band
+tests/test_high_energy.py::test_fermi_comments_propagate_observation_band_across_analysis_paragraphs
+tests/test_high_energy.py::test_derived_energy_band_does_not_leak_into_observed_spectral_parameters
+tests/test_high_energy.py::test_neighboring_instrument_does_not_override_high_energy_reporter
+tests/test_high_energy.py::test_same_clause_instrument_overrides_high_energy_reporter
+tests/test_host_context.py::test_real_host_context_phrasings_are_captured[The host association is not obvious.-host association is not obvious-host]
+tests/test_host_context.py::test_real_host_context_phrasings_are_captured[This object is a host candidate.-host candidate-host]
+tests/test_host_context.py::test_real_host_context_phrasings_are_captured[The transient is offset from the host galaxy.-offset from the host galaxy-host]
+tests/test_host_context.py::test_real_host_context_phrasings_are_captured[It is in the vicinity of a galaxy association with ~1.7 arcsec separation.-in the vicinity of a galaxy association with ~1.7 arcsec separation-host]
+tests/test_host_context.py::test_real_host_context_phrasings_are_captured[The absence of a host galaxy remains notable.-absence of a host galaxy-host]
+tests/test_host_context.py::test_real_host_context_phrasings_are_captured[Several nearby galaxies are visible in the field.-nearby galaxies-nearby_galaxy]
+tests/test_host_context.py::test_explicitly_established_host_is_confirmed_without_capturing_redshift
+tests/test_host_context.py::test_pure_redshift_values_are_not_host_context[A galaxy at z=0.473 is visible.]
+tests/test_host_context.py::test_pure_redshift_values_are_not_host_context[We measure a redshift of z=0.473.]
+tests/test_host_context.py::test_real_circular_44910_has_ambiguous_host_context
+tests/test_host_context.py::test_real_circular_36371_has_galaxy_separation_context
+tests/test_identity_index.py::test_identity_index_preserves_raw_body_and_subject_body_partition
+tests/test_identity_index.py::test_identity_index_parquet_roundtrip_is_exact
+tests/test_inventory_profiles.py::InventoryProfileTests::test_cli_overrides_win_over_profile_values
+tests/test_inventory_profiles.py::InventoryProfileTests::test_expected_profile_exists
+tests/test_inventory_profiles.py::InventoryProfileTests::test_profile_resolution_applies_defaults_and_template
+tests/test_lightcurve_evolution.py::test_real_lightcurve_phrasings_are_captured[The observations show optical rebrightening.-optical rebrightening-lightcurve_evolution.rise_brightening]
+tests/test_lightcurve_evolution.py::test_real_lightcurve_phrasings_are_captured[We measure a flattening of the light curve.-flattening of the light curve-lightcurve_evolution.flatten_plateau]
+tests/test_lightcurve_evolution.py::test_real_lightcurve_phrasings_are_captured[The source continues to fade.-The source continues to fade-lightcurve_evolution.fade_decline]
+tests/test_lightcurve_evolution.py::test_real_lightcurve_phrasings_are_captured[The afterglow entered a plateau phase.-plateau phase-lightcurve_evolution.flatten_plateau]
+tests/test_lightcurve_evolution.py::test_real_lightcurve_phrasings_are_captured[The flux shows a rapid decline.-rapid decline-lightcurve_evolution.fade_decline]
+tests/test_lightcurve_evolution.py::test_real_lightcurve_phrasings_are_captured[There is no evidence for fading.-There is no evidence for fading-lightcurve_evolution.negative]
+tests/test_lightcurve_evolution.py::test_physical_cause_clause_is_deferred_to_classification[This rebrightening may be due to late jet activity.]
+tests/test_lightcurve_evolution.py::test_physical_cause_clause_is_deferred_to_classification[This rebrightening\nmay be due to late jet activity.]
+tests/test_lightcurve_evolution.py::test_observed_rebrightening_survives_separate_cause_clause
+tests/test_lightcurve_evolution.py::test_negated_fading_is_not_emitted_as_positive_fade_decline
+tests/test_lightcurve_evolution.py::test_non_negated_fading_and_decline_remain_captured
+tests/test_lightcurve_evolution.py::test_negative_flat_behavior_is_not_treated_as_a_physical_cause[The g-band is consistent with no evolution.]
+tests/test_lightcurve_evolution.py::test_negative_flat_behavior_is_not_treated_as_a_physical_cause[Our observations suggest there is no significant evolution.]
+tests/test_lightcurve_evolution.py::test_generic_variability_requires_lightcurve_context
+tests/test_lightcurve_evolution.py::test_real_circular_42311_now_has_lightcurve_annotations
+tests/test_localization.py::test_localization_decimal_position
+tests/test_localization.py::test_localization_captures_multiline_sexagesimal_block_from_44941
+tests/test_localization.py::test_localization_combined_decimal_and_sexagesimal_block_is_one_annotation
+tests/test_localization.py::test_localization_decimal_position_deduplicates_nearby_sexagesimal
+tests/test_localization.py::test_localization_error_radius
+tests/test_localization.py::test_localization_counterpart_target
+tests/test_localization.py::test_localization_negative_without_coordinates
+tests/test_negative_statement.py::test_rejections_are_emitted_with_rejected_certainty[The event is not a GRB.-not a GRB-negative_statement.not_grb]
+tests/test_negative_statement.py::test_rejections_are_emitted_with_rejected_certainty[GRB 250101A is a false trigger.-GRB 250101A is a false trigger-negative_statement.false_trigger]
+tests/test_negative_statement.py::test_rejections_are_emitted_with_rejected_certainty[This circular is a retraction of GCN 44900.-retraction of GCN 44900-negative_statement.retraction]
+tests/test_negative_statement.py::test_rejections_are_emitted_with_rejected_certainty[The transient is not associated with the host galaxy.-not associated with the host galaxy-negative_statement.not_associated]
+tests/test_negative_statement.py::test_rejections_are_emitted_with_rejected_certainty[The localization rules out the association.-rules out the association-negative_statement.rules_out]
+tests/test_negative_statement.py::test_negative_findings_are_emitted_with_confirmed_certainty[We find no evidence for a supernova.-no evidence for a supernova-negative_statement.no_evidence]
+tests/test_negative_statement.py::test_negative_findings_are_emitted_with_confirmed_certainty[We find no evidence for a jet break.-no evidence for a jet break-negative_statement.no_evidence]
+tests/test_negative_statement.py::test_negative_findings_are_emitted_with_confirmed_certainty[The spectrum shows no significant excess.-no significant excess-negative_statement.no_significant]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[fading]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[brightening]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[rising]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[dimming]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[rebrightening]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[variability]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[variation]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[decay]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[decline]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[evolution]
+tests/test_negative_statement.py::test_lightcurve_behavior_negatives_are_deferred[flaring]
+tests/test_negative_statement.py::test_real_circular_42311_fading_claims_yield_zero_annotations
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[We find no evidence of the source prior to the GRB in GOTO observations down to a 5-sigma depth of >20.8 AB mag.]
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[We find no evidence for pre-GRB emission in the ZTF observations or the ATLAS forced photometry server.]
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[X2 is not detected, with a 3 sigma detection limit > 21.54 mag (AB).]
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[VLA-4 and VLA-5 are not detected in our images.]
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[We observed the field for one hour, and have not detected any afterglow.]
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[An upper limit of R = 19.0 with no detection of the afterglow.]
+tests/test_negative_statement.py::test_optical_ir_radio_photometric_negatives_are_excluded[No optical counterpart consistent with the position (GCN Circ. 12345) is detected down to r > 21.5 mag.]
+tests/test_negative_statement.py::test_photometric_context_gates_rejection_rules_too
+tests/test_negative_statement.py::test_counterpart_absence_claims_are_confirmed[No optical counterpart consistent with the INTEGRAL position is detected in the initial UVOT exposures.-No optical counterpart consistent with the INTEGRAL position]
+tests/test_negative_statement.py::test_counterpart_absence_claims_are_confirmed[The prompt search found no counterpart candidates.-no counterpart candidates]
+tests/test_negative_statement.py::test_counterpart_absence_claims_are_confirmed[No confirmed counterpart is found in the XRT or UVOT data within the BAT error circle.-No confirmed counterpart is found]
+tests/test_negative_statement.py::test_xray_catalog_counterpart_absence_is_retained_for_review
+tests/test_negative_statement.py::test_clause_final_unrelated_is_a_rejection[GRB 250309B and IceCube-250309A are unrelated.]
+tests/test_negative_statement.py::test_clause_final_unrelated_is_a_rejection[Potential Magellan candidates from GCN 36263 are unrelated.]
+tests/test_negative_statement.py::test_unlikely_counterpart_is_a_soft_rejection
+tests/test_negative_statement.py::test_disfavored_association_is_a_soft_rejection
+tests/test_negative_statement.py::test_unlikely_association_after_redshift_sentence_is_not_gated
+tests/test_negative_statement.py::test_xray_flux_context_is_not_treated_as_photometry
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[Swift Trigger 1434591 is not a GRB.-not a GRB-rejected-negative_statement.not_grb]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[This candidate is a false trigger.-a false trigger-rejected-negative_statement.false_trigger]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[The trigger is not a real astrophysical event.-not a real astrophysical event-rejected-negative_statement.not_real]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[This is a retraction of GCN 44900.-retraction of GCN 44900-rejected-negative_statement.retraction]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[The candidate was retracted.-retracted-rejected-negative_statement.retraction]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[Retraction.-Retraction-rejected-negative_statement.retraction]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[The candidates are unrelated to S240422ed.-unrelated to S240422ed-rejected-negative_statement.unrelated]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[The two candidates can be ruled out.-ruled out-rejected-negative_statement.rules_out]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[No significant excess emission was detected from the region.-No significant excess emission-confirmed-negative_statement.no_significant]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[There was no significant signal.-no significant signal-confirmed-negative_statement.no_significant]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[There was no significant X-ray signal.-no significant X-ray signal-confirmed-negative_statement.no_significant]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[No significant activity has been reported.-No significant activity-confirmed-negative_statement.no_significant]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[Preliminary analysis indicates no significant (>5sigma) new excess emission (>100 MeV).-no significant (>5sigma) new excess emission (>100 MeV)-confirmed-negative_statement.no_significant]
+tests/test_negative_statement.py::test_v1_confirmed_captures_do_not_regress[The association is not confirmed.-not confirmed-confirmed-negative_statement.not_confirmed]
+tests/test_negative_statement.py::test_bare_not_detected_remains_uncovered
+tests/test_negative_statement.py::test_methodological_rule_out_is_not_a_rejection
+tests/test_negative_statement.py::test_not_a_real_source_is_a_rejection
+tests/test_negative_statement.py::test_terminal_ruled_out_is_captured_but_uncertainty_is_not_inverted
+tests/test_negative_statement.py::test_no_annotation_carries_a_lightcurve_value
+tests/test_photometry_annotations.py::test_valid_detection_annotation
+tests/test_photometry_annotations.py::test_valid_upper_limit_annotation
+tests/test_photometry_annotations.py::test_detection_cannot_carry_limit_sigma
+tests/test_photometry_annotations.py::test_invalid_measurement_type_raises
+tests/test_photometry_annotations.py::test_verify_true_and_false_for_span_text
+tests/test_photometry_annotations.py::test_construction_is_deterministic
+tests/test_photometry_prose.py::test_brightness_detection_from_38780
+tests/test_photometry_prose.py::test_preliminary_isolated_detection_from_39777
+tests/test_photometry_prose.py::test_limiting_ab_magnitude_from_42115
+tests/test_photometry_prose.py::test_limit_sigma_can_come_from_preceding_sentence_clause
+tests/test_photometry_prose.py::test_sigma_depth_limit_is_measurement_but_average_search_depth_is_not
+tests/test_photometry_prose.py::test_up_to_limit_from_36988
+tests/test_photometry_prose.py::test_catalog_completeness_is_not_a_measurement
+tests/test_photometry_prose.py::test_calibration_statement_is_not_a_measurement
+tests/test_photometry_prose.py::test_non_optical_xrt_and_gecam_prefilter
+tests/test_photometry_prose.py::test_companion_fields_can_be_distributed_across_paragraphs
+tests/test_photometry_prose.py::test_citation_is_kept_but_marked_for_review
+tests/test_photometry_prose.py::test_coordinate_and_redshift_expressions_are_not_magnitudes
+tests/test_photometry_prose.py::test_citation_of_coordinate_does_not_mark_magnitude_ownership
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z = 0.0658]
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z = 1.763]
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z = 2.36]
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z < 3]
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z = 0.18 +/- 0.01]
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z=0.374]
+tests/test_photometry_prose.py::test_redshift_expressions_are_not_z_band_magnitudes[z < 2.06]
+tests/test_photometry_prose.py::test_explicit_z_band_magnitudes_remain_valid[z > 22.5 mag-upper_limit-22.5]
+tests/test_photometry_prose.py::test_explicit_z_band_magnitudes_remain_valid[z = 21.3 mag-detection-21.3]
+tests/test_photometry_prose.py::test_color_like_values_below_magnitude_range_are_discarded[r > 0.3 mag]
+tests/test_photometry_prose.py::test_color_like_values_below_magnitude_range_are_discarded[r = 0.97 +/- 0.05]
+tests/test_photometry_prose.py::test_color_like_values_below_magnitude_range_are_discarded[r < 1]
+tests/test_photometry_prose.py::test_valid_r_band_magnitude_remains_detected
+tests/test_photometry_prose.py::test_observation_time_wins_over_trigger_time_without_false_ambiguity
+tests/test_photometry_prose.py::test_goto_measurement_is_not_marked_as_cited_by_unrelated_gcn_text
+tests/test_photometry_prose.py::test_instrument_matching_distinguishes_not_telescope_from_lowercase_word
+tests/test_photometry_prose.py::test_ddoti_w_band_detection_with_system_in_preceding_phrase
+tests/test_photometry_prose.py::test_atlas_enumerated_limits_and_detections_are_all_captured
+tests/test_photometry_prose.py::test_atlas_teide_full_circular_44910_stays_empty_not_goto_citation
+tests/test_photometry_prose.py::test_ztf_p48_and_lt_measurements_33226_stay_empty_across_sentences
+tests/test_photometry_prose.py::test_sao_ras_measurement_34060_stays_empty_not_goto_discovery_citation
+tests/test_photometry_prose.py::test_bootes_limit_34291_stays_empty_not_other_teams_limit_list
+tests/test_photometry_prose.py::test_las_cumbres_limits_34836_stay_empty_not_author_affiliation
+tests/test_photometry_prose.py::test_lulin_slt_lot_bands_35083_stay_empty_not_later_goto_non_detection
+tests/test_photometry_prose.py::test_instrument_citation_within_same_sentence_is_still_rejected
+tests/test_photometry_prose.py::test_instrument_calibration_within_same_sentence_is_still_rejected
+tests/test_photometry_prose.py::test_instrument_named_only_in_author_block_is_never_sourced
+tests/test_photometry_prose.py::test_instrument_provenance_is_prose_same_sentence_when_populated
+tests/test_photometry_report.py::test_aggregate_measurements_counts_core_dimensions
+tests/test_photometry_report.py::test_limit_sigma_aggregation_separates_common_other_and_missing_values
+tests/test_photometry_report.py::test_find_measurement_problems_detects_out_of_range_magnitude
+tests/test_photometry_report.py::test_run_meta_hash_is_deterministic_for_same_inputs
+tests/test_photometry_report.py::test_aggregate_by_year_counts_core_dimensions
+tests/test_photometry_report.py::test_run_meta_records_years_covered
+tests/test_photometry_report.py::test_report_separates_table_and_prose_and_detects_overlap
+tests/test_photometry_report.py::test_prose_measurement_is_marked_when_same_circular_has_table
+tests/test_photometry_rows.py::test_uvot_upper_limit_row_from_35457
+tests/test_photometry_rows.py::test_uvot_detection_with_error_from_35534
+tests/test_photometry_rows.py::test_knc_row_prefers_mjd_over_relative_time_from_36326
+tests/test_photometry_rows.py::test_vega_system_from_cell_and_observer_column_is_skipped_from_36050
+tests/test_photometry_rows.py::test_headerless_position_and_catalog_column_is_not_instrument_from_33351
+tests/test_photometry_rows.py::test_headerless_transient_designation_column_is_not_instrument_from_33784
+tests/test_photometry_rows.py::test_magnitude_sanity_marks_row_for_review
+tests/test_photometry_rows.py::test_parser_extracts_all_table_rows_and_verifies
+tests/test_photometry_rows.py::test_master_limit_header_makes_numeric_cell_an_upper_limit_and_clear_band_no_review
+tests/test_photometry_rows.py::test_real_filter_without_system_still_needs_review
+tests/test_photometry_rows.py::test_multi_object_catalog_table_is_marked_for_review
+tests/test_photometry_rows.py::test_numeric_non_photometry_table_is_not_parsed_as_measurements
+tests/test_photometry_rows.py::test_positive_table_classification_for_master_uvot_and_knc
+tests/test_photometry_rows.py::test_separate_error_column_does_not_replace_magnitude_with_error_from_35584
+tests/test_photometry_rows.py::test_adjacent_small_numeric_column_is_mag_error_not_magnitude_from_35687
+tests/test_photometry_rows.py::test_mag_err_header_with_plus_minus_cells_does_not_replace_magnitude_from_38758
+tests/test_photometry_rows.py::test_adjacent_error_column_is_inferred_without_header
+tests/test_photometry_rows.py::test_upper_limit_error_parentheses_are_preserved_from_33228
+tests/test_photometry_rows.py::test_svom_vt_rows_with_units_from_42887
+tests/test_photometry_rows.py::test_radio_surface_brightness_table_is_rejected_from_37978
+tests/test_photometry_rows.py::test_svom_vt_pipe_header_and_whitespace_rows_from_44284
+tests/test_photometry_rows.py::test_svom_vt_rows_with_continuation_source_from_43720
+tests/test_photometry_rows.py::test_band_encoded_in_magnitude_header_from_34078
+tests/test_photometry_rows.py::test_xinglong_pipe_rows_with_blank_lines_from_38607
+tests/test_photometry_rows.py::test_goto_abmag_rows_with_blank_lines_from_44837
+tests/test_photometry_rows.py::test_grandma_detection_and_depth_columns_emit_detection_only_from_34887
+tests/test_photometry_rows.py::test_limit_sigma_from_limiting_magnitude_header
+tests/test_photometry_rows.py::test_limit_sigma_from_prefix_header_with_system
+tests/test_photometry_rows.py::test_context_sigma_applies_only_to_uvot_upper_limits
+tests/test_photometry_rows.py::test_iki_row_emits_detection_only_with_combined_time
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-11 19:43:01 1.40315 2*300 Rc      19.73 0.03 22.6-19.73-0.03]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-12 19:21:03 2.41821 5*300 Rc      20.61 0.03 23.5-20.61-0.03]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-11 21:33:51 1.48481  3x120+12x90   R     19.81 0.06   22.4-19.81-0.06]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-12 19:46:19 2.40802  9x120         R     20.70 0.13   22.3-20.70-0.13]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-14 23:15:23 4.56847 15*180 Rc      21.14 0.12 22.3-21.14-0.12]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-15 23:42:44 5.57617  8*180 Rc      20.98 0.17 21.8-20.98-0.17]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-16 20:30:40 6.44388  3*600 Rc      21.06 0.18 21.9-21.06-0.18]
+tests/test_photometry_rows.py::test_real_2026owq_detection_rows_do_not_emit_depth_as_upper_limit[2026-06-12 20:18:50 1.88931  96x60  R      20.59 0.10  22.0-20.59-0.10]
+tests/test_photometry_rows.py::test_separate_date_and_clock_columns_are_combined_from_44919
+tests/test_photometry_rows.py::test_dfot_single_row_uses_combined_date_and_clock
+tests/test_photometry_rows.py::test_mixed_system_context_is_not_inherited_without_a_row_system
+tests/test_photometry_rows.py::test_invalid_instrument_cells_are_rejected_but_uppercase_not_is_valid
+tests/test_photometry_rows.py::test_misaligned_uvot_header_does_not_emit_exposure_as_second_magnitude
+tests/test_photometry_rows.py::test_real_39129_compact_header_keeps_depth_out_of_measurements
+tests/test_photometry_rows.py::test_real_iki_ot_headers_keep_depth_out_of_measurements[Date       UT start  t-T0         Exp.    Filter   OT        Err.       UL(3sigma) Telescope\n                     (mid, days)  (s)-2025-01-30 22:16:50  1.76610      103*60  R        19.46     0.21       22.0         AS-32-19.46-0.21-103*60]
+tests/test_photometry_rows.py::test_real_iki_ot_headers_keep_depth_out_of_measurements[Date        UT start  t-T0       Exp.   Filter  OT     Err.  UL\n                      (mid,days) (n*s)                       (3sigma)-2025-10-13  21:40:38  0.17290    15*60  Clear   16.75  0.10  18.0-16.75-0.10-15*60]
+tests/test_photometry_rows.py::test_real_42256_texp_column_is_exposure_not_magnitude
+tests/test_photometry_rows.py::test_real_44939_multiband_row_keeps_both_distinct_measurements
+tests/test_photometry_tables.py::test_uvot_whitespace_header_context_and_roles
+tests/test_photometry_tables.py::test_knc_pipe_header_context_roles_and_time_subtypes
+tests/test_photometry_tables.py::test_bordered_knc_header_and_roles
+tests/test_photometry_tables.py::test_observer_column_is_not_instrument_when_header_is_observer
+tests/test_photometry_tables.py::test_single_casual_pipe_line_is_not_table
+tests/test_photometry_tables.py::test_content_signature_exposure_and_numeric_magnitude_disambiguation
+tests/test_photometry_tables.py::test_photometry_table_detection_does_not_emit_event_evidence
+tests/test_photometry_tables.py::test_sigma_ul_and_limiting_magnitude_headers_are_magnitude_not_error
+tests/test_photometry_tables.py::test_upper_limit_error_header_is_magnitude_and_separator_rows_are_excluded
+tests/test_photometry_tables.py::test_svom_pipe_header_with_whitespace_rows_is_captured
+tests/test_photometry_tables.py::test_noise_master_prose_block_is_discarded_but_real_pipe_table_remains
+tests/test_photometry_tables.py::test_detection_and_upper_limit_headers_remain_distinct_magnitude_columns
+tests/test_photometry_tables.py::test_instrument_content_signature_rejects_remarks_and_lowercase_not
+tests/test_photometry_tables.py::test_iki_two_line_header_is_combined_and_rows_are_structured
+tests/test_photometry_tables.py::test_dfot_single_row_whitespace_table_is_detected
+tests/test_photometry_xmi.py::test_export_and_roundtrip_preserve_text_duplicate_spans_and_features
+tests/test_photometry_xmi.py::test_comment_semantics_and_free_text_none_values_export_as_empty_strings
+tests/test_photometry_xmi.py::test_missing_tagset_values_use_valid_defaults_but_free_text_stays_empty
+tests/test_photometry_xmi.py::test_tagset_defaults_are_valid_project_tagset_values
+tests/test_photometry_xmi.py::test_missing_typesystem_feature_is_omitted_without_failure
+tests/test_photometry_xmi.py::test_limit_sigma_roundtrips_when_typesystem_feature_exists
+tests/test_redshift.py::test_redshift_event_afterglow_targets_counterpart
+tests/test_redshift.py::test_redshift_event_host_targets_host
+tests/test_redshift.py::test_redshift_context_nearby_galaxies
+tests/test_redshift.py::test_redshift_context_foreground_intervening
+tests/test_redshift.py::test_redshift_ambiguous_defaults_to_event_with_review
+tests/test_redshift.py::test_redshift_does_not_capture_z_band_magnitudes_or_filters
+tests/test_redshift.py::test_redshift_range_preserves_range_value
+tests/test_redshift.py::test_redshift_tentative_certainty
+tests/test_redshift.py::test_redshift_rejected_context_not_event
+tests/test_redshift.py::test_redshift_does_not_emit_spurious_table_row_values
+tests/test_redshift.py::test_redshift_event_anchor_after_number_removes_review
+tests/test_redshift.py::test_redshift_event_anchor_for_this_event_removes_review
+tests/test_redshift.py::test_redshift_event_anchor_for_this_event_with_extra_words_removes_review
+tests/test_redshift.py::test_redshift_at_the_redshift_of_z_removes_review
+tests/test_redshift.py::test_redshift_same_value_in_document_inherits_explicit_event_attribution
+tests/test_redshift.py::test_redshift_host_environment_targets_host_without_review
+tests/test_redshift.py::test_redshift_host_environment_in_same_sentence_removes_review_for_consistent_redshift
+tests/test_redshift.py::test_redshift_event_name_lies_at_this_redshift_removes_review
+tests/test_redshift.py::test_redshift_gcn_citation_is_event_without_review
+tests/test_redshift.py::test_redshift_galaxy_range_is_context
+tests/test_redshift.py::test_redshift_absolute_magnitude_reference_is_context
+tests/test_redshift.py::test_redshift_candidate_host_stays_event_review_tentative
+tests/test_redshift.py::test_redshift_photometric_catalogued_galaxy_candidate_afterglow_stays_review
+tests/test_redshift.py::test_redshift_candidate_afterglow_photometric_redshift_stays_review
+tests/test_redshift.py::test_redshift_event_anchor_wins_over_intervening_elsewhere
+tests/test_redshift.py::test_redshift_grb_event_and_local_intervening_system
+tests/test_redshift.py::test_redshift_event_measurement_and_intervening_redshift
+tests/test_redshift.py::test_redshift_burst_and_multiple_intervening_systems
+tests/test_redshift.py::test_redshift_legitimate_context_galaxy_requires_review
+tests/test_redshift.py::test_redshift_unrelated_galaxy_context_requires_review
+tests/test_source_selection.py::SourceSelectionTests::test_gcn_derived_subtype_classification
+tests/test_source_selection.py::SourceSelectionTests::test_gcn_grandma_contract_keeps_alias_prefix_matches
+tests/test_source_selection.py::SourceSelectionTests::test_gcn_grandma_contract_keeps_all_gcn_derived_subtypes
+tests/test_source_selection.py::SourceSelectionTests::test_gcn_grandma_contract_merges_tags_without_duplicates
+tests/test_source_selection.py::SourceSelectionTests::test_gcn_grandma_contract_merges_trigger_time_and_spectrum_flag
+tests/test_spectroscopy.py::test_real_spectroscopy_phrasings_are_captured[We obtained spectroscopy with ALFOSC.-We obtained spectroscopy with ALFOSC]
+tests/test_spectroscopy.py::test_real_spectroscopy_phrasings_are_captured[We identify Mg II and Ca II absorption features.-Mg II and Ca II absorption features]
+tests/test_spectroscopy.py::test_real_spectroscopy_phrasings_are_captured[The spectrum shows an [O II] emission line.-[O II] emission line]
+tests/test_spectroscopy.py::test_real_spectroscopy_phrasings_are_captured[The spectrum shows a P-Cygni profile of the H-alpha line.-P-Cygni profile of the H-alpha line]
+tests/test_spectroscopy.py::test_high_energy_spectra_are_excluded[The time-averaged WXT 0.5-4 keV spectrum was fitted.]
+tests/test_spectroscopy.py::test_high_energy_spectra_are_excluded[The average WXT 0.5 - 4 keV spectrum was fitted.]
+tests/test_spectroscopy.py::test_high_energy_spectra_are_excluded[The average FXT 0.5-10 keV spectrum was fitted.]
+tests/test_spectroscopy.py::test_high_energy_spectra_are_excluded[The prompt gamma-ray spectrum was fitted with a cutoff power law.]
+tests/test_spectroscopy.py::test_optical_spectrum_rule_requires_optical_context[The optical spectrum obtained with X-shooter is featureless.-The optical spectrum]
+tests/test_spectroscopy.py::test_optical_spectrum_rule_requires_optical_context[The spectrum shows H-alpha and H-beta emission lines.-The spectrum]
+tests/test_spectroscopy.py::test_optical_spectrum_rule_requires_optical_context[The spectrum covers 3500-9000 Angstroms.-The spectrum]
+tests/test_spectroscopy.py::test_optical_spectrograph_observation_stays_counterpart_when_gbm_is_cited
+tests/test_spectroscopy.py::test_redshift_classification_and_followup_only_phrases_are_excluded[The redshift is z=0.473.]
+tests/test_spectroscopy.py::test_redshift_classification_and_followup_only_phrases_are_excluded[The transient is a type II supernova.]
+tests/test_spectroscopy.py::test_redshift_classification_and_followup_only_phrases_are_excluded[Further spectroscopic observations are encouraged.]
+tests/test_spectroscopy.py::test_real_circular_44914_has_observation_and_absorption_features
+tests/test_spectroscopy.py::test_real_circular_45004_captures_each_named_doublet_feature
+tests/test_spectroscopy.py::test_real_circular_41532_has_p_cygni_profile
+tests/test_sweep.py::test_iter_stratified_circulars_samples_uniformly_by_year
+tests/test_sweep.py::test_run_sweep_per_year_records_year_aggregates
+tests/test_sweep.py::test_run_sweep_counts_synthetic_circulars
+tests/test_sweep.py::test_run_sweep_records_event_identity_gaps_with_subject
+tests/test_sweep.py::test_get_active_extractors_includes_thirteen_extractors
+tests/test_sweep.py::test_run_sweep_filters_duration_and_high_energy_extractors
+tests/test_sweep.py::test_run_sweep_records_duration_and_high_energy_signal_gaps
+tests/test_sweep.py::test_run_sweep_filters_and_records_negative_statement_gaps
+tests/test_sweep.py::test_run_sweep_filters_and_records_lightcurve_evolution_gaps
+tests/test_sweep.py::test_run_sweep_filters_and_records_counterpart_association_gaps
+tests/test_sweep.py::test_run_sweep_filters_and_records_classification_interpretation_gaps
+tests/test_sweep.py::test_run_sweep_filters_and_records_host_context_gaps
+tests/test_sweep.py::test_run_sweep_filters_and_records_spectroscopy_gaps
+tests/test_sweep.py::test_run_sweep_only_redshift_runs_single_extractor
+tests/test_sweep.py::test_run_sweep_extracts_trigger_instrument_from_synthetic_circular
+tests/test_sweep.py::test_flag_suspicious_marks_long_spans_and_bad_coordinates
+tests/test_sweep.py::test_flag_suspicious_adds_context_only_for_flagged_annotations
+tests/test_sweep.py::test_run_sweep_keeps_healthy_annotations_without_context_fields
+tests/test_sweep.py::test_run_sweep_records_extractor_errors_and_continues
+tests/test_sweep.py::test_aggregation_helpers_count_rules_flags_review_and_coverage
+tests/test_sweep.py::test_flag_suspicious_marks_review_and_weird_formats
+tests/test_sweep.py::test_flag_suspicious_validates_duration_and_high_energy_ranges_and_units
+tests/test_sweep.py::test_dimensionless_rules_cover_all_supported_spectral_indices
+tests/test_sweep.py::test_samples_by_rule_include_source_text_line_and_context
+tests/test_sweep.py::test_gap_examples_are_distributed_across_years
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[ZTF23aaarlti]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[AT 2023bic]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[GRB 230101A]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[GRB 230101.09]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[EP 240315a]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[EP 260225.148]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[EP-WXT 01709176712]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[EP-WXT 20240219aa]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[EP-FXT 01709177837]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[IceCube-230101A]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[GW230529]
+tests/test_sweep.py::test_flag_suspicious_accepts_canonical_event_identity_values[S231113a]
+tests/test_sweep.py::test_flag_suspicious_rejects_malformed_event_identity_values[GRB 23]
+tests/test_sweep.py::test_flag_suspicious_rejects_malformed_event_identity_values[XYZ 999]
+tests/test_sweep.py::test_flag_suspicious_rejects_out_of_range_clock_value
+tests/test_sweep.py::test_flag_suspicious_accepts_expected_trigger_value_formats[2023-01-01T02:16:38-None]
+tests/test_sweep.py::test_flag_suspicious_accepts_expected_trigger_value_formats[59945.1-mjd]
+tests/test_sweep.py::test_flag_suspicious_accepts_expected_trigger_value_formats[02:16:38-None]
+tests/test_sweep.py::test_flag_suspicious_accepts_expected_trigger_value_formats[02:16:38 UT-None]
+tests/test_sweep.py::test_sweep_report_run_id_is_deterministic
+tests/test_sweep.py::test_alerts_report_sync_status_detects_mismatch
+tests/test_trigger_instrument.py::test_trigger_instrument_clear_swift_bat_trigger
+tests/test_trigger_instrument.py::test_trigger_instrument_followup_is_not_captured
+tests/test_trigger_instrument.py::test_trigger_instrument_mixed_trigger_and_followup_keeps_only_trigger
+tests/test_trigger_instrument.py::test_trigger_instrument_multi_trigger_instruments_need_review
+tests/test_trigger_instrument.py::test_trigger_instrument_deduplicates_same_canonical_instrument
+tests/test_trigger_instrument.py::test_trigger_instrument_negative_optical_followup_only
+tests/test_trigger_instrument.py::test_trigger_instrument_rejects_fermi_lat_boresight_reference_but_keeps_gbm_trigger_time
+tests/test_trigger_instrument.py::test_trigger_instrument_rejects_fermi_lat_catalog_reference
+tests/test_trigger_instrument.py::test_trigger_instrument_rejects_fermi_lat_collaboration_citation
+tests/test_trigger_instrument.py::test_trigger_instrument_rejects_detection_reference_heading
+tests/test_trigger_instrument.py::test_trigger_instrument_keeps_legitimate_ipn_multi_instrument_detection
+tests/test_trigger_instrument.py::test_trigger_instrument_keeps_legitimate_icecube_detection
+tests/test_trigger_instrument.py::test_trigger_instrument_keeps_fermi_gbm_triggered_and_located
+tests/test_trigger_instrument.py::test_trigger_instrument_rejects_lat_data_analysis_reference
+tests/test_trigger_instrument.py::test_trigger_instrument_rejects_available_lat_data_after_gbm_trigger_context
+tests/test_trigger_instrument.py::test_trigger_instrument_keeps_gbm_trigger_data_reference
+tests/test_trigger_time.py::test_trigger_time_with_trigger_context
+tests/test_trigger_time.py::test_trigger_time_clock_on_date_des_overlaps_ut_clock
+tests/test_trigger_time.py::test_trigger_time_t0_explicit_counts_as_context
+tests/test_trigger_time.py::test_trigger_time_agile_wrapped_date_and_clock_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_without_trigger_context_is_ignored
+tests/test_trigger_time.py::test_real_2026owq_observation_times_are_not_trigger_times
+tests/test_trigger_time.py::test_real_2026owq_trigger_time_remains_captured
+tests/test_trigger_time.py::test_mjd_trigger_time_is_captured_but_observation_mjds_are_not
+tests/test_trigger_time.py::test_trigger_number_is_not_trigger_time_even_with_context
+tests/test_trigger_time.py::test_trigger_time_rejects_declination_sexagesimal_coordinate
+tests/test_trigger_time.py::test_trigger_time_rejects_ra_sexagesimal_coordinate_even_with_trigger_context
+tests/test_trigger_time.py::test_trigger_time_rejects_master_observation_start_after_trigger_time
+tests/test_trigger_time.py::test_trigger_time_rejects_swift_xrt_observation_start
+tests/test_trigger_time.py::test_trigger_time_rejects_observation_window_with_relative_mid_time
+tests/test_trigger_time.py::test_trigger_time_rejects_maxi_scan_times_with_t0_offsets
+tests/test_trigger_time.py::test_trigger_time_rejects_started_observation_with_adjacent_date
+tests/test_trigger_time.py::test_trigger_time_rejects_started_observations_with_relative_suffix
+tests/test_trigger_time.py::test_trigger_time_rejects_starting_on_observation_with_after_trigger_suffix
+tests/test_trigger_time.py::test_trigger_time_rejects_we_observed_burst_with_later_after_trigger_suffix
+tests/test_trigger_time.py::test_trigger_time_keeps_swift_bat_trigger_time_as_single_annotation
+tests/test_trigger_time.py::test_trigger_time_keeps_noise_event_trigger_time
+tests/test_trigger_time.py::test_trigger_time_date_before_clock_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_calet_clock_on_month_day_date_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_prose_date_before_clock_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_date_after_clock_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_iso_date_after_clock_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_comma_date_before_clock_normalizes_to_iso
+tests/test_trigger_time.py::test_trigger_time_date_on_previous_line_does_not_get_combined
+tests/test_trigger_time.py::test_trigger_time_sentence_boundary_does_not_combine_date_and_clock
+tests/test_trigger_time.py::test_trigger_time_blank_line_does_not_combine_date_and_clock
+tests/test_trigger_time.py::test_trigger_time_konus_wind_keeps_parenthesized_clock_without_date
+tests/test_trigger_time.py::test_trigger_time_keeps_multi_instrument_trigger_times_needing_review
+tests/test_trigger_time.py::test_trigger_time_keeps_earlier_than_trigger_time_iso
+tests/test_trigger_time.py::test_trigger_time_header_date_is_excluded
+tests/test_trigger_time.py::test_trigger_time_multiple_candidates_need_review
+tests/test_trigger_time.py::test_is_observation_context_detects_negative_observation_gates
+tests/test_trigger_time.py::test_has_trigger_context_detects_positive_trigger_gates
+tests/test_trigger_time.py::test_find_adjacent_date_respects_wrapping_sentence_and_paragraph_boundaries
+tests/test_trigger_time.py::test_normalize_to_iso_combines_date_match_or_returns_raw_time
+tests/test_trigger_time.py::test_resolve_overlaps_keeps_longest_candidate
+tests/test_trigger_time.py::test_real_39097_sexagesimal_coordinates_are_not_trigger_times
+tests/test_trigger_time.py::test_signed_sexagesimal_value_is_not_a_trigger_time
+tests/test_trigger_time.py::test_real_observation_governed_times_are_not_trigger_times
+tests/test_trigger_time.py::test_times_inside_real_photometry_tables_are_not_trigger_times
+tests/test_trigger_time.py::test_real_36016_detection_time_survives_earlier_coordinate_context
+tests/test_trigger_time.py::test_real_44324_explicit_t0_survives_followup_observation_language
+tests/test_xmi_comparison.py::test_exact_annotation_match
+tests/test_xmi_comparison.py::test_feature_only_change
+tests/test_xmi_comparison.py::test_adjusted_boundaries
+tests/test_xmi_comparison.py::test_relabelled_annotation
+tests/test_xmi_comparison.py::test_automatic_only_annotation
+tests/test_xmi_comparison.py::test_expert_only_annotation
+tests/test_xmi_comparison.py::test_one_to_one_conflict_resolution_prefers_exact_span
+tests/test_xmi_comparison.py::test_deterministic_tie_breaking_uses_span_then_index
+tests/test_xmi_comparison.py::test_feature_normalization[None-]
+tests/test_xmi_comparison.py::test_feature_normalization[  repeated\n whitespace  -repeated whitespace]
+tests/test_xmi_comparison.py::test_feature_normalization[001.2300-1.23]
+tests/test_xmi_comparison.py::test_feature_normalization[True-true]
+tests/test_xmi_comparison.py::test_feature_normalization[2026-01-02T03:04:05Z-2026-01-02T03:04:05+00:00]
+tests/test_xmi_comparison.py::test_feature_normalization[value5-["a","2"]]
+tests/test_xmi_comparison.py::test_feature_normalization[mJy-mJy]
+tests/test_xmi_comparison.py::test_human_rejection_marker_exclusion
+tests/test_xmi_comparison.py::test_invalid_span_failure
+tests/test_xmi_comparison.py::test_missing_label_failure
+tests/test_xmi_comparison.py::test_canonical_text_mismatch_failure
+tests/test_xmi_comparison.py::test_invalid_xmi_span_failure
+tests/test_xmi_comparison.py::test_missing_annotation_layer_failure
+tests/test_xmi_comparison.py::test_missing_expert_label_requires_explicit_compatibility_flag
+tests/test_xmi_comparison.py::test_repeated_evaluation_has_deterministic_ordering
+tests/test_xmi_roundtrip.py::test_xmi_roundtrip_preserves_offsets_and_features
+
+727 tests collected in 12.51s
+
+COMMAND 2
+=========
+/home/meneses/project_astronomical/MAFORAI/.venv/bin/python -m pytest -q
+
+FULL OUTPUT 2
+=============
+........................................................................ [  9%]
+........................................................................ [ 19%]
+........................................................................ [ 29%]
+........................................................................ [ 39%]
+........................................................................ [ 49%]
+........................................................................ [ 59%]
+........................................................................ [ 69%]
+........................................................................ [ 79%]
+........................................................................ [ 89%]
+........................................................................ [ 99%]
+.......                                                                  [100%]
+727 passed in 12.87s

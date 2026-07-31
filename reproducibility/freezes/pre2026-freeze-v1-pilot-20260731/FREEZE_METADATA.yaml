@@ -1,0 +1,85 @@
+freeze_id: pre2026-freeze-v1-pilot-20260731
+freeze_created_at: "2026-07-31T20:07:21+02:00"
+project: MAFORAI
+report_type: ENSTA Projet de Recherche
+git:
+  branch: carlos-dev
+  source_commit: 3d8b23ec77b0f4ae107921784c068f35ac98b9ff
+  commit: null
+  commit_note: The metadata commit cannot contain its own hash; the final freeze commit is recorded by the annotated tag and execution report.
+  tag: pre2026-freeze-v1-pilot-20260731
+  remote_publication_performed: false
+data:
+  snapshot_id: pre2026-freeze-v1-pilot-20260731
+  snapshot_access: restricted
+  target_storage: IJCLab OwnCloud
+  uploaded_to_owncloud: false
+  external_backup_complete: false
+  local_snapshot_path: /home/meneses/project_astronomical/MAFORAI_FREEZES/pre2026-freeze-v1-pilot-20260731
+  source_inventory_units: 81
+  source_inventory_bytes: 218965286
+  gcn_archive_capture: "20260720_093324"
+  skyportal_inventory_capture_date: "2026-07-20"
+derived:
+  registry_events: 574
+  viable_events: 146
+  viable_grb: 80
+  viable_gcn: 47
+  viable_ep: 19
+  event_documents: 10
+  circulars: 297
+  event_evidence_annotations: 1683
+  photometric_annotations: 670
+  invalid_local_spans: 0
+evaluation:
+  scope: single expert-reviewed pilot
+  event: 2026owq
+  circulars: 28
+  historical_automatic_event_evidence: 193
+  historical_automatic_photometry: 76
+  canonical_text_sha256: a51b058b1e19cdbaa71dd858451999825147b8f38ac9d36f6fe45e45e9c234d6
+  historical_evaluation_strictly_reproducible: false
+  current_evaluation_reproducible: true
+  ten_event_expert_validation_complete: false
+  deterministic_repeated_run: true
+  output_sha256:
+    metrics.json: b3e7870ea5cec72ea4d5e469b84684b5d8dc5e4abd3aff2ce8f82d77f85746df
+    annotation_diff.csv: 19ec3ba0f02df50c29c717955cacfe6729401c0d5d7eddda35abdf101efb32f0
+    feature_metrics.csv: f83bae485362013677f9784a484f6f65d7f7c24a9bc96cbe994f47c64e1c27fe
+    label_confusion.csv: d34620d7d43049dc2ddb347e56886a14764eedfbc314a8e8e6eeb52f9841c489
+    evaluation_report.md: 13c51364d1d7f8942342f6e439120e9bb5c11f369d24b07489630c1d7f263b36
+    input_manifest.sha256: e540fe2f25048ec0bff579350464c3a0f6af6e8d0cf2711e2932f20537b5d8af
+temporal:
+  dated_fact_registry_implemented: true
+  state_snapshots_implemented: true
+  dense_indexes_implemented: true
+  retrieval_evaluation_stable: false
+  status_note: Retrospective retrieval is preliminary and is not a validated report result.
+rag:
+  finalized: false
+llm:
+  assistant_implemented: false
+tests:
+  collected: 727
+  passed: 727
+  failed: 0
+  skipped: 0
+  warnings: 0
+environment:
+  python: 3.10.12
+  pip: 26.1.2
+integrity:
+  manifest_sha256: fe9a0af58aa582d54a0fae19bb74502cf51815553273ecabe98dac93d867534b
+  manifest_verified: true
+  manifest_file_count: 292
+  manifest_scope_note: The payload manifest excludes itself and FREEZE_METADATA.yaml to avoid checksum self-reference; the post-tag Git bundle is verified separately.
+limitations:
+  - single pilot event
+  - non-independent rule adjustment and evaluation
+  - no inter-annotator agreement
+  - ten-document expert validation incomplete
+  - expert XMI access restricted
+  - temporal retrieval preliminary
+  - no finalized RAG system
+  - no LLM assistant
+  - OwnCloud upload pending
