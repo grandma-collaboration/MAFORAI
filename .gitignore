@@ -254,3 +254,8 @@ PRE_2026/
 .claude/
 
 !notebooks/evidence/*.csv
+
+# Small, derived XMI evaluation tables (raw XMI remains ignored under data/)
+!reports/evaluation/2026owq_20260731/annotation_diff.csv
+!reports/evaluation/2026owq_20260731/feature_metrics.csv
+!reports/evaluation/2026owq_20260731/label_confusion.csv

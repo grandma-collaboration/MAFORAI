@@ -1,0 +1,525 @@
+{
+  "including_human_rejection_markers": {
+    "EVENT_EVIDENCE": {
+      "annotations_with_feature_change": 26,
+      "automatic_total": 193,
+      "category_counts": {
+        "AUTOMATIC_ONLY": 0,
+        "EXACT_MATCH": 167,
+        "EXPERT_ONLY": 6,
+        "FEATURE_CHANGED": 24,
+        "HUMAN_REJECTION_MARKER_EXCLUDED": 0,
+        "RELABELED": 2,
+        "SPAN_ADJUSTED": 0
+      },
+      "exact_end_to_end": {
+        "f1": 0.8520408163265306,
+        "precision": 0.8652849740932642,
+        "recall": 0.8391959798994975,
+        "true_positive": 167
+      },
+      "exact_span": {
+        "f1": 0.9846938775510203,
+        "precision": 1.0,
+        "recall": 0.9698492462311558,
+        "true_positive": 193
+      },
+      "excluded_rejection_markers": 0,
+      "expert_total": 199,
+      "full_feature_agreement_on_matched": 0.8652849740932642,
+      "label_accuracy_on_matched": 0.9896373056994818,
+      "overlap_span": {
+        "f1": 0.9846938775510203,
+        "precision": 1.0,
+        "recall": 0.9698492462311558,
+        "true_positive": 193
+      },
+      "paired_total": 193,
+      "per_feature": {
+        "certainty": {
+          "accuracy": 0.9430051813471503,
+          "equal": 182,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 193
+        },
+        "comment": {
+          "accuracy": 0.9015544041450777,
+          "equal": 174,
+          "missing_automatic": 11,
+          "missing_expert": 0,
+          "n": 193
+        },
+        "target": {
+          "accuracy": 1.0,
+          "equal": 193,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 193
+        },
+        "unit": {
+          "accuracy": 0.9740932642487047,
+          "equal": 188,
+          "missing_automatic": 5,
+          "missing_expert": 0,
+          "n": 193
+        },
+        "value": {
+          "accuracy": 0.9533678756476683,
+          "equal": 184,
+          "missing_automatic": 8,
+          "missing_expert": 0,
+          "n": 193
+        }
+      },
+      "relabeled_count": 2,
+      "relaxed_same_label": {
+        "f1": 0.9744897959183673,
+        "precision": 0.9896373056994818,
+        "recall": 0.9597989949748744,
+        "true_positive": 191
+      }
+    },
+    "PHOTOMETRIC_MEASUREMENT": {
+      "annotations_with_feature_change": 68,
+      "automatic_total": 76,
+      "category_counts": {
+        "AUTOMATIC_ONLY": 8,
+        "EXACT_MATCH": 0,
+        "EXPERT_ONLY": 1,
+        "FEATURE_CHANGED": 68,
+        "HUMAN_REJECTION_MARKER_EXCLUDED": 0,
+        "RELABELED": 0,
+        "SPAN_ADJUSTED": 0
+      },
+      "exact_end_to_end": {
+        "f1": null,
+        "precision": 0.0,
+        "recall": 0.0,
+        "true_positive": 0
+      },
+      "exact_span": {
+        "f1": 0.9379310344827586,
+        "precision": 0.8947368421052632,
+        "recall": 0.9855072463768116,
+        "true_positive": 68
+      },
+      "excluded_rejection_markers": 0,
+      "expert_total": 69,
+      "full_feature_agreement_on_matched": 0.0,
+      "label_accuracy_on_matched": 1.0,
+      "overlap_span": {
+        "f1": 0.9379310344827586,
+        "precision": 0.8947368421052632,
+        "recall": 0.9855072463768116,
+        "true_positive": 68
+      },
+      "paired_total": 68,
+      "per_feature": {
+        "certainty": {
+          "accuracy": 0.9117647058823529,
+          "equal": 62,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "comment": {
+          "accuracy": 0.6911764705882353,
+          "equal": 47,
+          "missing_automatic": 15,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "exposure_time_raw": {
+          "accuracy": 0.7794117647058824,
+          "equal": 53,
+          "missing_automatic": 15,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "instrument": {
+          "accuracy": 0.029411764705882353,
+          "equal": 2,
+          "missing_automatic": 58,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "limit_sigma": {
+          "accuracy": 0.9411764705882353,
+          "equal": 64,
+          "missing_automatic": 4,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "magnitude_error": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "magnitude_or_limit": {
+          "accuracy": 0.9411764705882353,
+          "equal": 64,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "obs_time_raw": {
+          "accuracy": 0.8235294117647058,
+          "equal": 56,
+          "missing_automatic": 4,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "obs_time_reference": {
+          "accuracy": 0.3235294117647059,
+          "equal": 22,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "obs_time_type": {
+          "accuracy": 0.8382352941176471,
+          "equal": 57,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "photometric_band": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "photometric_system": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "target": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "timezone_raw": {
+          "accuracy": 0.6911764705882353,
+          "equal": 47,
+          "missing_automatic": 21,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "unit": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        }
+      },
+      "relabeled_count": 0,
+      "relaxed_same_label": {
+        "f1": 0.9379310344827586,
+        "precision": 0.8947368421052632,
+        "recall": 0.9855072463768116,
+        "true_positive": 68
+      }
+    }
+  },
+  "inputs": {
+    "automatic": {
+      "annotation_counts": {
+        "EVENT_EVIDENCE": 193,
+        "PHOTOMETRIC_MEASUREMENT": 76
+      },
+      "file_sha256": "0cf1a61da156175fce32bdf792c2a532d653a861c9dd389f346dae5c718031d3",
+      "missing_label_annotations": [],
+      "path": "data/inception/out/event_2026owq.xmi",
+      "text_length": 54631,
+      "text_sha256": "a51b058b1e19cdbaa71dd858451999825147b8f38ac9d36f6fe45e45e9c234d6"
+    },
+    "canonical_text_equal": true,
+    "expert": {
+      "annotation_counts": {
+        "EVENT_EVIDENCE": 199,
+        "PHOTOMETRIC_MEASUREMENT": 69
+      },
+      "file_sha256": "9ba85b2f4fbaf7eb3beebafc9ec222ba4c1ed0337450596deef17b2d8eb9c2e7",
+      "missing_label_annotations": [
+        "EVENT_EVIDENCE:203:218:original_index=1",
+        "EVENT_EVIDENCE:5000:5017:original_index=22",
+        "PHOTOMETRIC_MEASUREMENT:11462:11480:original_index=12"
+      ],
+      "path": "data/interim/gcn/annotation_review/camille/Camille.xmi",
+      "text_length": 54631,
+      "text_sha256": "a51b058b1e19cdbaa71dd858451999825147b8f38ac9d36f6fe45e45e9c234d6"
+    },
+    "typesystem": {
+      "in_memory_compatibility_augmentations": [
+        "webanno.custom.EVENT_SUMMARY.corpus_value:uima.cas.String"
+      ],
+      "path": "data/inception/TypeSystem.xml",
+      "sha256": "06146ae3a7276213a9f9075a85e5a9a33b8cfcf71b10437fca3502419eeb975e"
+    }
+  },
+  "layers": {
+    "EVENT_EVIDENCE": {
+      "annotations_with_feature_change": 21,
+      "automatic_total": 188,
+      "category_counts": {
+        "AUTOMATIC_ONLY": 0,
+        "EXACT_MATCH": 167,
+        "EXPERT_ONLY": 6,
+        "FEATURE_CHANGED": 19,
+        "HUMAN_REJECTION_MARKER_EXCLUDED": 5,
+        "RELABELED": 2,
+        "SPAN_ADJUSTED": 0
+      },
+      "exact_end_to_end": {
+        "f1": 0.87434554973822,
+        "precision": 0.8882978723404256,
+        "recall": 0.8608247422680413,
+        "true_positive": 167
+      },
+      "exact_span": {
+        "f1": 0.9842931937172774,
+        "precision": 1.0,
+        "recall": 0.9690721649484536,
+        "true_positive": 188
+      },
+      "excluded_rejection_markers": 5,
+      "expert_total": 194,
+      "full_feature_agreement_on_matched": 0.8882978723404256,
+      "label_accuracy_on_matched": 0.9893617021276596,
+      "overlap_span": {
+        "f1": 0.9842931937172774,
+        "precision": 1.0,
+        "recall": 0.9690721649484536,
+        "true_positive": 188
+      },
+      "paired_total": 188,
+      "per_feature": {
+        "certainty": {
+          "accuracy": 0.9680851063829787,
+          "equal": 182,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 188
+        },
+        "comment": {
+          "accuracy": 0.925531914893617,
+          "equal": 174,
+          "missing_automatic": 9,
+          "missing_expert": 0,
+          "n": 188
+        },
+        "target": {
+          "accuracy": 1.0,
+          "equal": 188,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 188
+        },
+        "unit": {
+          "accuracy": 0.9840425531914894,
+          "equal": 185,
+          "missing_automatic": 3,
+          "missing_expert": 0,
+          "n": 188
+        },
+        "value": {
+          "accuracy": 0.9521276595744681,
+          "equal": 179,
+          "missing_automatic": 8,
+          "missing_expert": 0,
+          "n": 188
+        }
+      },
+      "relabeled_count": 2,
+      "relaxed_same_label": {
+        "f1": 0.9738219895287958,
+        "precision": 0.9893617021276596,
+        "recall": 0.9587628865979382,
+        "true_positive": 186
+      }
+    },
+    "PHOTOMETRIC_MEASUREMENT": {
+      "annotations_with_feature_change": 68,
+      "automatic_total": 76,
+      "category_counts": {
+        "AUTOMATIC_ONLY": 8,
+        "EXACT_MATCH": 0,
+        "EXPERT_ONLY": 1,
+        "FEATURE_CHANGED": 68,
+        "HUMAN_REJECTION_MARKER_EXCLUDED": 0,
+        "RELABELED": 0,
+        "SPAN_ADJUSTED": 0
+      },
+      "exact_end_to_end": {
+        "f1": null,
+        "precision": 0.0,
+        "recall": 0.0,
+        "true_positive": 0
+      },
+      "exact_span": {
+        "f1": 0.9379310344827586,
+        "precision": 0.8947368421052632,
+        "recall": 0.9855072463768116,
+        "true_positive": 68
+      },
+      "excluded_rejection_markers": 0,
+      "expert_total": 69,
+      "full_feature_agreement_on_matched": 0.0,
+      "label_accuracy_on_matched": 1.0,
+      "overlap_span": {
+        "f1": 0.9379310344827586,
+        "precision": 0.8947368421052632,
+        "recall": 0.9855072463768116,
+        "true_positive": 68
+      },
+      "paired_total": 68,
+      "per_feature": {
+        "certainty": {
+          "accuracy": 0.9117647058823529,
+          "equal": 62,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "comment": {
+          "accuracy": 0.6911764705882353,
+          "equal": 47,
+          "missing_automatic": 15,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "exposure_time_raw": {
+          "accuracy": 0.7794117647058824,
+          "equal": 53,
+          "missing_automatic": 15,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "instrument": {
+          "accuracy": 0.029411764705882353,
+          "equal": 2,
+          "missing_automatic": 58,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "limit_sigma": {
+          "accuracy": 0.9411764705882353,
+          "equal": 64,
+          "missing_automatic": 4,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "magnitude_error": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "magnitude_or_limit": {
+          "accuracy": 0.9411764705882353,
+          "equal": 64,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "obs_time_raw": {
+          "accuracy": 0.8235294117647058,
+          "equal": 56,
+          "missing_automatic": 4,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "obs_time_reference": {
+          "accuracy": 0.3235294117647059,
+          "equal": 22,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "obs_time_type": {
+          "accuracy": 0.8382352941176471,
+          "equal": 57,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "photometric_band": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "photometric_system": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "target": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "timezone_raw": {
+          "accuracy": 0.6911764705882353,
+          "equal": 47,
+          "missing_automatic": 21,
+          "missing_expert": 0,
+          "n": 68
+        },
+        "unit": {
+          "accuracy": 1.0,
+          "equal": 68,
+          "missing_automatic": 0,
+          "missing_expert": 0,
+          "n": 68
+        }
+      },
+      "relabeled_count": 0,
+      "relaxed_same_label": {
+        "f1": 0.9379310344827586,
+        "precision": 0.8947368421052632,
+        "recall": 0.9855072463768116,
+        "true_positive": 68
+      }
+    }
+  },
+  "matching": {
+    "allowed_missing_expert_labels": true,
+    "one_to_one": true,
+    "phases": [
+      "exact span and same label",
+      "overlapping span and same label",
+      "exact or strong overlap and different label"
+    ],
+    "relabel_iou_threshold": 0.5,
+    "score_formula": "0.60 * span_iou + 0.25 * covered_text_similarity + 0.15 * boundary_similarity",
+    "tie_break": "automatic begin/end, expert begin/end, labels, original indexes"
+  },
+  "normalization": [
+    "None, missing values, and empty strings normalize to an empty string.",
+    "Leading, trailing, and repeated internal whitespace is collapsed.",
+    "Booleans normalize to lowercase true/false.",
+    "Pure numeric strings normalize through Decimal without changing magnitude.",
+    "ISO-8601 timestamps normalize Z to an explicit UTC offset.",
+    "Sequences preserve order; mappings sort keys before deterministic JSON serialization.",
+    "Ordinary strings and scientific unit strings remain case-sensitive."
+  ],
+  "primary_policy": "documented human rejection markers excluded",
+  "schema_version": "1.0"
+}
