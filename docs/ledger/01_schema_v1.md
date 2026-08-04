@@ -1,19 +1,23 @@
 # Ledger schema v1
 
-**Status:** provisional. Designed before the ingestion exists. Several columns are
-marked `expected → NB02`: they are present because a phenomenon is anticipated on the
-grounds stated beside them, not because anything in this repository measures it yet.
-`notebooks/02_ledger_evidence.ipynb` will measure them once the emitters produce data,
-and any column that turns out not to be needed will be removed.
+**Status:** built and verified. This document was written before ingestion existed; it has
+been updated against the ledger as built. Columns previously marked `expected → NB02` now
+cite the notebook that measured them, or state plainly that nothing measures them yet.
 
-**Evidence convention.** Every column names where its justification lives. `§` means
-"section", and `NB01` is `notebooks/01_skyportal_inventory_coverage.ipynb`.
+**Evidence convention.** Every column names where its justification lives. Citations name
+the **notebook**, not a section number — notebooks get reorganised and section numbers rot.
+All notebooks are under `notebooks/`.
 
-- `NB01 §8.6` — measured, in the cited section of notebook 01
+- `NB01` … `NB06` — measured, in the named notebook
 - `design` — a structural choice; it follows from how the data is organised, and no
   measurement would change it
-- `expected → NB02` — the column exists because a phenomenon is expected for the reason
-  given beside it. Nothing in this repository measures it yet
+- `unmeasured` — the column exists because a phenomenon is expected for the reason given
+  beside it. Nothing in this repository measures it yet
+
+> The previous version of this document cited `notebooks/01_skyportal_inventory_coverage.ipynb`
+> as `NB01 §x` and deferred measurements to `notebooks/02_ledger_evidence.ipynb`. The first
+> was superseded by NB01 and NB02; the second was never written, replaced by the NB01–NB06
+> series. All citations have been re-mapped.
 
 ---
 
@@ -52,12 +56,15 @@ Parquet, partitioned, queried through DuckDB.
 data/ledger/
   facts/source_system=<gcn|skyportal>/year=<YYYY>/part-*.parquet   # year from t_known
   events/events.parquet
-  event_container_map/map.parquet
+  event_container_map/map.parquet                                  # SkyPortal
+  event_container_map/gcn_map.parquet                              # GCN
+  state_snapshots/window=<6h|24h|7d>/part-*.parquet
+  state_index/window=<6h|24h|7d>/                                  # .npy vectors + metadata.parquet
 ```
 
 Partitioning by `source_system` allows querying one side alone; by year it bounds
-time-range scans. Expected scale is a few hundred thousand fact rows, so the layout is
-for clarity rather than performance and can be revised.
+time-range scans. Actual scale is 102,848 fact rows, so the layout is for clarity rather
+than performance and can be revised.
 
 ---
 
@@ -67,7 +74,7 @@ for clarity rather than performance and can be revised.
 
 | column | type | notes | evidence |
 |---|---|---|---|
-| `fact_id` | STRING | deterministic content hash; see note below. Must be stable across regenerations and unique per fact, so validation status can be updated in place | design |
+| `fact_id` | STRING | deterministic content hash; see note below. Must be stable across regenerations and unique per fact, so validation status can be updated in place | NB06 |
 | `fact_type` | STRING | coarse enum, see §6.1 | design |
 | `fact_subtype` | STRING | fine label (`T90`, `REDSHIFT_EVENT`, …), NULL where not applicable | design |
 | `source_system` | STRING | `gcn` \| `skyportal` | design |
@@ -86,28 +93,39 @@ in the same span collapse to one fact, which is correct; two different measureme
 not collide. Uniqueness is what lets `validation_status` be updated per row without
 touching a sibling.
 
+Determinism is verified, not assumed: NB06 regenerated facts from raw data and matched
+them against the ledger by `fact_id` — 1,776 of 1,776 on the SkyPortal side, 292 of 292 on
+a 50-circular stratified sample, zero mismatches. Because the id is a content hash, an
+exact match means every byte entering the hash was reproduced.
+
 ### 3.2 Time
 
 | column | type | notes | evidence |
 |---|---|---|---|
-| `t_known` | TIMESTAMP UTC | **NOT NULL.** When the fact entered the record | design |
-| `t_known_method` | STRING | how `t_known` was derived, see §6.2 | expected → NB02 |
-| `t_known_confidence` | STRING | `high` \| `low` | expected → NB02 |
+| `t_known` | TIMESTAMP UTC | **NOT NULL.** When the fact entered the record | NB03 |
+| `t_known_method` | STRING | how `t_known` was derived, see §6.2 | NB04 |
+| `t_known_confidence` | STRING | `high` \| `low` | unmeasured |
 | `t_occurred` | TIMESTAMP UTC | physical epoch, absolute; NULL for comments, classifications, summaries, and for relative times (see `t_occurred_offset_hours`) | design |
 | `t_occurred_offset_hours` | DOUBLE | physical epoch stated relative to the trigger ("T+3.2 h"); resolved to an instant on join with `events` as `t0 + offset`; NULL otherwise | design |
 | `t_intended_start` | TIMESTAMP UTC | requested window start; follow-up requests only | design |
 | `t_intended_end` | TIMESTAMP UTC | requested window end | design |
 
 `t_known` NOT NULL is the core invariant: a fact that cannot be placed in the
-information timeline cannot participate in a truncated state.
+information timeline cannot participate in a truncated state. NB03 established that the
+raw capture supports it — knowledge-time coverage is complete on all six SkyPortal fact
+types (comments 2,950/2,950; classifications 416/416; photometry 7,968/7,968; redshift
+versions 83/83; summary versions 1,274/1,274; follow-up requests 2,359/2,359).
 
 `t_known_method` exists because the same nominal field is not equally reliable across
-sources. The GRANDMA team reports that photometry appearing in GCN circulars was for a
-long time entered into SkyPortal by hand, sometimes well after the fact, to fill gaps in
-events whose decisions had already been taken elsewhere. A `created_at` produced that
-way records when someone typed the value, not when the information became available; the
-circular's publication date does. How large that difference is in practice is not
-measured yet.
+sources. **NB04 measured how large the difference is.** For photometry matched to its
+circular, the median delay from observation to circular publication is 10.7 h (p90 2.4 d),
+while the median delay from publication to SkyPortal entry is 3.2 d — with a p90 of
+**227 days**. Dating a GCN-origin fact by SkyPortal's `created_at` therefore places it more
+than seven months late in one case out of ten. The circular's publication date does not
+have that problem.
+
+`t_known_confidence` remains unmeasured. NB04 shows the two channels separate sharply in
+the median, but whether a two-valued flag is the right encoding has not been decided.
 
 ### 3.3 Content
 
@@ -116,8 +134,8 @@ measured yet.
 | `value_raw` | STRING | literal source text of the value | design |
 | `value_parsed` | STRING (JSON) | typed payload, or NULL | design |
 | `unit_raw` | STRING | unit as written | design |
-| `parse_status` | STRING | `ok` \| `partial` \| `failed` \| `not_applicable` | expected → NB02 |
-| `parse_note` | STRING | reason when not `ok` | expected → NB02 |
+| `parse_status` | STRING | `ok` \| `partial` \| `failed` \| `not_applicable` | unmeasured |
+| `parse_note` | STRING | reason when not `ok` | unmeasured |
 | `text` | STRING | natural-language form; embedded and cited | design |
 | `text_source` | STRING | `span` (offsets into a canonical circular) \| `rendered` (built from a template) \| `literal` (stored as written, not anchored to a document) | design |
 | `text_render_version` | STRING | template version; NULL when `text_source` is `span` or `literal` | design |
@@ -125,27 +143,54 @@ measured yet.
 `text` is stored rather than generated on read so that embeddings remain aligned with
 the text they were built from. `text_render_version` makes a template change detectable.
 
+Parse failures are recorded but their rate is not yet measured — see §9. NB05 observed
+individual failure shapes without quantifying them: malformed band values parsed as
+numbers (`21.70`, `22.31` appearing as band labels), and one `-1000` magnitude sentinel.
+
 ### 3.4 Promoted photometry columns
 
 Kept out of `value_parsed` because they are filtered on constantly.
 
 | column | type | evidence |
 |---|---|---|
-| `band_raw` | STRING | expected → NB02 |
-| `band_canonical` | STRING | expected → NB02 |
-| `photometric_system` | STRING | expected → NB02 |
+| `band_raw` | STRING | NB05 |
+| `band_canonical` | STRING | NB05 |
+| `photometric_system` | STRING | NB05 |
 | `mag` | DOUBLE | design |
 | `mag_err` | DOUBLE | design |
 | `is_limit` | BOOLEAN | design |
 | `limit_sigma` | DOUBLE | design |
-| `instrument` | STRING | design |
+| `instrument` | STRING | NB05 |
 | `exposure_raw` | STRING | design |
 
 `band_raw` and `band_canonical` are both kept: normalisation is lossy and the original
-string is needed to audit it. `photometric_system` is mandatory rather than optional
-because a magnitude without its system is ambiguous — the Vega and AB scales differ by
-more than a magnitude in some ultraviolet bands, so two rows describing the same
-observation can disagree numerically while both are correct.
+string is needed to audit it. **NB05 measured how lossy.** Of 627 compared GCN↔SkyPortal
+pairs, **zero band labels are identical** and 620 differ. The translations are systematic:
+`r → sdssr` (102), `i → sdssi` (54), `z → sdssz` (52), `R → bessellr` (43), `g → sdssg` (34).
+
+`photometric_system` is mandatory rather than optional because a magnitude without its
+system is ambiguous. This was written as an expectation; NB05 confirmed it by measurement.
+Within each band pair the magnitude offset is constant to floating-point precision, and
+the values match Vega-to-AB conversion offsets:
+
+| circular band | SkyPortal band | offset | σ |
+|---|---|---:|---:|
+| `R` | `bessellr` | 0.193 | 0.457 |
+| `Rc` | `bessellr` | 0.193 | 0.000 |
+| `V` | `bessellv` | 0.010 | 0.000 |
+| `B` | `bessellb` | −0.102 | 0.000 |
+| `Ic` | `besselli` | 0.441 | 0.000 |
+| `J` | `2massj` | 0.899 | 0.000 |
+| `H` | `2massh` | 1.373 | 0.000 |
+| `u` | `uvot::u` | 1.012 | 0.000 |
+
+The ultraviolet case predicted by the original text is confirmed: `u` differs by more than
+one magnitude. Two rows describing the same observation disagree numerically while both
+are correct.
+
+`instrument` cites NB05 because of a loss it revealed: SkyPortal does not preserve the
+instrument on transcription — a measurement from `UVOT` is stored with instrument `GCN`.
+The observing instrument survives only on the GCN side.
 
 ### 3.5 Provenance
 
@@ -164,7 +209,7 @@ observation can disagree numerically while both are correct.
 | `validation_status` | STRING | `rule_extracted` \| `human_validated` \| `human_rejected` | design |
 | `author` | STRING | SkyPortal facts: who wrote it | design |
 | `is_bot` | BOOLEAN | SkyPortal facts | design |
-| `captured_at` | TIMESTAMP UTC | when the underlying data was read | NB01 §0 |
+| `captured_at` | TIMESTAMP UTC | when the underlying data was read | NB01 |
 
 Offsets are **circular-level**, never event-level. Event-level offsets shift whenever
 the circular selection for an event changes, which would invalidate every span on any
@@ -175,31 +220,36 @@ INCEpTION XMI export. Carrying them here is what makes provenance survive.
 
 `validation_status` starts at `rule_extracted` for every emitted fact. When validated
 INCEpTION documents arrive, rows are updated in place — which is why `fact_id` must be
-deterministic.
+deterministic (verified by NB06).
 
 ### 3.6 Relations
 
 | column | type | notes | evidence |
 |---|---|---|---|
-| `related_fact_id` | STRING | the other side of the relation | expected → NB02 |
-| `relation_type` | STRING | `interpreted_from` \| `duplicate_of` | expected → NB02 |
-| `is_canonical` | BOOLEAN | which row of a linked pair is preferred for state | expected → NB02 |
-| `aggregation_level` | STRING | `reported` \| `frame` | expected → NB02 |
+| `related_fact_id` | STRING | the other side of the relation | NB05 |
+| `relation_type` | STRING | `interpreted_from` \| `duplicate_of` | NB05 |
+| `is_canonical` | BOOLEAN | which row of a linked pair is preferred for state | design |
+| `aggregation_level` | STRING | `reported` \| `frame` | unmeasured |
 | `parent_fact_id` | STRING | e.g. a spectrum produced by a follow-up request | design |
 
 `interpreted_from` rather than `duplicate_of` for the GCN↔SkyPortal photometry overlap.
-The GRANDMA team reports that when a measurement from a circular is entered into
-SkyPortal the filter is recorded in SkyPortal's own vocabulary — a circular's `r` may be
-stored as `sdssr` — and magnitudes may be converted between photometric systems. The two
-rows then hold the same observation under different conventions, and neither is wrong.
-For early state the circular row is preferred, since the reinterpretation was made
-later, by a person, using conventions the original report did not state.
+This was originally recorded on the GRANDMA team's report; **NB05 measured it.** When a
+measurement from a circular is entered into SkyPortal, the band is recorded in SkyPortal's
+own vocabulary and the magnitude is converted to a canonical photometric system — the
+translation table in §3.4. The two rows hold the same observation under different
+conventions, and neither is wrong. `duplicate_of` would assert a literal equality that does
+not hold; treating them as independent facts would overcount observations.
+
+For early state the circular row is preferred, since the reinterpretation was made later,
+by a person, using conventions the original report did not state. NB04 supports this
+independently: the SkyPortal row is dated a median of 3.2 days after publication.
 
 `aggregation_level` distinguishes a stacked measurement reported in a circular from the
 individual exposures held in SkyPortal. A circular usually reports one combined
 magnitude for a night, while the pipeline that produced it stores every frame, so one
 circular row can legitimately correspond to many SkyPortal rows. `STATE(T)` summarises
-frames rather than listing them.
+frames rather than listing them. **Not yet measured** — NB05 compared pairs one-to-one and
+did not test whether one circular row maps to several SkyPortal frames.
 
 ---
 
@@ -207,19 +257,19 @@ frames rather than listing them.
 
 | column | type | notes | evidence |
 |---|---|---|---|
-| `event_id` | STRING | SkyPortal source id | NB01 §2 |
-| `t0` | TIMESTAMP UTC | temporal anchor; may be derived | NB01 §8.6 |
-| `t0_source` | STRING | see §6.3 | NB01 §8.6 |
-| `t0_uncertainty_hours` | DOUBLE | the tier's measured uncertainty, looked up from `t0_source`; see §6.3 | NB01 §8.6 |
-| `anchor_type` | STRING | `trigger` \| `first_detection` | NB01 §8.2 |
-| `tier_status` | STRING | `phase_matching` \| `provisional` \| `dossier_only` | NB01 §8.7 |
-| `name_pattern_class` | STRING | `gcn_internal`, `ep_internal`, `grb_internal`, `grb_named`, `tns_like`, `ztf_like`, `other` | NB01 §4 |
-| `profiles` | STRING | which inventory queries returned this source | NB01 §1 |
-| `ra` | DOUBLE | | NB01 §5 |
-| `dec` | DOUBLE | | NB01 §5 |
-| `created_at` | TIMESTAMP UTC | source record creation | NB01 §5 |
-| `modified` | TIMESTAMP UTC | | NB01 §5 |
-| `captured_at` | TIMESTAMP UTC | capture date of the frozen inventory (2026-07-20) | NB01 §0 |
+| `event_id` | STRING | SkyPortal source id | NB01 |
+| `t0` | TIMESTAMP UTC | temporal anchor; may be derived | NB02 |
+| `t0_source` | STRING | see §6.3 | NB02 |
+| `t0_uncertainty_hours` | DOUBLE | the tier's measured uncertainty, looked up from `t0_source`; see §6.3 | NB02 |
+| `anchor_type` | STRING | `trigger` \| `first_detection` | NB02 |
+| `tier_status` | STRING | `phase_matching` \| `provisional` \| `dossier_only` | NB02 |
+| `name_pattern_class` | STRING | `gcn_internal`, `ep_internal`, `grb_internal`, `grb_named`, `tns_like`, `ztf_like`, `other` | NB01 |
+| `profiles` | STRING | which inventory queries returned this source | NB01 |
+| `ra` | DOUBLE | | NB01 |
+| `dec` | DOUBLE | | NB01 |
+| `created_at` | TIMESTAMP UTC | source record creation | NB01 |
+| `modified` | TIMESTAMP UTC | | NB01 |
+| `captured_at` | TIMESTAMP UTC | capture date of the frozen inventory (2026-07-20) | NB01 |
 | `visibility_scope` | STRING | groups the API token could read at capture time, recorded in the download manifest | design |
 | `source_groups` | STRING | groups this source belongs to, as reported by the listing | design |
 
@@ -232,8 +282,9 @@ filters photometry by group membership, and the number of rows returned for a so
 already been seen to change once the account was granted access to further groups.
 Without this column the corpus is not reproducible from a different token.
 
-Current distribution: 230 `phase_matching`, 189 `provisional`, 381 `dossier_only`
-(NB01 §8.7).
+Current distribution: 230 `phase_matching`, 189 `provisional`, 381 `dossier_only` (NB02).
+Of the 230, roughly 106 carry descriptive facts at 6 h — that, not 800, is the honest size
+of the phase-matchable corpus.
 
 ---
 
@@ -252,7 +303,10 @@ row records why the association was made, so a questionable match can be traced.
 
 Containers with no event are still ingested into `facts`. They cost little and become
 usable as soon as matching improves — 365 events currently have only an internal
-SkyPortal id as a search term (NB01 §4).
+SkyPortal id as a search term (NB01).
+
+Current coverage: 800 SkyPortal rows and 2,335 GCN rows, connecting 191 events to their
+circulars, with a median of ten circulars per matched event.
 
 ---
 
@@ -264,13 +318,17 @@ SkyPortal id as a search term (NB01 §4).
 `summary_version` · `followup_request` · `spectrum` · `skyportal_annotation`
 
 `spectrum` and `skyportal_annotation` are residual in the current population — 1 of 800
-sources and 3 of 982 listing records respectively (NB01 §5, §8.7). They are admitted by
-the enum but nothing is designed around them.
+sources and 3 of 982 listing records respectively (NB01). They are admitted by the enum
+but nothing is designed around them.
 
 Explicitly excluded: `photstats`, because it carries no timestamp and is computed over
 all photometry attached to a source, including rows the API token is not permitted to
 return — it therefore cannot serve as a completeness control for what was downloaded.
 Also excluded: the current `source_summary` field, superseded by `summary_version` rows.
+
+Two declared photometry subtypes, `non_detection` and `unclear`, have **zero rows** in the
+ledger. Whether the extractors never emit them or the corpus never contains them is not
+established.
 
 ### 6.2 `t_known_method`
 
@@ -280,6 +338,8 @@ Also excluded: the current `source_summary` field, superseded by `summary_versio
 | `altdata_circular` | SkyPortal row declaring its source circular; publication date used |
 | `created_at` | SkyPortal row creation |
 | `set_at_utc` | versioned history entry (redshift, summary) |
+
+The distinction is measured, not stylistic: see §3.2 and NB04.
 
 ### 6.3 `t0_source`
 
@@ -294,8 +354,8 @@ Also excluded: the current `source_summary` field, superseded by `summary_versio
 | `first_detection` | pending | pending |
 | `created_at` | dossier only | 349 (trigger) / 17572 (first_detection) |
 
-`t0_uncertainty_hours` is the **measured worst case of the tier**, not the precision of
-the stored representation. An id parsed to the second still carries its tier's measured
+`t0_uncertainty_hours` is the **measured worst case of the tier** (NB02), not the precision
+of the stored representation. An id parsed to the second still carries its tier's measured
 uncertainty: `source_id_timestamp_grb` reads as a second-precision timestamp, yet one of
 31 validated cases was wrong by 287 h, so 287.3 is the honest figure. Storing 0 there
 would tell a downstream consumer the anchor is exact when it is not.
@@ -330,54 +390,63 @@ Full dossier: the same query without the `t_known` predicate.
 
 Both are computed on read.
 
+**Non-leakage is asserted at build time**, not assumed: no fact with `t_known` after the
+cutoff may appear in any truncated state. The check returns 0 violations.
+
 ---
 
 ## 8. Decisions recorded
 
-| # | decision | rationale |
-|---|---|---|
-| 1 | Facts reference containers, not events | matching will change; facts must not be rewritten |
-| 2 | Truncate on `t_known` | ingestion lag makes `t_occurred` unusable for causality |
-| 3 | `t_known` derived per source type | circular publication is ~2.8 h; SkyPortal ingestion can be months |
-| 4 | No stored Δt | anchors will improve |
-| 5 | Containers without events are ingested | cheap now, usable when matching improves |
-| 6 | Parquet partitioned + DuckDB | query pattern is filter by container and time |
-| 7 | `text` stored, with render version | embeddings must stay aligned with their source text |
-| 8 | Individual frames ingested, flagged | they are the real trajectory; `STATE(T)` summarises them |
-| 9 | Nothing deleted; duplicates linked | consistent with the annotation policy |
-| 10 | Circular-level span offsets | event-level offsets break on reselection |
-| 11 | The emitter assigns tiers; notebook 01 measures them | one implementation, so the two cannot diverge |
-| 12 | `t0_uncertainty_hours` is tier-level, not per-row | representation precision is not accuracy |
+| # | decision | rationale | evidence |
+|---|---|---|---|
+| 1 | Facts reference containers, not events | matching will change; facts must not be rewritten | design |
+| 2 | Truncate on `t_known` | ingestion lag makes `t_occurred` unusable for causality | NB04 |
+| 3 | `t_known` derived per source type | circular publication is 10.7 h median; SkyPortal ingestion has a 227 d p90 | NB04 |
+| 4 | No stored Δt | anchors will improve | design |
+| 5 | Containers without events are ingested | cheap now, usable when matching improves | design |
+| 6 | Parquet partitioned + DuckDB | query pattern is filter by container and time | design |
+| 7 | `text` stored, with render version | embeddings must stay aligned with their source text | design |
+| 8 | Individual frames ingested, flagged | they are the real trajectory; `STATE(T)` summarises them | design |
+| 9 | Nothing deleted; duplicates linked | consistent with the annotation policy | design |
+| 10 | Circular-level span offsets | event-level offsets break on reselection | design |
+| 11 | The emitter assigns tiers; NB02 measures them | one implementation, so the two cannot diverge | NB02 |
+| 12 | `t0_uncertainty_hours` is tier-level, not per-row | representation precision is not accuracy | NB02 |
+| 13 | GCN↔SkyPortal photometry links as `interpreted_from` | SkyPortal renames the band and converts the magnitude | NB05 |
+
+Decision 3 previously stated circular publication as "~2.8 h". The measured median is
+10.7 h; the earlier figure has no notebook behind it.
 
 ---
 
 ## 9. Open items
 
-Measurements to reproduce in `notebooks/02_ledger_evidence.ipynb` against emitted data:
+Measurements originally deferred to a single evidence notebook. Their status after
+NB01–NB06:
 
-1. **Ingestion lag by origin** — how far behind the observation each `origin` value
-   enters SkyPortal, and whether the split is sharp enough for `t_known_confidence` to
-   be a two-valued flag.
-2. **Photometry overlap and stacking** — how much of the GCN↔SkyPortal overlap is one
-   observation under two conventions, and how often one circular row corresponds to
-   several SkyPortal frames.
-3. **Parse failure rate** — what fraction of extracted photometric measurements yields
-   an unusable observation time, and whether the failures fall into a few recurring
-   shapes worth fixing in the extraction rules.
-4. **Band normalisation coverage** — how many distinct band strings appear on each side,
-   how many map to a canonical band, and whether the mapping is symmetric.
-5. **Permission-driven incompleteness** — how many photometry rows the account still
-   cannot see, now that broader access has been granted.
+| # | measurement | status |
+|---|---|---|
+| 1 | Ingestion lag by origin | **resolved (NB04)** — 10.7 h to publication, 3.2 d publication to SkyPortal, 45.5 d for unmatched photometry |
+| 2 | Photometry overlap and stacking | **partial (NB05)** — the overlap is measured and explained; one-to-many frame stacking is not tested |
+| 3 | Parse failure rate | open — individual failure shapes observed, rate not quantified |
+| 4 | Band normalisation coverage | **resolved (NB05)** — 0 identical labels, 620 differing, translation table in §3.4 |
+| 5 | Permission-driven incompleteness | open |
 
 Unresolved beyond the schema:
 
 - **EP provisional tier.** Validated by a causality check once photometry is ingested:
-  if the ID-derived `t0` is correct, no photometry point may have `mjd < t0`. Applies to
-  all 194 EP sources.
+  if the ID-derived `t0` is correct, no photometry point may have `mjd < t0`. **The check
+  cannot run as designed: EP sources have no photometry.** Validation must come from
+  `TRIGGER_TIME` extracted on the GCN side. *(This section states 194 EP sources; NB02
+  reports 189 in the provisional tier. The discrepancy is unreconciled.)*
 - **`t0` for survey-discovered transients.** 252 sources have a first-detection anchor
   rather than a trigger; the first-detection tier is not yet built.
 - **Band equivalence convention.** A questionnaire to the GRANDMA astronomers is
-  pending; answers become part of this documentation.
+  pending. **NB05 now supplies the measured translation table**, so the question to ask
+  has changed: not what the equivalences are, but whether SkyPortal's conversions are the
+  right ones for GRANDMA's use.
+- **Circular matcher reliability.** 10 of 958 matched photometry rows carry a negative
+  publication lag; two link 2026 observations to 2005 circulars through 4-digit id
+  collisions. Excluding them moves the median lag by 2.94% (NB05).
 
 ---
 
@@ -386,3 +455,4 @@ Unresolved beyond the schema:
 | version | date | change |
 |---|---|---|
 | v1 | 2026-07-23 | initial design, before ingestion exists |
+| v2 | 2026-08-04 | re-mapped all citations from the superseded notebook to NB01–NB06; `expected → NB02` replaced by measured citations or `unmeasured`; added band translation and Vega-to-AB offset tables; corrected decision 3 (2.8 h → 10.7 h measured); added decision 13; updated open items; recorded the zero-row photometry subtypes and the 194/189 EP discrepancy |
