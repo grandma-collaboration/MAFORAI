@@ -1,0 +1,14 @@
+side,check,expected,observed,status
+skyportal,rows regenerated,1776,1776,PASS
+skyportal,rows in ledger,1776,1776,PASS
+skyportal,fact_ids matching,1776,1776,PASS
+skyportal,only regeneration,0,0,PASS
+skyportal,only ledger,0,0,PASS
+skyportal,field differences,0,0,PASS
+gcn_sample,rows regenerated,292,292,PASS
+gcn_sample,rows in ledger,292,292,PASS
+gcn_sample,fact_ids matching,292,292,PASS
+gcn_sample,only regeneration,0,0,PASS
+gcn_sample,only ledger,0,0,PASS
+gcn_sample,field differences,0,0,PASS
+gcn_sample,sampled circulars,50,50,PASS
