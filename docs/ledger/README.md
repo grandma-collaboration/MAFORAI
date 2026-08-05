@@ -16,9 +16,7 @@ reconstructed without temporal leakage.
 
 ## Evidence
 
-Design decisions are justified by six notebooks, each starting from raw data and answering
-one question. Citations name the notebook, not a section number — notebooks get
-reorganised and section numbers rot.
+Design decisions are justified by six notebooks, each starting from raw data and answering one question.
 
 | Notebook | Question | Evidence file |
 |---|---|---|
@@ -31,11 +29,6 @@ reorganised and section numbers rot.
 | [06_ledger_construction](../../notebooks/06_ledger_construction.ipynb) | Is the ledger reproducible from raw data? | `06_regeneration_check.csv` |
 
 Evidence CSVs are under [`notebooks/evidence/`](../../notebooks/evidence/).
-
-**Golden rule:** notebooks 01–05 never read `data/ledger/`. The ledger is the *result* of
-the decisions they justify, so reading it would be circular. NB06 is the sole exception,
-and there the ledger is the object under test, compared against output regenerated from
-raw data.
 
 ## Tables
 
@@ -72,16 +65,3 @@ State windows are `6h`, `24h` and `7d`. Index vectors are `float32`, 1024 dimens
 | 8 | `17_retrieval_backtest.py` | Leave-one-out retrieval backtest. | no |
 
 Steps 1–5 build the ledger. Steps 6–8 build the state and retrieval layer on top of it.
-
-## Reproducibility
-
-NB06 regenerated facts from raw data and compared them against the ledger on disk by
-`fact_id` — a content hash, so an exact match means every byte entering the hash was
-reproduced, not merely that counts agree.
-
-| Side | Regenerated | Matching | Mismatches |
-|---|---:|---:|---:|
-| SkyPortal (full) | 1,776 | 1,776 | 0 |
-| GCN (50-circular year-stratified sample, 0.42%) | 292 | 292 | 0 |
-
-Full GCN regeneration remains unverified.

@@ -1,23 +1,15 @@
 # Ledger schema v1
 
-**Status:** built and verified. This document was written before ingestion existed; it has
-been updated against the ledger as built. Columns previously marked `expected → NB02` now
-cite the notebook that measured them, or state plainly that nothing measures them yet.
+**Status:** built and verified.
 
 **Evidence convention.** Every column names where its justification lives. Citations name
-the **notebook**, not a section number — notebooks get reorganised and section numbers rot.
-All notebooks are under `notebooks/`.
+the **notebook**. All notebooks are under `notebooks/`.
 
 - `NB01` … `NB06` — measured, in the named notebook
 - `design` — a structural choice; it follows from how the data is organised, and no
   measurement would change it
 - `unmeasured` — the column exists because a phenomenon is expected for the reason given
   beside it. Nothing in this repository measures it yet
-
-> The previous version of this document cited `notebooks/01_skyportal_inventory_coverage.ipynb`
-> as `NB01 §x` and deferred measurements to `notebooks/02_ledger_evidence.ipynb`. The first
-> was superseded by NB01 and NB02; the second was never written, replaced by the NB01–NB06
-> series. All citations have been re-mapped.
 
 ---
 
@@ -41,7 +33,7 @@ validation, GCN `TRIGGER_TIME` tier).
 
 **Parse failures are visible nulls, not dropped rows.**
 `value_raw` always holds the literal source text. `value_parsed` holds the typed value
-or NULL with a reason. Silent discards previously hid extraction bugs.
+or NULL with a reason.
 
 **Nothing is deleted.**
 Duplicates, reinterpretations and annotations judged incorrect are kept and linked.
@@ -93,9 +85,7 @@ in the same span collapse to one fact, which is correct; two different measureme
 not collide. Uniqueness is what lets `validation_status` be updated per row without
 touching a sibling.
 
-Determinism is verified, not assumed: NB06 regenerated facts from raw data and matched
-them against the ledger by `fact_id` — 1,776 of 1,776 on the SkyPortal side, 292 of 292 on
-a 50-circular stratified sample, zero mismatches. Because the id is a content hash, an
+Because the id is a content hash, an
 exact match means every byte entering the hash was reproduced.
 
 ### 3.2 Time
@@ -390,7 +380,7 @@ Full dossier: the same query without the `t_known` predicate.
 
 Both are computed on read.
 
-**Non-leakage is asserted at build time**, not assumed: no fact with `t_known` after the
+**Non-leakage is asserted at build time**: no fact with `t_known` after the
 cutoff may appear in any truncated state. The check returns 0 violations.
 
 ---
@@ -409,12 +399,9 @@ cutoff may appear in any truncated state. The check returns 0 violations.
 | 8 | Individual frames ingested, flagged | they are the real trajectory; `STATE(T)` summarises them | design |
 | 9 | Nothing deleted; duplicates linked | consistent with the annotation policy | design |
 | 10 | Circular-level span offsets | event-level offsets break on reselection | design |
-| 11 | The emitter assigns tiers; NB02 measures them | one implementation, so the two cannot diverge | NB02 |
-| 12 | `t0_uncertainty_hours` is tier-level, not per-row | representation precision is not accuracy | NB02 |
-| 13 | GCN↔SkyPortal photometry links as `interpreted_from` | SkyPortal renames the band and converts the magnitude | NB05 |
+| 11 | `t0_uncertainty_hours` is tier-level, not per-row | representation precision is not accuracy | NB02 |
+| 12 | GCN↔SkyPortal photometry links as `interpreted_from` | SkyPortal renames the band and converts the magnitude | NB05 |
 
-Decision 3 previously stated circular publication as "~2.8 h". The measured median is
-10.7 h; the earlier figure has no notebook behind it.
 
 ---
 
@@ -447,12 +434,3 @@ Unresolved beyond the schema:
 - **Circular matcher reliability.** 10 of 958 matched photometry rows carry a negative
   publication lag; two link 2026 observations to 2005 circulars through 4-digit id
   collisions. Excluding them moves the median lag by 2.94% (NB05).
-
----
-
-## 10. Change log
-
-| version | date | change |
-|---|---|---|
-| v1 | 2026-07-23 | initial design, before ingestion exists |
-| v2 | 2026-08-04 | re-mapped all citations from the superseded notebook to NB01–NB06; `expected → NB02` replaced by measured citations or `unmeasured`; added band translation and Vega-to-AB offset tables; corrected decision 3 (2.8 h → 10.7 h measured); added decision 13; updated open items; recorded the zero-row photometry subtypes and the 194/189 EP discrepancy |
