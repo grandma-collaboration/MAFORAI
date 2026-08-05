@@ -16,7 +16,7 @@ reconstructed without temporal leakage.
 
 ## Evidence
 
-Design decisions are justified by six notebooks, each starting from raw data and answering one question.
+Design decisions are justified by six notebooks, each starting from raw data and answering one question. Citations name the notebook.
 
 | Notebook | Question | Evidence file |
 |---|---|---|

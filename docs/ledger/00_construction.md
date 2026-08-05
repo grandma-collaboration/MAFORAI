@@ -4,7 +4,7 @@ For whom: anyone who needs to understand how the event ledger was built and why 
 shaped the way it is. This document is the story. The column-level specification lives in
 [01_schema_v1.md](./01_schema_v1.md).
 
-**Citation convention.** Findings cite the notebook that measured them — Notebooks get reorganised; section numbers rot. All notebooks are under
+**Citation convention.** Findings cite the notebook that measured them. All notebooks are under
 `notebooks/`, and each writes a compact evidence CSV to `notebooks/evidence/`.
 
 ---
@@ -33,7 +33,7 @@ Two independent sources, captured and frozen so results stay reproducible.
 |---|---|
 | `inventory/…_20260720` | 982 listing records → 800 distinct sources, 4 profiles |
 | `source_detail_20260724` | 2,950 comments, 7,968 photometry, 1 spectrum, 2,359 follow-up requests |
-| `frozen/skyportal_2026-07-22` | the listing, frozen deliberately for reconstruction |
+| `frozen/skyportal_2026-07-22` | the listing, frozen for reconstruction |
 
 The four inventory profiles (`grandma_base`, `gcn`, `ep`, `grb`) overlap: 182 sources are
 returned by more than one query. The union of the four defines the corpus (NB01).
@@ -52,7 +52,7 @@ produce unvalidated output that looked valid.
 
 ---
 
-## 3. What we measured before designing
+## 3. What was measured before designing
 
 Six notebooks, each starting from raw data, each answering one question.
 
@@ -106,9 +106,9 @@ capture, coverage is complete:
 
 ### NB04 — How fast does each channel deliver?
 
-This is the central finding. A photometric measurement has three moments: when it was
-observed, when the circular announcing it was published, and when it entered SkyPortal.
-For the 958 measurements matched to a circular:
+A photometric measurement has three moments: when it was observed, when the circular
+announcing it was published, and when it entered SkyPortal. For the 958 measurements
+matched to a circular:
 
 | Delay | Median | p90 |
 |---|---:|---:|
@@ -118,14 +118,14 @@ For the 958 measurements matched to a circular:
 
 Photometry with no circular reference reaches SkyPortal in 45.5 d (median).
 
-Two consequences. First, the GCN channel is fast and SkyPortal ingestion is slow and
-largely retrospective. Second, and more
-sharply: **dating a GCN-origin fact by SkyPortal's `created_at` dates it late, by more
-than 227 days in 10% of cases.** That is the measurement behind `t_known_method`.
+Two consequences. The GCN channel is fast and SkyPortal ingestion is slow and largely
+retrospective — the two speeds are measured. And more sharply: **dating a
+GCN-origin fact by SkyPortal's `created_at` dates it late, by more than 227 days in 10% of
+cases.** That is the measurement behind `t_known_method`.
 
-A detail worth keeping: in the tail, SkyPortal is equally slow whatever the origin (p90 of
-235 d for matched rows against 266 d for unmatched). The slowness belongs to SkyPortal's
-ingestion, not to any one channel.
+In the tail, SkyPortal is equally slow whatever the origin (p90 of 235 d for matched rows
+against 266 d for unmatched). The slowness belongs to SkyPortal's ingestion, not to any
+one channel.
 
 ### NB05 — Is it the same measurement on both sides?
 
@@ -145,6 +145,7 @@ floating-point precision, and the values match Vega-to-AB conversion offsets:
 | `Ic` | `besselli` | 0.441 | 0.000 |
 | `J` | `2massj` | 0.899 | 0.000 |
 | `H` | `2massh` | 1.373 | 0.000 |
+| `u` | `uvot::u` | 1.012 | 0.000 |
 
 SkyPortal normalises each measurement to a canonical photometric system: it renames the
 band **and** converts the value. This is the evidence behind linking the two records as
@@ -184,10 +185,11 @@ early and must not appear in an early state. NB04 shows how far apart the two ca
 ### `t_known_method` records where the date came from
 
 The same nominal timestamp means different things depending on the source. A GCN fact is
-dated by circular publication; a SkyPortal-native fact by `created_at` or `set_at_utc`.
-NB04 measures why this distinction is necessary rather than pedantic.
+dated by circular publication; a SkyPortal-native fact by `created_at` or `set_at_utc`; a
+SkyPortal row that declares its source circular is dated by that circular's publication,
+not by when someone typed it in.
 
-### Causal truncation is a runtime check
+### Causal truncation is a runtime check, not an assumption
 
 The assertion *no fact with `t_known > T` appears in a state truncated at T* is verified on
 every build. It returns **0 violations**. It is never assumed.
@@ -204,6 +206,27 @@ events; a circular about two events produces two map rows.
 More importantly, event↔circular matching will improve over time. If facts depended on
 events, every improvement would force re-emitting 100,000+ facts. Because they depend on
 containers, improving the match only adds rows to the map. This decoupling is deliberate.
+
+### Every fact carries its own text
+
+A fact stores a natural-language form of itself, because that text is what gets embedded
+and what gets cited. It arrives three ways:
+
+- **`span`** — the text exists inside a circular and is copied literally, with character
+  offsets into the canonical text. All GCN facts.
+- **`rendered`** — no text exists to copy, so one is built from the structured fields by a
+  template. SkyPortal classifications, redshift versions, annotations.
+- **`literal`** — real prose not anchored to any canonical document, stored as written.
+  SkyPortal summaries.
+
+The text is stored rather than generated on read, so that embeddings stay aligned with the
+text they were built from. A `text_render_version` records which template produced a
+rendered text, making a template change detectable.
+
+Templates live in two places: SkyPortal fact templates in
+`scripts/10_emit_skyportal_source_facts.py`, state-level clause templates in
+`src/skyportal_corpus/state/state.py`. The two carry independent version identifiers and
+are unrelated to each other.
 
 ### The two sources are complementary
 
@@ -284,6 +307,10 @@ at 24 h, 116 at 7 d.
   re-emitted once: band field contamination (`Lim`, `P-`/`P/` variants, magnitudes and
   exposures parsed as bands, mojibake), 12 false localisation radii, ~3,626 unparseable
   relative time offsets.
+- **Template versions are recorded but not dispatched.** `text_render_version` and the
+  state text version identify which template produced a text, but the implementations are
+  embedded in the emitter code rather than selected by a version lookup. Changing a
+  template makes the previous text unreproducible.
 - **Follow-up requests embed personal data** — name, email and phone in 914 of 2,359
   records. The emitter that consumes them must reduce this to a stable identifier before
   the ledger is shared.
@@ -301,5 +328,3 @@ at 24 h, 116 at 7 d.
 | SkyPortal normalises to a canonical photometric system | NB05 | `05_photometry_pairs.csv` |
 | The ledger regenerates exactly from raw data | NB06 | `06_regeneration_check.csv` |
 | Non-leakage holds on the built ledger | build-time assertion | — |
-
----
