@@ -389,7 +389,55 @@ the originally planned causality check.
 
 ---
 
-## 7. Query patterns
+## 7. Reingestion from INCEpTION
+
+Validated documents return from INCEpTION as XMI. A document covers one event and all
+its circulars, and the annotator revises it as a whole — accepting, correcting,
+rejecting and adding annotations across the entire text.
+
+### What comes back
+
+| Returning annotation | Ingested as |
+|---|---|
+| Pre-annotation accepted unchanged | `human_validated` |
+| Pre-annotation corrected | `human_validated`, new `fact_id` |
+| Pre-annotation rejected | `human_rejected` |
+| Annotation created by the annotator | `human_validated`, no `extractor_id` |
+
+A corrected annotation produces a different `fact_id` than the rule-extracted row it
+came from, because the id is a content hash and the content changed. Rows are therefore
+never updated in place: the corrected version is a new row, and the original remains.
+Nothing is deleted.
+
+### Precedence is per container, not per annotation
+
+A container is validated or it is not. Once a circular has been through INCEpTION, its
+facts are those the annotator left behind; the rule-extracted rows for that circular are
+superseded in full and take no part in state reconstruction.
+
+    validated_containers AS (
+      SELECT DISTINCT container_id
+      FROM facts
+      WHERE validation_status IN ('human_validated', 'human_rejected')
+    )
+
+State and dossier queries select, for each container, the human rows where the container
+appears in that set and the rule rows otherwise. This requires no per-annotation
+matching, no span comparison and no stable annotation identifier: a document is revised
+as a unit, so it is superseded as a unit.
+
+`validation_status` therefore has a function beyond provenance — it decides which rows a
+container contributes when both kinds exist.
+
+### Scope
+
+Human validation covers a subset of the corpus. Every other container contributes
+rule-extracted facts, and any fact carrying `rule_extracted` has not been seen by a
+person. The proportion is recorded in the corpus documentation.
+
+---
+
+## 8. Query patterns
 
 State at time T:
 
@@ -416,7 +464,7 @@ cutoff may appear in any truncated state. The check returns 0 violations.
 
 ---
 
-## 8. Decisions recorded
+## 9. Decisions recorded
 
 | # | decision | rationale | evidence |
 |---|---|---|---|
@@ -437,7 +485,7 @@ cutoff may appear in any truncated state. The check returns 0 violations.
 
 ---
 
-## 9. Open items
+## 10. Open items
 
 | # | item | status |
 |---|---|---|
