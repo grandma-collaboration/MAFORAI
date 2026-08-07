@@ -64,7 +64,7 @@ Both scripts are deterministic: given the same raw captures, they produce
 byte-identical output on every run. This was verified by regenerating both
 stages into an isolated temporary directory and comparing every output
 file's SHA-256 hash against the committed one, across all eleven files (five
-interim, six corpus) — see `notebooks/skyportal/C_reproducibility.ipynb`.
+interim, six corpus) — see `notebooks/skyportal/D_reproducibility.ipynb`.
 
 ## Decisions applied
 
