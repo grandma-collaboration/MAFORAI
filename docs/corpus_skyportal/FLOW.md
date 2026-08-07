@@ -222,11 +222,11 @@ before it.
 
 | question | where it is answered |
 |---|---|
-| What do the raw tables contain? | `notebooks/skyportal/A_eda.ipynb` |
-| Which decisions were taken, and why? | final cell of `A_eda.ipynb` |
-| What did each decision change? | `notebooks/skyportal/B_normalisation.ipynb` |
-| Is the corpus reproducible? | `notebooks/skyportal/C_reproducibility.ipynb` |
-| What does the corpus contain? | `data/corpus_skyportal/DATASET_CARD.md` |
+| What do the flattened tables contain? | `notebooks/skyportal/A_eda.ipynb` |
+| Which decisions were taken, and why? | `notebooks/skyportal/B_decisions.ipynb` |
+| What did each decision change? | `notebooks/skyportal/C_normalisation.ipynb` |
+| Is the corpus reproducible? | `notebooks/skyportal/D_reproducibility.ipynb` |
+| What does the corpus contain? | `docs/corpus_skyportal/DATASET_CARD.md` |
 
 ## Running the pipeline
 
