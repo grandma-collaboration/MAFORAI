@@ -8,6 +8,8 @@ reported under UNCOVERED CASES, never silently coerced.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections import OrderedDict
 from pathlib import Path
@@ -44,6 +46,12 @@ PROCESSING_RESULT_PATTERNS = [
 
 MJD_RANGE_LOW = 55000
 MJD_RANGE_HIGH = 61250
+
+FIELD_HISTORY_TABLE = "source_field_history"
+HISTORY_COLUMNS = {"redshift_history": "redshift", "summary_history": "summary"}
+HISTORY_VALUE_KEYS = {"redshift_history": "value", "summary_history": "summary"}
+FIELD_HISTORY_SCHEMA = ["source_id", "field", "entry_index", "value", "value_is_null",
+                        "set_at_utc", "set_by_user_id", "uncertainty", "origin", "is_bot"]
 
 
 # ---------------------------------------------------------------------------
@@ -525,6 +533,88 @@ def d15_verify_created_at_anchor(tables: dict[str, pd.DataFrame]):
 
 
 # ---------------------------------------------------------------------------
+# Decision 16 — expand the serialised field history into its own table
+# ---------------------------------------------------------------------------
+def d16_expand_source_field_history(df_sources: pd.DataFrame):
+    """Emit one row per recorded change to a source field.
+
+    The history arrives as a JSON array per source. A source returned by several
+    profile queries carries the same array on every copy, so identity is collapsed
+    before parsing: parsing all 982 interim rows would count every multi-profile
+    history twice. Entries carrying no value are retained as deletion events.
+    """
+    unique_sources = df_sources.drop_duplicates(subset="id", keep="first")
+    records: list[dict[str, Any]] = []
+
+    for column, field in HISTORY_COLUMNS.items():
+        value_key = HISTORY_VALUE_KEYS[column]
+        carrying = unique_sources[unique_sources[column].notna()]
+        for _, row in carrying.iterrows():
+            source_id = row["id"]
+            for entry_index, entry in enumerate(json.loads(row[column])):
+                stamp = entry.get("set_at_utc")
+                if not stamp:
+                    raise RuntimeError(
+                        f"Decision 16: {column} entry {entry_index} of source {source_id!r} "
+                        f"carries no set_at_utc"
+                    )
+                user_id = entry.get("set_by_user_id")
+                if not isinstance(user_id, int) or isinstance(user_id, bool):
+                    raise RuntimeError(
+                        f"Decision 16: {column} entry {entry_index} of source {source_id!r} "
+                        f"carries set_by_user_id of type {type(user_id).__name__}, expected int"
+                    )
+                value = entry.get(value_key)
+                records.append({
+                    "source_id": source_id, "field": field, "entry_index": entry_index,
+                    "value": value, "value_is_null": value is None, "set_at_utc": stamp,
+                    "set_by_user_id": user_id, "uncertainty": entry.get("uncertainty"),
+                    "origin": entry.get("origin"), "is_bot": entry.get("is_bot"),
+                })
+
+    if not records:
+        raise RuntimeError("Decision 16 produced 0 history rows; refusing to write an empty table")
+
+    frame = pd.DataFrame(records, columns=FIELD_HISTORY_SCHEMA)
+    # Some stamps carry an explicit +00:00 offset and most carry none; both are UTC.
+    frame["set_at_utc"] = pd.to_datetime(frame["set_at_utc"], format="ISO8601", utc=True)
+    frame["is_bot"] = frame["is_bot"].astype("boolean")
+
+    in_array_order = frame.sort_values(["source_id", "field", "entry_index"], kind="stable")
+    chronological = in_array_order.groupby(["source_id", "field"])["set_at_utc"].apply(
+        lambda stamps: list(stamps) == sorted(stamps))
+    unordered = chronological[~chronological]
+
+    frame = frame.sort_values(["source_id", "field", "set_at_utc"], kind="stable")
+    frame = frame.reset_index(drop=True)
+
+    per_field = frame["field"].value_counts().to_dict()
+    deletions = frame[frame["value_is_null"]]["field"].value_counts().to_dict()
+    sources_per_field = frame.groupby("field")["source_id"].nunique().to_dict()
+    unordered_per_field = unordered.index.get_level_values("field").value_counts().to_dict()
+
+    effect = new_effect(
+        decision=16, table=FIELD_HISTORY_TABLE, rows_before=len(unique_sources),
+        rows_after=len(frame), rows_affected=len(frame), columns_dropped=["analysis_id"],
+        note=(
+            f"{len(frame)} history rows expanded from {frame['source_id'].nunique()} sources; "
+            f"rows per field={per_field}; sources per field={sources_per_field}; "
+            f"deletion events per field={deletions}; sources not stored in chronological "
+            f"order={len(unordered)} {unordered_per_field}; 'analysis_id' dropped as empty; "
+            f"the serialised columns remain in sources"
+        ),
+    )
+    effect.update({
+        "rows_produced": len(frame), "sources_covered": int(frame["source_id"].nunique()),
+        "rows_per_field": per_field, "sources_per_field": sources_per_field,
+        "deletion_events_per_field": deletions,
+        "sources_not_chronological": len(unordered),
+        "sources_not_chronological_per_field": unordered_per_field,
+    })
+    return frame, effect
+
+
+# ---------------------------------------------------------------------------
 # Printing helpers
 # ---------------------------------------------------------------------------
 def print_section(title: str) -> None:
@@ -542,12 +632,21 @@ def main() -> None:
             raise RuntimeError(f"Loaded 0 rows from {path}; refusing to proceed")
         tables[name] = df
 
+    previous_hashes = {
+        name: hashlib.sha256((OUTPUT_ROOT / f"{name}.parquet").read_bytes()).hexdigest()
+        for name in TABLE_NAMES if (OUTPUT_ROOT / f"{name}.parquet").exists()
+    }
+
     all_effects: list[dict] = []
     uncovered_cases: list[dict] = []
 
     # Decision 4 first: identifiers must be clean before any grouping or join.
     tables, effects4 = d04_strip_identifier_whitespace(tables)
     all_effects.extend(effects4)
+
+    # Decision 16 (field history, read from the sources table before it is collapsed).
+    field_history, effect16 = d16_expand_source_field_history(tables["sources"])
+    all_effects.append(effect16)
 
     # Decisions 1 and 2 (sources shape).
     differences, uncovered2, effect2 = d02_multiprofile_canonical_diff(tables["sources"])
@@ -622,6 +721,8 @@ def main() -> None:
     for name in TABLE_NAMES:
         if len(tables[name]) == 0:
             raise RuntimeError(f"Table '{name}' has 0 rows after normalisation; refusing to write")
+    if len(field_history) == 0:
+        raise RuntimeError(f"Table '{FIELD_HISTORY_TABLE}' has 0 rows; refusing to write")
 
     # -----------------------------------------------------------------
     # CONTROLS
@@ -647,6 +748,19 @@ def main() -> None:
     check("limiting_mag nulled", effect11["rows_affected"], 10)
     check("mjd nulled", effect12["rows_affected"], 5)
 
+    redshift_rows = field_history[field_history["field"] == "redshift"]
+    summary_rows = field_history[field_history["field"] == "summary"]
+    check("source_field_history rows", len(field_history), 1357)
+    check("distinct source_id", int(field_history["source_id"].nunique()), 266)
+    check("rows where field == 'redshift'", len(redshift_rows), 83)
+    check("rows where field == 'summary'", len(summary_rows), 1274)
+    check("sources with redshift history", int(redshift_rows["source_id"].nunique()), 60)
+    check("sources with summary history", int(summary_rows["source_id"].nunique()), 256)
+    check("deletion events, redshift", int(redshift_rows["value_is_null"].sum()), 3)
+    check("deletion events, summary", int(summary_rows["value_is_null"].sum()), 25)
+    check("set_at_utc null count", int(field_history["set_at_utc"].isna().sum()), 0)
+    check("is_bot true count", int((field_history["is_bot"] == True).sum()), 0)  # noqa: E712
+
     all_pass = all(c["status"] == "PASS" for c in controls)
 
     # -----------------------------------------------------------------
@@ -658,6 +772,20 @@ def main() -> None:
             tables[name].to_parquet(
                 OUTPUT_ROOT / f"{name}.parquet", engine="pyarrow", index=False,
             )
+        field_history.to_parquet(
+            OUTPUT_ROOT / f"{FIELD_HISTORY_TABLE}.parquet", engine="pyarrow", index=False,
+        )
+
+    # The five tables decisions 1-15 produce must survive this run unchanged.
+    if all_pass and previous_hashes:
+        identical = sum(
+            1 for name in TABLE_NAMES
+            if hashlib.sha256((OUTPUT_ROOT / f"{name}.parquet").read_bytes()).hexdigest()
+            == previous_hashes.get(name)
+        )
+        check("the five existing tables, byte-identical",
+              f"{identical} of {len(previous_hashes)}", "5 of 5")
+        all_pass = all(c["status"] == "PASS" for c in controls)
 
     # -----------------------------------------------------------------
     # FINAL SUMMARY
@@ -669,11 +797,11 @@ def main() -> None:
     if not all_pass:
         print("\nAt least one control FAILED. No Parquet files were written.")
 
-    print_section("2. EFFECT LOG (grouped by decision, 1 to 15)")
+    print_section("2. EFFECT LOG (grouped by decision, 1 to 16)")
     by_decision: "OrderedDict[int, list[dict]]" = OrderedDict()
     for e in sorted(all_effects, key=lambda e: e["decision"]):
         by_decision.setdefault(e["decision"], []).append(e)
-    for decision_number in range(1, 16):
+    for decision_number in range(1, 17):
         entries = by_decision.get(decision_number, [])
         if not entries:
             print(f"decision {decision_number:2d}: no effect entries recorded")
@@ -718,22 +846,35 @@ def main() -> None:
         print(f"  {value:20s} {count:5d}")
     print(f"  {'TOTAL':20s} {sum(status_counts.values()):5d}")
 
-    print_section("6. UNCOVERED CASES")
+    print_section("6. Decision 16 detail — source_field_history")
+    preview = field_history.head(15).copy()
+    preview["value"] = preview["value"].map(
+        lambda v: None if v is None else (v[:40] + "..." if len(v) > 40 else v))
+    print(preview.to_string(index=False))
+    print("\nentries per source, by field:")
+    for field_name, group in field_history.groupby("field"):
+        per_source = group.groupby("source_id").size()
+        print(f"  {field_name:10s} sources={len(per_source):4d} min={per_source.min()} "
+              f"median={per_source.median():.0f} max={per_source.max()}")
+
+    print_section("7. UNCOVERED CASES")
     if uncovered_cases:
         for case in uncovered_cases:
             print(f"  decision {case['decision']} / table {case['table']}: {case['detail']}")
     else:
         print("  none")
 
-    print_section("7. Output")
+    print_section("8. Output")
     if all_pass:
         for name in TABLE_NAMES:
             print(f"  wrote {OUTPUT_ROOT / f'{name}.parquet'} ({len(tables[name])} rows, "
                   f"{tables[name].shape[1]} columns)")
+        print(f"  wrote {OUTPUT_ROOT / f'{FIELD_HISTORY_TABLE}.parquet'} "
+              f"({len(field_history)} rows, {field_history.shape[1]} columns)")
     else:
         print("  no files written (controls failed)")
 
-    print_section("8. Decision 8 detail — full column coverage")
+    print_section("9. Decision 8 detail — full column coverage")
     for name in TABLE_NAMES:
         print(f"\n-- {name} ({len(coverage[name])} columns) --")
         for column, pct in coverage[name].items():
