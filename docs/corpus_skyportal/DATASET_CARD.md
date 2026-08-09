@@ -36,8 +36,10 @@ a past instant, rather than what is known about it now.
 The corpus is built from two fixed raw captures:
 
 ```
-listing  data/raw/skyportal/inventory/source_inventory_<profile>_20260720_093939/
-         four profiles: grandma_base, grb, ep, gcn
+listing  data/raw/skyportal/inventory/source_inventory_grandma_base_20260720_093939/
+         data/raw/skyportal/inventory/source_inventory_gcn_20260720_093955/
+         data/raw/skyportal/inventory/source_inventory_ep_20260720_094001/
+         data/raw/skyportal/inventory/source_inventory_grb_20260720_094006/
 detail   data/raw/skyportal/source_detail_20260724/
 ```
 
@@ -200,7 +202,7 @@ latest entry with `set_at_utc` at or before it. No other field of
 ## Personal data
 
 Follow-up request records carry the requester's name: 911 of 2339
-`followup_requests` rows (39.0%) carry a non-empty requester first or last
+`followup_requests` rows (38.9%) carry a non-empty requester first or last
 name. Comment text (`comments.text`) and summary text
 (`sources.summary`, `source_field_history.value` where `field == 'summary'`)
 are retained as written and may contain names. `source_field_history`
