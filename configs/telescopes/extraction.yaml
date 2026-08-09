@@ -1,0 +1,55 @@
+# Extraction configuration for the ICARE observational-resource raw capture
+# (Stage 1). Only genuine extraction parameters live here: the API token
+# itself is never stored in this file, only the name of the environment
+# variable that holds it, following the same precedence philosophy as
+# configs/extraction/skyportal.yaml.
+#
+# ICARE is the deployment name of this SkyPortal instance (same base_url as
+# configs/extraction/skyportal.yaml); this file only adds the
+# telescope/instrument/allocation/observation resources, which are out of
+# scope for the existing source-inventory workflow.
+
+version: 1
+
+icare:
+  source_name: "icare"
+  base_url: "https://skyportal-icare.ijclab.in2p3.fr/api"
+  auth:
+    token_env_var: "SKYPORTAL_API_TOKEN"
+
+paths:
+  raw_root: "data/raw/telescopes/icare"
+
+http_defaults:
+  timeout_seconds: 60
+  max_retries: 3
+  retry_backoff_seconds: 2.0
+  sleep_between_requests_seconds: 0.3
+
+# Each entry names one GET endpoint and the query parameters to send on
+# every request. `num_per_page` only applies to resources that paginate
+# (currently only `observations`, confirmed by live inspection: the API
+# returns `data.observations` + `data.totalMatches`, the same envelope shape
+# as /api/sources).
+resources:
+  telescopes:
+    endpoint: "/telescope"
+    query_params: {}
+  instruments:
+    endpoint: "/instrument"
+    query_params:
+      includeRegion: "true"
+  allocations:
+    endpoint: "/allocation"
+    query_params: {}
+  observations:
+    endpoint: "/observation"
+    # /api/observation requires non-null startDate/endDate query parameters
+    # (confirmed live: omitting them returns HTTP 400 "Missing start_date");
+    # startDate is a wide technical lower bound chosen to avoid truncating
+    # the historical record, not a scientific assumption about the data.
+    # endDate is not set here: it is computed at run time as the capture
+    # start timestamp, so every run captures everything up to that moment.
+    query_params:
+      startDate: "1900-01-01T00:00:00"
+    num_per_page: 100
