@@ -15,7 +15,6 @@ dependencies = [
   "numpy",
   "openpyxl",
   "pandas",
-  "pdfplumber",
   "pyarrow",
   "pydantic>=2",
   "python-dotenv",
