@@ -247,6 +247,8 @@ __marimo__/
 !/data/inception/
 /data/inception/*
 !/data/inception/TypeSystem.xml
+!/data/telescope_catalog/
+!/data/telescope_catalog/resource_catalog.parquet
 
 /backups
 
