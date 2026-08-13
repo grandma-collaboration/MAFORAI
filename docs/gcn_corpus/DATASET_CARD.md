@@ -54,7 +54,7 @@ The corpus records what these extraction rules produced. When measurement reveal
 | `scripts/gcn_corpus/01_extract.py` | Archive to `data/interim/gcn_corpus/` | Runs the 15 extractors and writes their output without corpus decisions. |
 | `scripts/gcn_corpus/02_normalise.py` | Interim tables to `data/gcn_corpus/` | Applies the 13 declared corpus decisions and writes the final tables and manifest. |
 
-Both stages are deterministic. [The reproducibility notebook](../../notebooks/gcn_corpus/D_reproducibility.ipynb) records a clean regeneration and byte-for-byte verification of all nine interim and final artifacts. Current Parquet hashes agree with both manifests. Neither manifest stores elapsed runtime, and this card did not rerun extraction, so no independently measured stage runtime is claimed here; the reproducibility notebook is the record for machine-specific timing.
+Both stages are deterministic. [The reproducibility notebook](../../notebooks/gcn_corpus/D_reproducibility.ipynb) records a clean regeneration in which eight of the nine interim and final artifacts reproduce byte for byte. The final corpus `manifest.json` legitimately varies because its `generated_at` field records wall-clock time by design and does not participate in `content_hash`. Current Parquet hashes agree with both manifests. Neither manifest stores elapsed runtime, and this card did not rerun extraction, so no independently measured stage runtime is claimed here; the reproducibility notebook is the record for machine-specific timing.
 
 ## Reading a span row
 
@@ -152,4 +152,4 @@ The circular archive shown under Provenance must be present. From the repository
 /home/meneses/project_astronomical/MAFORAI/.venv/bin/python /home/meneses/project_astronomical/MAFORAI/scripts/gcn_corpus/02_normalise.py
 ```
 
-Stage elapsed times are not stored in either manifest and therefore cannot be recovered from the corpus alone. The clean-run timings and the nine-artifact determinism check are recorded in [the reproducibility notebook](../../notebooks/gcn_corpus/D_reproducibility.ipynb).
+Stage elapsed times are not stored in either manifest and therefore cannot be recovered from the corpus alone. The clean-run timings and the determinism check — eight of nine artifacts byte-stable, with the final corpus manifest varying only because `generated_at` records wall-clock time by design and does not participate in `content_hash` — are recorded in [the reproducibility notebook](../../notebooks/gcn_corpus/D_reproducibility.ipynb).
