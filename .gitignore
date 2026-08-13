@@ -239,6 +239,11 @@ __marimo__/
 /data/raw/inception
 !/data/
 /data/*
+!/data/raw/
+/data/raw/*
+!/data/raw/reference/
+/data/raw/reference/*
+!/data/raw/reference/telescope_external_capabilities.csv
 !/data/inception/
 /data/inception/*
 !/data/inception/TypeSystem.xml
