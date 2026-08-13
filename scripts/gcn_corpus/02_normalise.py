@@ -17,6 +17,7 @@ import inspect
 import json
 import math
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -96,8 +97,16 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def read_prior_output_hashes() -> tuple[dict[str, str], str | None] | None:
-    """Hash a complete prior output set so this run can prove it is idempotent."""
+def content_hash(output_hashes: dict[str, str]) -> str:
+    """Identify output content from table hashes in the fixed output-table order."""
+
+    concatenated_hashes = "".join(output_hashes[name] for name in OUTPUT_TABLES)
+    return hashlib.sha256(concatenated_hashes.encode("ascii")).hexdigest()
+
+
+def read_prior_output_hashes(
+) -> tuple[dict[str, str], str | None, str | None] | None:
+    """Read a complete prior output identity without using its variable manifest hash."""
 
     manifest_path = OUTPUT_DIR / "manifest.json"
     table_paths = [OUTPUT_DIR / name for name in OUTPUT_TABLES]
@@ -105,8 +114,7 @@ def read_prior_output_hashes() -> tuple[dict[str, str], str | None] | None:
         return None
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     hashes = {path.name: sha256_file(path) for path in table_paths}
-    hashes[manifest_path.name] = sha256_file(manifest_path)
-    return hashes, manifest.get("script_sha256")
+    return hashes, manifest.get("content_hash"), manifest.get("script_sha256")
 
 
 def stop(reason: str, rows: pd.DataFrame | None = None) -> None:
@@ -780,17 +788,21 @@ def d13_write_manifest(
     rule_inventory: dict[str, int],
     input_hashes: dict[str, str],
     script_sha256: str,
+    generated_at: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """13 - the manifest that tells two generations of the corpus apart."""
 
     applied = [*effects, {"decision": 13, "title": DECISION_TITLES[13],
                           "table": "manifest.json", "rows_affected": 1,
                           "columns_added": [], "columns_dropped": []}]
+    output_hashes = {name: sha256_file(written[name]) for name in OUTPUT_TABLES}
     manifest = {
-        "run_timestamp": interim_manifest["run_timestamp"],
-        "run_timestamp_source": (
-            "data/interim/gcn_corpus/manifest.json:run_timestamp, carried forward so "
-            "the corpus is a pure function of its input"
+        "source_run_timestamp": interim_manifest["run_timestamp"],
+        "generated_at": generated_at,
+        "content_hash": content_hash(output_hashes),
+        "determinism_note": (
+            "generated_at differs between runs by design; content_hash identifies a "
+            "generation from the four output Parquet hashes."
         ),
         "script_sha256": script_sha256,
         "input_sha256": input_hashes,
@@ -813,9 +825,7 @@ def d13_write_manifest(
             }
             for item in applied
         ],
-        "output_sha256": {
-            name: sha256_file(path) for name, path in sorted(written.items())
-        },
+        "output_sha256": output_hashes,
     }
     manifest_path = OUTPUT_DIR / "manifest.json"
     manifest_path.write_text(
@@ -830,8 +840,9 @@ def d13_write_manifest(
             0,
             1,
             1,
-            ["run_timestamp", "extractors", "rule_inventory", "row_counts",
-             "decisions_applied", "output_sha256"],
+            ["source_run_timestamp", "generated_at", "content_hash", "determinism_note",
+             "extractors", "rule_inventory", "row_counts", "decisions_applied",
+             "output_sha256"],
             [],
             f"{len(manifest['extractors'])} extractors and {len(rule_inventory)} rules "
             f"recorded, with the sha256 of each of the {len(written)} output tables",
@@ -865,6 +876,7 @@ def print_controls(controls: list[tuple[str, bool, str, str]]) -> None:
 
 def main() -> None:
     script_sha256 = sha256_file(Path(__file__).resolve())
+    generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     prior_output = read_prior_output_hashes()
     interim_manifest = json.loads((INPUT_DIR / "manifest.json").read_text(encoding="utf-8"))
     input_paths = {
@@ -894,7 +906,7 @@ def main() -> None:
     print("Interim tables read:")
     for name, path in input_paths.items():
         print(f"  {name}: {input_hashes[name]}")
-    print(f"Interim run_timestamp: {interim_manifest['run_timestamp']}")
+    print(f"Source run_timestamp: {interim_manifest['run_timestamp']}")
 
     effects: list[dict[str, Any]] = []
     evidence, photometry, item = d01_verify_span_key(evidence, photometry)
@@ -1036,6 +1048,7 @@ def main() -> None:
         rule_inventory,
         input_hashes,
         script_sha256,
+        generated_at,
     )
     effects.append(item)
 
@@ -1098,21 +1111,38 @@ def main() -> None:
 
     print("\n8. DETERMINISM")
     output_hashes = manifest["output_sha256"]
-    manifest_path = OUTPUT_DIR / "manifest.json"
-    all_hashes = {**output_hashes, "manifest.json": sha256_file(manifest_path)}
-    for name in sorted(all_hashes):
-        print(f"  {name}: {all_hashes[name]}")
+    for name in OUTPUT_TABLES:
+        print(f"  {name}: {output_hashes[name]}")
+    print(f"  content_hash: {manifest['content_hash']}")
+    print(f"  generated_at: {manifest['generated_at']}")
     if prior_output is None:
         print("  No complete prior output set was available; run again to compare.")
     else:
-        prior_hashes, prior_script_sha256 = prior_output
+        prior_hashes, prior_content_hash, prior_script_sha256 = prior_output
         if prior_script_sha256 != script_sha256:
             print("  The prior output came from a different script revision; comparison deferred.")
+        elif prior_content_hash is None:
+            print("  The prior output lacks content_hash; comparison deferred.")
         else:
-            identical = prior_hashes == all_hashes
-            print(f"  Consecutive-run hashes identical: {'PASS' if identical else 'FAIL'}")
+            table_hashes_identical = prior_hashes == output_hashes
+            content_hash_identical = prior_content_hash == manifest["content_hash"]
+            identical = table_hashes_identical and content_hash_identical
+            print(
+                "  Consecutive-run table hashes identical: "
+                f"{'PASS' if table_hashes_identical else 'FAIL'}"
+            )
+            print(
+                "  Consecutive-run content_hash identical: "
+                f"{'PASS' if content_hash_identical else 'FAIL'}"
+            )
             if not identical:
-                changed = [name for name in all_hashes if prior_hashes.get(name) != all_hashes[name]]
+                changed = [
+                    name
+                    for name in OUTPUT_TABLES
+                    if prior_hashes.get(name) != output_hashes[name]
+                ]
+                if not content_hash_identical:
+                    changed.append("content_hash")
                 raise SystemExit(f"Determinism failure: {changed} changed across runs.")
 
     print("\n9. GIT STATUS")
