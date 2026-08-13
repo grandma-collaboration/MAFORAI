@@ -1,7 +1,7 @@
 # SkyPortal Pipeline
 
 This traces the SkyPortal data from the API to the corpus. For what the
-corpus contains, see `data/corpus_skyportal/DATASET_CARD.md`; for the
+corpus contains, see `docs/corpus_skyportal/DATASET_CARD.md`; for the
 evidence behind each decision, see the notebooks referenced throughout.
 
 ## Overview
