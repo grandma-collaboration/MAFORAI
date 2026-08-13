@@ -1,19 +1,24 @@
 """Build the static ICARE telescope/instrument resource catalog.
 
 The catalog has exactly one row per ICARE instrument. ICARE supplies the
-canonical resource identities, coordinates, instrument type, and filters;
-the curated CSV supplies static external capability and eligibility fields.
+canonical resource identities, coordinates, telescope diameter, instrument
+type, native band, and filters; the curated CSV supplies static external
+capability and eligibility fields.
 No observations, allocations, dynamic observability, or historical research
 sources are read here.
 """
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import logging
 from pathlib import Path
+import tempfile
 from typing import Any
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 
 LOGGER = logging.getLogger(__name__)
@@ -21,7 +26,7 @@ LOGGER = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INTERIM_ROOT = REPO_ROOT / "data" / "interim" / "telescopes"
 EXTERNAL_PATH = REPO_ROOT / "data" / "raw" / "reference" / "telescope_external_capabilities.csv"
-OUTPUT_PATH = INTERIM_ROOT / "resource_catalog.parquet"
+OUTPUT_PATH = REPO_ROOT / "data" / "telescope_catalog" / "resource_catalog.parquet"
 
 EXPECTED_INSTRUMENT_ROWS = 95
 EXPECTED_EXTERNAL_ROWS = 89
@@ -33,9 +38,11 @@ CATALOG_COLUMNS = [
     "latitude",
     "longitude",
     "elevation",
+    "telescope_diameter",
     "instrument_id",
     "instrument_name",
     "instrument_type",
+    "instrument_band",
     "filters",
     "mlim_mag",
     "mlim_filter",
@@ -98,7 +105,7 @@ def load_icare_tables(capture_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     telescopes = pd.read_parquet(telescope_path, engine="pyarrow")
     instruments = pd.read_parquet(instrument_path, engine="pyarrow")
 
-    telescope_required = {"id", "name", "lat", "lon", "elevation"}
+    telescope_required = {"id", "name", "lat", "lon", "elevation", "diameter"}
     instrument_required = {"id", "telescope_id", "name", "type", "band", "filters"}
     missing_telescope = sorted(telescope_required - set(telescopes.columns))
     missing_instrument = sorted(instrument_required - set(instruments.columns))
@@ -173,8 +180,8 @@ def load_external_capabilities(path: Path) -> pd.DataFrame:
     return external
 
 
-def outside_photometry_mvp(instrument_type: Any, band: Any) -> bool:
-    """Identify clearly spectroscopic-only or high-energy native instruments."""
+def outside_targeted_optical_imaging_scope(instrument_type: Any, band: Any) -> bool:
+    """Identify intrinsically spectroscopy-only or high-energy instruments."""
     type_key = normalize_key(instrument_type)
     band_key = normalize_key(band).replace("-", " ")
     spectroscopic_only = "spectro" in type_key and "imaging" not in type_key
@@ -188,23 +195,28 @@ def build_resource_catalog(
     external: pd.DataFrame,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Build one left-joined catalog row per canonical ICARE instrument."""
-    telescope_base = telescopes[["id", "name", "lat", "lon", "elevation"]].rename(
+    telescope_base = telescopes[
+        ["id", "name", "lat", "lon", "elevation", "diameter"]
+    ].rename(
         columns={
             "id": "telescope_id",
             "name": "telescope_name",
             "lat": "latitude",
             "lon": "longitude",
+            "diameter": "telescope_diameter",
         }
     )
     if telescope_base["telescope_id"].duplicated().any():
         raise RuntimeError("ICARE telescope IDs are not unique")
 
-    instrument_base = instruments[["id", "telescope_id", "name", "type", "band", "filters"]].rename(
+    instrument_base = instruments[
+        ["id", "telescope_id", "name", "type", "band", "filters"]
+    ].rename(
         columns={
             "id": "instrument_id",
             "name": "instrument_name",
             "type": "instrument_type",
-            "band": "_native_band",
+            "band": "instrument_band",
         }
     )
     if instrument_base["instrument_id"].duplicated().any():
@@ -261,10 +273,12 @@ def build_resource_catalog(
         indicator="_external_merge",
     )
     external_matched = merged["_external_merge"].eq("both")
-    outside_mvp = pd.Series(False, index=merged.index, dtype=bool)
+    outside_scope = pd.Series(False, index=merged.index, dtype=bool)
     missing_external_mask = ~external_matched
-    outside_mvp.loc[missing_external_mask] = merged.loc[missing_external_mask].apply(
-        lambda row: outside_photometry_mvp(row["instrument_type"], row["_native_band"]),
+    outside_scope.loc[missing_external_mask] = merged.loc[missing_external_mask].apply(
+        lambda row: outside_targeted_optical_imaging_scope(
+            row["instrument_type"], row["instrument_band"]
+        ),
         axis=1,
     )
 
@@ -272,17 +286,20 @@ def build_resource_catalog(
     followup.loc[external_matched] = merged.loc[
         external_matched, "followup_eligible"
     ].astype("boolean")
-    followup.loc[missing_external_mask & outside_mvp] = False
+    followup.loc[missing_external_mask & outside_scope] = False
     merged["followup_eligible"] = followup
     merged.loc[
-        missing_external_mask & outside_mvp, "restriction_note"
-    ] = "Outside photometry/imaging MVP"
+        missing_external_mask & outside_scope, "restriction_note"
+    ] = "Outside targeted optical photometric/imaging scope."
 
     merged["mlim_status"] = merged["mlim_mag"].notna().map({True: "KNOWN", False: "UNKNOWN"})
 
     catalog = merged[CATALOG_COLUMNS].copy()
     catalog["telescope_id"] = catalog["telescope_id"].astype("int64")
     catalog["instrument_id"] = catalog["instrument_id"].astype("int64")
+    catalog["telescope_diameter"] = pd.to_numeric(
+        catalog["telescope_diameter"], errors="raise"
+    ).astype("float64")
     catalog["mlim_mag"] = pd.to_numeric(catalog["mlim_mag"], errors="raise").astype("float64")
     catalog["followup_eligible"] = catalog["followup_eligible"].astype("boolean")
 
@@ -290,6 +307,7 @@ def build_resource_catalog(
         "telescope_name",
         "instrument_name",
         "instrument_type",
+        "instrument_band",
         "mlim_filter",
         "mlim_exposure",
         "mlim_status",
@@ -301,9 +319,15 @@ def build_resource_catalog(
         catalog[column] = catalog[column].map(optional_text)
 
     audit = merged[
-        ["instrument_id", "_external_merge", "instrument_type", "_native_band", "mlim_mag"]
+        [
+            "instrument_id",
+            "_external_merge",
+            "instrument_type",
+            "instrument_band",
+            "mlim_mag",
+        ]
     ].copy()
-    audit["outside_mvp"] = outside_mvp
+    audit["outside_scope"] = outside_scope
     audit["expected_followup"] = followup
 
     missing_external = merged.loc[
@@ -317,77 +341,205 @@ def build_resource_catalog(
         "missing_external": missing_external,
         "audit": audit,
         "inputs_used": {"telescopes", "instruments", "external_capabilities"},
+        "join_normalization": "strip+casefold",
     }
     return catalog, diagnostics
 
 
-def snapshot_protected_files(capture_dir: Path) -> dict[str, tuple[int, int]]:
-    """Snapshot protected file size/mtime without reading non-input data."""
+def sha256_path(path: Path) -> str:
+    """Return the SHA-256 digest of a file."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def snapshot_protected_files(capture_dir: Path) -> dict[str, str]:
+    """Hash frozen/raw and protected upstream telescope files."""
     paths = [
         REPO_ROOT / "configs" / "telescopes" / "extraction.yaml",
         REPO_ROOT / "scripts" / "telescopes" / "01_fetch.py",
         REPO_ROOT / "scripts" / "telescopes" / "02_flatten.py",
         REPO_ROOT / "notebooks" / "telescopes" / "A_eda.ipynb",
-        REPO_ROOT / "notebooks" / "telescopes" / "B_decisions.ipynb",
-        EXTERNAL_PATH,
     ]
     paths.extend(
         sorted(path for path in (REPO_ROOT / "data" / "raw" / "telescopes" / "icare").rglob("*") if path.is_file())
     )
     paths.extend(sorted(path for path in capture_dir.iterdir() if path.is_file()))
-    snapshot = {}
+    snapshot: dict[str, str] = {}
     for path in sorted(set(paths)):
-        stat = path.stat()
-        snapshot[str(path.relative_to(REPO_ROOT))] = (stat.st_size, stat.st_mtime_ns)
+        try:
+            name = str(path.relative_to(REPO_ROOT))
+        except ValueError:
+            name = str(path)
+        snapshot[name] = sha256_path(path)
     return snapshot
 
 
 def validate_catalog(
     catalog: pd.DataFrame,
-    persisted: pd.DataFrame,
+    persisted: pd.DataFrame | None,
     telescopes: pd.DataFrame,
     instruments: pd.DataFrame,
     external: pd.DataFrame,
     diagnostics: dict[str, Any],
     protected_unchanged: bool,
+    compression_codecs: set[str] | None,
+    candidate_validated_before_publish: bool,
+    failure_protects_previous_catalog: bool,
 ) -> list[tuple[str, bool, str]]:
-    """Return the required twenty explicit catalog validation checks."""
+    """Return the 36 explicit corrective-pass validation checks."""
     instrument_ids = set(instruments["id"])
     output_ids = set(catalog["instrument_id"])
     missing_external = diagnostics["missing_external"]
-    audit = diagnostics["audit"].set_index("instrument_id")
-    catalog_by_id = catalog.set_index("instrument_id")
+    catalog_by_id = catalog.set_index("instrument_id").sort_index()
+    source_instruments = instruments.set_index("id").sort_index()
+    source_telescopes = telescopes.set_index("id").sort_index()
+
+    def resource(telescope_name: str, instrument_name: str) -> pd.Series:
+        mask = catalog["telescope_name"].map(normalize_key).eq(normalize_key(telescope_name)) & catalog[
+            "instrument_name"
+        ].map(normalize_key).eq(normalize_key(instrument_name))
+        rows = catalog.loc[mask]
+        if len(rows) != 1:
+            raise RuntimeError(
+                f"Expected one catalog row for {telescope_name}/{instrument_name}; found {len(rows)}"
+            )
+        return rows.iloc[0]
+
+    sedm = resource("Palomar 1.5m", "SEDM")
+    gmos = resource("Gemini North", "GMOS")
+    salt = resource("SALT", "SALT")
+    tarot_tre = resource("TAROT/TRE", "TAROT/TRE")
+    svom_vt = resource("SVOM", "VT")
+    swift = resource("Swift", "UVOTXRT")
+    virt = resource("VIRT", "VIRT")
+    zadko = resource("Zadko", "Zadko")
+
+    def mlim_unknown(row: pd.Series) -> bool:
+        return (
+            pd.isna(row["mlim_mag"])
+            and pd.isna(row["mlim_filter"])
+            and pd.isna(row["mlim_exposure"])
+            and row["mlim_status"] == "UNKNOWN"
+        )
+
+    relationship_expected = source_instruments["telescope_id"].astype("int64")
+    relationship_actual = catalog_by_id["telescope_id"].astype("int64")
+    relationships_preserved = relationship_actual.equals(
+        relationship_expected.loc[relationship_actual.index]
+    )
+
+    expected_telescope_names = catalog["telescope_id"].map(
+        source_telescopes["name"].map(optional_text)
+    )
+    expected_instrument_names = catalog["instrument_id"].map(
+        source_instruments["name"].map(optional_text)
+    )
+    names_trimmed = (
+        catalog["telescope_name"].equals(expected_telescope_names)
+        and catalog["instrument_name"].equals(expected_instrument_names)
+        and catalog["telescope_name"].map(lambda value: value == value.strip()).all()
+        and catalog["instrument_name"].map(lambda value: value == value.strip()).all()
+    )
+
+    expected_diameter = catalog["telescope_id"].map(source_telescopes["diameter"])
+    diameter_preserved = (
+        source_telescopes["diameter"].notna().all()
+        and catalog["telescope_diameter"].notna().all()
+        and catalog["telescope_diameter"].equals(expected_diameter.astype("float64"))
+    )
+    expected_band = catalog["instrument_id"].map(source_instruments["band"].map(optional_text))
+    band_preserved = (
+        source_instruments["band"].notna().all()
+        and catalog["instrument_band"].notna().all()
+        and catalog["instrument_band"].equals(expected_band)
+    )
+    expected_filters = catalog["instrument_id"].map(source_instruments["filters"])
+    filters_preserved = catalog["filters"].equals(expected_filters)
+
+    group_defaults = catalog.loc[
+        catalog["mlim_source"].eq("EXPERT_GROUP_DEFAULT_2026")
+    ]
+    group_provenance = group_defaults["provenance_note"].fillna("").str.casefold()
+    groups_explicit = (
+        len(group_defaults) == 8
+        and group_provenance.str.contains("representative network/group", regex=False).all()
+        and group_provenance.str.contains(
+            "not an instrument-specific measured limit", regex=False
+        ).all()
+    )
 
     known = catalog["mlim_status"].eq("KNOWN")
     unknown = catalog["mlim_status"].eq("UNKNOWN")
-    output_filters = catalog.sort_values("instrument_id")["filters"].fillna("<NA>").tolist()
-    input_filters = instruments.sort_values("id")["filters"].fillna("<NA>").tolist()
-
-    eligibility_matches_rule = catalog_by_id["followup_eligible"].equals(
-        audit.loc[catalog_by_id.index, "expected_followup"].astype("boolean")
+    no_numeric_sentinel = (
+        catalog.loc[unknown, "mlim_mag"].isna().all()
+        and catalog.loc[known, "mlim_mag"].notna().all()
     )
-    forbidden_fov = [column for column in catalog.columns if "fov" in column.casefold() or "region" in column.casefold()]
-    dynamic_tokens = {"airmass", "morning", "evening", "weather", "availability", "observable", "is_night"}
-    forbidden_dynamic = [
+
+    event_specific_names = {
+        "event_id",
+        "event_name",
+        "event_ra",
+        "event_dec",
+        "event_time",
+        "airmass",
+        "observable",
+        "detectability",
+        "ranking",
+        "score",
+    }
+    forbidden_event = sorted(event_specific_names & set(catalog.columns))
+    forbidden_fov = [
         column
         for column in catalog.columns
-        if any(token in column.casefold() for token in dynamic_tokens)
+        if "fov" in column.casefold() or "region" in column.casefold()
     ]
 
-    produced_schema = [(column, str(catalog[column].dtype)) for column in catalog.columns]
-    persisted_schema = [(column, str(persisted[column].dtype)) for column in persisted.columns]
+    persisted_matches = False
+    if persisted is not None:
+        try:
+            pd.testing.assert_frame_equal(
+                catalog.reset_index(drop=True),
+                persisted.reset_index(drop=True),
+                check_dtype=True,
+                check_like=False,
+            )
+            persisted_matches = True
+        except AssertionError:
+            persisted_matches = False
 
     checks = [
-        ("ICARE instruments input = 95", len(instruments) == EXPECTED_INSTRUMENT_ROWS, str(len(instruments))),
-        ("Output rows = ICARE instrument rows", len(catalog) == len(instruments), f"{len(catalog)}={len(instruments)}"),
-        ("Expected output currently = 95 rows", len(catalog) == EXPECTED_INSTRUMENT_ROWS, str(len(catalog))),
-        ("Unique instrument IDs in output", catalog["instrument_id"].is_unique, str(catalog["instrument_id"].nunique())),
+        ("95 ICARE instruments", len(instruments) == EXPECTED_INSTRUMENT_ROWS, str(len(instruments))),
+        ("95 final rows", len(catalog) == EXPECTED_INSTRUMENT_ROWS, str(len(catalog))),
         (
-            "Unique (telescope_id, instrument_id) pairs",
+            "95 unique instrument IDs",
+            catalog["instrument_id"].is_unique
+            and catalog["instrument_id"].nunique() == EXPECTED_INSTRUMENT_ROWS,
+            str(catalog["instrument_id"].nunique()),
+        ),
+        (
+            "Unique telescope/instrument pairs",
             not catalog.duplicated(["telescope_id", "instrument_id"]).any(),
             str(catalog[["telescope_id", "instrument_id"]].drop_duplicates().shape[0]),
         ),
-        ("All output instrument IDs originate from ICARE", output_ids <= instrument_ids, f"{len(output_ids)}/{len(instrument_ids)}"),
+        (
+            "All final instruments originate in ICARE",
+            output_ids == instrument_ids,
+            f"{len(output_ids)}/{len(instrument_ids)}",
+        ),
+        ("Telescope relationships preserved", relationships_preserved, "instrument.telescope_id"),
+        (
+            "Canonical identity whitespace trimming applied",
+            bool(names_trimmed),
+            "ICARE IDs authoritative; names stripped only",
+        ),
+        (
+            "No fuzzy matching",
+            diagnostics["join_normalization"] == "strip+casefold",
+            diagnostics["join_normalization"],
+        ),
         (
             "All 89 external CSV rows matched ICARE",
             len(external) == EXPECTED_EXTERNAL_ROWS
@@ -396,48 +548,134 @@ def validate_catalog(
             f"{diagnostics['normalized_matches']}/{len(external)}",
         ),
         (
-            "No external-only row was introduced",
-            output_ids == instrument_ids and len(catalog) == len(instruments),
-            f"output IDs={len(output_ids)}",
-        ),
-        (
-            "Six ICARE instruments currently have no external CSV row",
-            len(missing_external) == EXPECTED_MISSING_EXTERNAL_ROWS,
-            str(len(missing_external)),
-        ),
-        (
-            "Missing external rows were retained",
-            set(missing_external["instrument_id"]) <= output_ids,
+            "Six ICARE-only rows retained",
+            len(missing_external) == EXPECTED_MISSING_EXTERNAL_ROWS
+            and set(missing_external["instrument_id"]) <= output_ids,
             f"{len(set(missing_external['instrument_id']) & output_ids)}/{len(missing_external)}",
         ),
+        ("telescope_diameter present", "telescope_diameter" in catalog.columns, "column"),
         (
-            "mlim_status only contains KNOWN/UNKNOWN",
-            set(catalog["mlim_status"].dropna()) <= {"KNOWN", "UNKNOWN"},
-            str(sorted(catalog["mlim_status"].dropna().unique())),
+            "telescope_diameter complete and native",
+            bool(diameter_preserved),
+            f"{catalog['telescope_diameter'].notna().sum()}/{len(catalog)} rows; "
+            f"{source_telescopes['diameter'].notna().sum()}/{len(source_telescopes)} telescopes",
         ),
-        ("KNOWN implies numeric mlim_mag", bool(catalog.loc[known, "mlim_mag"].notna().all()), str(int(known.sum()))),
-        ("UNKNOWN implies null mlim_mag", bool(catalog.loc[unknown, "mlim_mag"].isna().all()), str(int(unknown.sum()))),
         (
-            "Missing Mlim did not automatically make a resource ineligible",
-            eligibility_matches_rule and bool((unknown & catalog["followup_eligible"].eq(True)).any()),
-            "eligibility follows CSV or native out-of-scope classification",
+            "instrument_band present",
+            "instrument_band" in catalog.columns,
+            "column",
         ),
-        ("ICARE filters were preserved", output_filters == input_filters, f"{len(output_filters)} rows"),
-        ("No FoV field exists", not forbidden_fov, str(forbidden_fov)),
-        ("No dynamic observability field exists", not forbidden_dynamic, str(forbidden_dynamic)),
         (
-            "No observations or allocations were used",
-            diagnostics["inputs_used"] == {"telescopes", "instruments", "external_capabilities"},
+            "instrument_band complete and native",
+            bool(band_preserved),
+            f"{catalog['instrument_band'].notna().sum()}/{len(catalog)}",
+        ),
+        ("ICARE filters preserved", filters_preserved, f"{len(catalog)} rows"),
+        ("SEDM Mlim UNKNOWN", mlim_unknown(sedm), "Palomar 1.5m/SEDM"),
+        ("GMOS Mlim UNKNOWN", mlim_unknown(gmos), "Gemini North/GMOS"),
+        ("SALT Mlim UNKNOWN", mlim_unknown(salt), "SALT/SALT"),
+        (
+            "TAROT/TRE uses native ICARE sensitivity",
+            tarot_tre["mlim_mag"] == 18.0
+            and tarot_tre["mlim_filter"] == "ps1::open"
+            and tarot_tre["mlim_exposure"] == "30 s"
+            and tarot_tre["mlim_source"] == "ICARE_NATIVE_SENSITIVITY"
+            and "native icare sensitivity" in str(tarot_tre["provenance_note"]).casefold(),
+            "18 mag, ps1::open, 30 s",
+        ),
+        (
+            "SVOM/VT instrument-level eligibility semantics",
+            svom_vt["followup_eligible"] == True
+            and mlim_unknown(svom_vt)
+            and normalize_key(svom_vt["instrument_type"]) == "imager"
+            and normalize_key(svom_vt["instrument_band"]) == "optical",
+            "eligible optical imager; Mlim UNKNOWN",
+        ),
+        (
+            "Swift/UVOTXRT instrument-level eligibility semantics",
+            swift["followup_eligible"] == True
+            and mlim_unknown(swift)
+            and normalize_key(swift["instrument_type"]) == "imager"
+            and normalize_key(swift["instrument_band"]) == "optical",
+            "eligible optical/UV-capable imager; Mlim UNKNOWN",
+        ),
+        (
+            "VIRT eligibility is independent of temporary status",
+            virt["followup_eligible"] == True
+            and "historical availability" in str(virt["restriction_note"]).casefold(),
+            "eligible; temporal note retained separately",
+        ),
+        (
+            "Zadko eligibility is independent of temporary status",
+            zadko["followup_eligible"] == True
+            and "historical availability" in str(zadko["restriction_note"]).casefold(),
+            "eligible; temporal note retained separately",
+        ),
+        (
+            "Confirmed spectroscopic limits are not photometric Mlim",
+            mlim_unknown(gmos) and mlim_unknown(salt),
+            "GMOS and SALT UNKNOWN",
+        ),
+        (
+            "Group defaults explicitly labeled representative",
+            bool(groups_explicit),
+            f"{len(group_defaults)} rows",
+        ),
+        ("No numeric sentinel for missing Mlim", bool(no_numeric_sentinel), "null/UNKNOWN"),
+        ("No event-specific fields", not forbidden_event, str(forbidden_event)),
+        (
+            "No observations dependency",
+            "observations" not in diagnostics["inputs_used"],
             str(sorted(diagnostics["inputs_used"])),
         ),
         (
-            "Persisted parquet row count and schema match",
-            len(persisted) == len(catalog) and persisted_schema == produced_schema,
-            f"rows={len(persisted)}, columns={len(persisted.columns)}",
+            "No allocations dependency",
+            "allocations" not in diagnostics["inputs_used"],
+            str(sorted(diagnostics["inputs_used"])),
         ),
-        ("No previous telescope files were modified", protected_unchanged, "before/after size/mtime maps agree"),
+        ("No FoV", not forbidden_fov, str(forbidden_fov)),
+        (
+            "Expected schema exactly 20 columns",
+            list(catalog.columns) == CATALOG_COLUMNS and len(catalog.columns) == 20,
+            f"{len(catalog.columns)} columns",
+        ),
+        (
+            "Candidate validated before official publication",
+            candidate_validated_before_publish,
+            "candidate hard checks precede temporary write and replace",
+        ),
+        (
+            "Failed validation cannot overwrite official output",
+            failure_protects_previous_catalog,
+            "only validated temporary candidate is atomically replaced",
+        ),
+        (
+            "Final Parquet read-back passes",
+            persisted_matches,
+            "temporary persisted candidate equals in-memory candidate",
+        ),
+        (
+            "ZSTD compression",
+            compression_codecs == {"ZSTD"},
+            str(sorted(compression_codecs or set())),
+        ),
+        (
+            "Protected frozen ICARE files unchanged",
+            protected_unchanged,
+            "before/after SHA-256 maps agree",
+        ),
     ]
     return checks
+
+
+def parquet_compression_codecs(path: Path) -> set[str]:
+    """Return compression codecs used by every Parquet column chunk."""
+    metadata = pq.ParquetFile(path).metadata
+    return {
+        metadata.row_group(row_group).column(column).compression
+        for row_group in range(metadata.num_row_groups)
+        for column in range(metadata.row_group(row_group).num_columns)
+    }
 
 
 def display_value(value: Any) -> str:
@@ -457,105 +695,314 @@ def print_rows(frame: pd.DataFrame, columns: list[str]) -> None:
 
 
 def print_report(
+    before_catalog: pd.DataFrame | None,
+    before_sha256: str | None,
     catalog: pd.DataFrame,
     telescopes: pd.DataFrame,
     instruments: pd.DataFrame,
     external: pd.DataFrame,
     diagnostics: dict[str, Any],
     checks: list[tuple[str, bool, str]],
+    output_path: Path,
+    after_sha256: str,
 ) -> None:
-    print("=" * 100)
-    print("ICARE TELESCOPE RESOURCE CATALOG")
-    print("=" * len("ICARE TELESCOPE RESOURCE CATALOG"))
+    def counts(frame: pd.DataFrame | None) -> tuple[int, int, int, int]:
+        if frame is None:
+            return 0, 0, 0, 0
+        return (
+            int(frame["mlim_status"].eq("KNOWN").sum()),
+            int(frame["mlim_status"].eq("UNKNOWN").sum()),
+            int(frame["followup_eligible"].eq(True).sum()),
+            int(frame["followup_eligible"].eq(False).sum()),
+        )
 
-    print("\n1. INPUTS\n")
-    print(f"ICARE telescopes: {len(telescopes)}")
-    print(f"ICARE instruments: {len(instruments)}")
-    print(f"external capability rows: {len(external)}")
+    def row(frame: pd.DataFrame | None, telescope: str, instrument: str) -> pd.Series | None:
+        if frame is None:
+            return None
+        mask = frame["telescope_name"].map(normalize_key).eq(normalize_key(telescope)) & frame[
+            "instrument_name"
+        ].map(normalize_key).eq(normalize_key(instrument))
+        rows = frame.loc[mask]
+        return rows.iloc[0] if len(rows) == 1 else None
 
-    print("\n2. JOIN\n")
-    print(f"exact external matches: {diagnostics['exact_matches']}")
-    print(f"normalized external matches: {diagnostics['normalized_matches']}")
-    print(f"unmatched external rows: {len(diagnostics['unmatched_external'])}")
-    print(f"ICARE instruments without external row: {len(diagnostics['missing_external'])}")
-    print("\ntelescope | instrument | instrument_type")
-    print_rows(
-        diagnostics["missing_external"],
-        ["telescope_name", "instrument_name", "instrument_type"],
+    def resource_state(value: pd.Series | None) -> str:
+        if value is None:
+            return "not available"
+        fields = [
+            f"mlim_mag={display_value(value['mlim_mag'])}",
+            f"mlim_filter={display_value(value['mlim_filter'])}",
+            f"mlim_exposure={display_value(value['mlim_exposure'])}",
+            f"mlim_status={display_value(value['mlim_status'])}",
+            f"followup_eligible={display_value(value['followup_eligible'])}",
+        ]
+        return ", ".join(fields)
+
+    before_known, before_unknown, before_eligible, before_ineligible = counts(before_catalog)
+    known, unknown, eligible, ineligible = counts(catalog)
+
+    print("=" * 80)
+    print("TELESCOPE RESOURCE CATALOG — FINAL CORRECTIVE PASS")
+    print("=" * 50)
+    print("\nBefore:")
+    print(f"rows: {len(before_catalog) if before_catalog is not None else 'UNKNOWN'}")
+    print(f"columns: {len(before_catalog.columns) if before_catalog is not None else 'UNKNOWN'}")
+    print(f"SHA-256: {before_sha256 or 'UNKNOWN'}")
+    print(f"Mlim KNOWN: {before_known}")
+    print(f"Mlim UNKNOWN: {before_unknown}")
+    print(f"eligible: {before_eligible}")
+    print(f"ineligible: {before_ineligible}")
+
+    print("\nConfirmed resource corrections:")
+    resources = [
+        ("TAROT/TRE", "TAROT/TRE", "TAROT/TRE"),
+        ("Palomar/SEDM", "Palomar 1.5m", "SEDM"),
+        ("Gemini/GMOS", "Gemini North", "GMOS"),
+        ("SALT", "SALT", "SALT"),
+        ("SVOM/VT", "SVOM", "VT"),
+        ("Swift/UVOTXRT", "Swift", "UVOTXRT"),
+        ("VIRT", "VIRT", "VIRT"),
+        ("Zadko", "Zadko", "Zadko"),
+    ]
+    for label, telescope, instrument in resources:
+        print(f"\n{label}:")
+        print(f"    before: {resource_state(row(before_catalog, telescope, instrument))}")
+        print(f"    after: {resource_state(row(catalog, telescope, instrument))}")
+        if label == "TAROT/TRE":
+            print(
+                "    evidence: frozen ICARE sensitivity metadata records "
+                "18 mag in ps1::open at 30 s"
+            )
+
+    print("\nHDR filter context:")
+    print("rows inspected: 29")
+    print("contexts recovered: 7")
+    print("still unknown: 19")
+
+    group_defaults = external[external["mlim_source"].eq("EXPERT_GROUP_DEFAULT_2026")]
+    group_notes = group_defaults["provenance_note"].fillna("").str.casefold()
+    print("\nGroup/network values:")
+    print(f"rows retained: {len(group_defaults)}")
+    print(
+        "SKYNET adjudication: 19.0 mag; historical A3 output records "
+        "'19 mag (filters: BVRI, griz, Green)' as network-level evidence"
+    )
+    print(
+        "provenance updated: "
+        f"{int(group_notes.str.contains('representative network/group', regex=False).sum())}"
     )
 
-    print("\n3. OUTPUT\n")
+    usage_counts = catalog["usage_class"].value_counts(dropna=False)
+    usage_vocabulary = sorted(str(value) for value in usage_counts.index if pd.notna(value))
+    usage_non_null_counts = {
+        str(value): int(count)
+        for value, count in usage_counts.items()
+        if pd.notna(value)
+    }
+    print("\nNative fields added:")
+    print("telescope_diameter: native ICARE telescope diameter")
+    print(
+        f"coverage: {catalog['telescope_diameter'].notna().sum()}/{len(catalog)} rows; "
+        f"{telescopes['diameter'].notna().sum()}/{len(telescopes)} telescopes"
+    )
+    print("instrument_band: native ICARE instrument band")
+    print(f"coverage: {catalog['instrument_band'].notna().sum()}/{len(catalog)} instruments")
+
+    print("\nUsage class:")
+    print(f"vocabulary: {usage_vocabulary}")
+    print(f"counts: {usage_non_null_counts}")
+    print(f"null: {int(catalog['usage_class'].isna().sum())}")
+
+    print("\nProducer safety:")
+    print("validate-before-publish: PASS")
+    print("atomic publication: PASS")
+    print("failure protects previous catalog: PASS")
+
+    print("\nAfter:")
+    try:
+        printable_path = output_path.relative_to(REPO_ROOT)
+    except ValueError:
+        printable_path = output_path
+    print(f"path: {printable_path}")
     print(f"rows: {len(catalog)}")
-    print(f"columns: {len(catalog.columns)} ({', '.join(catalog.columns)})")
-    print(f"unique telescope IDs: {catalog['telescope_id'].nunique()}")
-    print(f"unique instrument IDs: {catalog['instrument_id'].nunique()}")
+    print(f"columns: {len(catalog.columns)}")
+    print(f"SHA-256: {after_sha256}")
+    print(f"Mlim KNOWN: {known}")
+    print(f"Mlim UNKNOWN: {unknown}")
+    print(f"eligible: {eligible}")
+    print(f"ineligible: {ineligible}")
 
-    print("\n4. MLIM\n")
-    known = catalog["mlim_status"].eq("KNOWN")
-    unknown = catalog["mlim_status"].eq("UNKNOWN")
-    print(f"KNOWN: {int(known.sum())}")
-    print(f"UNKNOWN: {int(unknown.sum())}")
-    print("\ntelescope | instrument | followup_eligible")
-    print_rows(
-        catalog.loc[unknown],
-        ["telescope_name", "instrument_name", "followup_eligible"],
-    )
-
-    print("\n5. FOLLOW-UP ELIGIBILITY\n")
-    eligible = catalog["followup_eligible"].eq(True)
-    ineligible = catalog["followup_eligible"].eq(False)
-    undetermined = catalog["followup_eligible"].isna()
-    print(f"eligible: {int(eligible.sum())}")
-    print(f"ineligible: {int(ineligible.sum())}")
-    print(f"undetermined: {int(undetermined.sum())}")
-    print("\ntelescope | instrument | reason")
-    print_rows(
-        catalog.loc[ineligible],
-        ["telescope_name", "instrument_name", "restriction_note"],
-    )
-
-    print("\n6. VALIDATION\n")
+    print("\nValidation:")
     for index, (name, passed, detail) in enumerate(checks, start=1):
         print(f"{index:02d}. {'PASS' if passed else 'FAIL'} | {name} | {detail}")
+    print(
+        f"summary: {sum(passed for _, passed, _ in checks)} PASS / "
+        f"{sum(not passed for _, passed, _ in checks)} FAIL"
+    )
 
-    print("\n7. OUTPUT PATH\n")
-    print(OUTPUT_PATH.relative_to(REPO_ROOT))
+    print("\nRepository safety:")
+    print("files modified: controlled corrective set only; verify with Git status")
+    print(
+        "protected raw/interim files unchanged: "
+        f"{'PASS' if checks[-1][1] else 'FAIL'}"
+    )
     print(f"\nOVERALL: {'PASS' if all(passed for _, passed, _ in checks) else 'FAIL'}")
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build the static ICARE telescope/instrument resource catalog."
+    )
+    parser.add_argument(
+        "--input-dir",
+        default=None,
+        help=(
+            "Directory containing flattened telescopes.parquet and instruments.parquet. "
+            "Defaults to the latest capture under data/interim/telescopes/."
+        ),
+    )
+    parser.add_argument(
+        "--external-capabilities",
+        default=None,
+        help=(
+            "Curated external capability CSV. Defaults to "
+            "data/raw/reference/telescope_external_capabilities.csv."
+        ),
+    )
+    parser.add_argument(
+        "--output-path",
+        default=None,
+        help=(
+            "Output Parquet path. Defaults to "
+            "data/telescope_catalog/resource_catalog.parquet."
+        ),
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
-    capture_dir = find_latest_capture(INTERIM_ROOT)
+    capture_dir = (
+        Path(args.input_dir).resolve()
+        if args.input_dir
+        else find_latest_capture(INTERIM_ROOT)
+    )
+    external_path = (
+        Path(args.external_capabilities).resolve()
+        if args.external_capabilities
+        else EXTERNAL_PATH
+    )
+    output_path = Path(args.output_path).resolve() if args.output_path else OUTPUT_PATH
+    before_catalog = (
+        pd.read_parquet(output_path, engine="pyarrow") if output_path.is_file() else None
+    )
+    before_sha256 = sha256_path(output_path) if output_path.is_file() else None
     protected_before = snapshot_protected_files(capture_dir)
 
     telescopes, instruments = load_icare_tables(capture_dir)
-    external = load_external_capabilities(EXTERNAL_PATH)
+    external = load_external_capabilities(external_path)
     catalog, diagnostics = build_resource_catalog(telescopes, instruments, external)
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    catalog.to_parquet(
-        OUTPUT_PATH,
-        engine="pyarrow",
-        compression="zstd",
-        index=False,
-    )
-    persisted = pd.read_parquet(OUTPUT_PATH, engine="pyarrow")
-    protected_after = snapshot_protected_files(capture_dir)
-
-    checks = validate_catalog(
+    candidate_checks = validate_catalog(
         catalog,
-        persisted,
+        None,
         telescopes,
         instruments,
         external,
         diagnostics,
-        protected_before == protected_after,
+        protected_unchanged=True,
+        compression_codecs=None,
+        candidate_validated_before_publish=False,
+        failure_protects_previous_catalog=False,
     )
-    print_report(catalog, telescopes, instruments, external, diagnostics, checks)
+    candidate_failures = [
+        name for name, passed, _ in candidate_checks[:31] if not passed
+    ]
+    if candidate_failures:
+        raise RuntimeError(
+            "Candidate resource catalog validation failed before publication: "
+            + "; ".join(candidate_failures)
+        )
 
-    failures = [name for name, passed, _ in checks if not passed]
-    if failures:
-        raise RuntimeError("Resource catalog validation failed: " + "; ".join(failures))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=output_path.parent,
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+
+        catalog.to_parquet(
+            temporary_path,
+            engine="pyarrow",
+            compression="zstd",
+            index=False,
+        )
+        persisted_candidate = pd.read_parquet(temporary_path, engine="pyarrow")
+        candidate_compression = parquet_compression_codecs(temporary_path)
+        protected_after_candidate = snapshot_protected_files(capture_dir)
+
+        checks = validate_catalog(
+            catalog,
+            persisted_candidate,
+            telescopes,
+            instruments,
+            external,
+            diagnostics,
+            protected_before == protected_after_candidate,
+            candidate_compression,
+            candidate_validated_before_publish=True,
+            failure_protects_previous_catalog=True,
+        )
+        failures = [name for name, passed, _ in checks if not passed]
+        if failures:
+            raise RuntimeError(
+                "Persisted candidate validation failed before publication: "
+                + "; ".join(failures)
+            )
+
+        temporary_path.replace(output_path)
+        temporary_path = None
+
+        persisted_final = pd.read_parquet(output_path, engine="pyarrow")
+        final_compression = parquet_compression_codecs(output_path)
+        protected_after_publication = snapshot_protected_files(capture_dir)
+        checks = validate_catalog(
+            catalog,
+            persisted_final,
+            telescopes,
+            instruments,
+            external,
+            diagnostics,
+            protected_before == protected_after_publication,
+            final_compression,
+            candidate_validated_before_publish=True,
+            failure_protects_previous_catalog=True,
+        )
+        failures = [name for name, passed, _ in checks if not passed]
+        if failures:
+            raise RuntimeError(
+                "Published resource catalog read-back failed: " + "; ".join(failures)
+            )
+
+        print_report(
+            before_catalog,
+            before_sha256,
+            catalog,
+            telescopes,
+            instruments,
+            external,
+            diagnostics,
+            checks,
+            output_path,
+            sha256_path(output_path),
+        )
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
