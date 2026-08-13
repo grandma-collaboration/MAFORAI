@@ -2,7 +2,7 @@ icare_telescope,icare_instrument,mlim_mag,mlim_filter,mlim_exposure,mlim_source,
 AbAO-T150,AbAO-T150,22.8,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: AbAO/T150
 AbAO-T70,AbAO-T70,21.5,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: AbAO/T70
 ASTEP,ASTEP,20.0,red/blue simultaneous,,GRB_GUIDELINE_2025,R,true,Best suited to very southern targets; proposal/contact based.,GRB guideline: ASTEP
-Asteroid Terrestrial-impact Last Alert System,ATLAS,,,,,,true,No Mag Limit was provided in the expert review; keep detectability UNKNOWN.,Expert review completed with no numeric Mlim.
+Asteroid Terrestrial-impact Last Alert System,ATLAS,,,,,,true,No accepted nominal limiting magnitude is retained.,Expert review completed with no numeric Mlim.
 C2PU/Omicron,C2PU-O,22.5,"g,r,i,z",,GRB_GUIDELINE_2025,R,true,Late-time/publication-oriented use; instrument configuration can vary.,GRB guideline: C2PU
 CAHA-3.5m,CAHA-3.5m,23.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 23
 CAHA-CAFOS,CAFOS,,,,,,true,No photometric Mlim consolidated. The HDR value 20 is in the spectroscopy section and is intentionally not used as imaging sensitivity.,Curated decision from HDR Table 1.1 scope.
@@ -10,25 +10,25 @@ Canada-France-Hawaii Telescope,CFHT/MEGACAM,25.5,"g,r,i,z",<=1 h,GRANDMA_HDR_202
 Canada-France-Hawaii Telescope,CFHT/WIRCAM,24.0,"J,H,Ks",<=1 h,GRANDMA_HDR_2026,R,true,,HDR Table 1.1: CFHT/WIRCam
 Colibri,COLIBRI-VIS,22.5,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 22.5
 Euler,Euler,23.4,"g,r,i,R (?)",,GRB_GUIDELINE_2025,R,true,Late-time use for strong/clear cases; filter notation uncertain in source.,GRB guideline: Euler
-FRAM-Auger,FRAM-Auger,17.0,,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: FRAM-Auger
-FRAM-CTA-N,FRAM-CTA-N,17.0,,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: FRAM-CTA
+FRAM-Auger,FRAM-Auger,17.0,"Clear,RI",<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: FRAM-Auger; retained project evidence records Clear/RI filter context
+FRAM-CTA-N,FRAM-CTA-N,17.0,RI,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: FRAM-CTA; retained project evidence records RI filter context
 Fraunhofer 2m Telescope,Wendelstein 3KK,23.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 23
 Fraunhofer Telescope at Wendelstein Observatory,3KK,23.0,,,EXPERT_FEEDBACK_2026,,true,Expert said this is the same as the Fraunhofer resource above; avoid double-counting if the pipeline later deduplicates physical resources.,Sarah expert feedback: same as row above (23)
 Gaia,Gaia,20.0,,,EXPERT_FEEDBACK_2026,,true,Expert notes a non-standard/peculiar filter; compare photometry only when band compatibility is defensible.,Sarah expert feedback: 20; 'filtre bizarre'
 GCN,GCN,,,,,,false,Generic/non-physical ICARE entry; not an observing resource.,Expert/audit decision: exclude generic GCN entry.
-Gemini North,GMOS,25.0,,,EXPERT_FEEDBACK_2026,,false,Expert marked this case as spectroscopy; exclude from active photometric follow-up recommendations in the MVP.,Sarah expert feedback: 25; 'spect'
-GMG-2.4m,GMG-2.4,,,,,,false,"Scope conflict: HDR lists GMG-2.4 under photometry, while ICARE types this instrument as spectrograph. Excluded from active photometric MVP rather than guessing.",A3 audit scope ambiguity; no additional expert resolution.
+Gemini North,GMOS,,,,,,true,Imaging spectrograph; no spectroscopic threshold is stored as photometric Mlim.,Expert feedback described 25 mag in spectroscopic context; no accepted imaging-specific limiting magnitude is retained.
+GMG-2.4m,GMG-2.4,,,,,,false,"Scope conflict: HDR lists GMG-2.4 under photometry, while ICARE types this instrument as spectrograph. Outside targeted optical photometric/imaging scope under the native type rather than guessing.",A3 audit scope ambiguity; no additional expert resolution.
 GoChile,GoT1,21.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21
-Gran Telescopio Canarias,GTC/OSIRIS,25.0,"g,r,i,z",,GRB_GUIDELINE_2025,R,true,Use only the imaging/photometric capability in this MVP; purely spectroscopic EMIR is excluded.,GRB guideline: GTC photometric depth
+Gran Telescopio Canarias,GTC/OSIRIS,25.0,"g,r,i,z",,GRB_GUIDELINE_2025,R,true,Only the supported imaging/photometric capability is represented; purely spectroscopic EMIR context is excluded.,GRB guideline: GTC photometric depth
 HAO,HAO,19.5,"B,G,R,I",,GRB_GUIDELINE_2025,F,true,Source describes frequent to very frequent use.,"GRB guideline: HAO1, 19.5 mag"
 KAIT,KAIT,21.0,clear,,EXPERT_FEEDBACK_2026,,true,Expert specified clear/open only for this limit.,Sarah expert feedback: 21; only clear
-KAO,KAO,22.0,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: KAO
-Keck I 10m,LRIS,25.0,,,EXPERT_FEEDBACK_2026,,true,Expert notes spectroscopy is also available; this MVP retains only the imaging/photometric use of the provided limit.,Sarah expert feedback: 25; spectro en plus
-KNC-CDK14inch_112,PlaneWave F7.15,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
-KNC-FRANCE,KNC-FR-CAM,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
-KNC-GEN,KNC,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
-KNC-T-BGO,T-BGO,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
-KNC-T-BRO,T-BRO,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
+KAO,KAO,22.0,r,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: KAO; retained project evidence records r-band context for the 21.5-22 mag range
+Keck I 10m,LRIS,25.0,,,EXPERT_FEEDBACK_2026,,true,The provided limit is retained for imaging/photometric use; spectroscopic capability is also noted.,Sarah expert feedback: 25; spectro en plus
+KNC-CDK14inch_112,PlaneWave F7.15,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
+KNC-FRANCE,KNC-FR-CAM,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
+KNC-GEN,KNC,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
+KNC-T-BGO,T-BGO,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
+KNC-T-BRO,T-BRO,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
 LCO-SAAO,LCO-SAAO,22.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 22; imager
 LCO_0m4-39,LCO_0m4-39,21.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21; imager
 Les-Makes/T60,Les-Makes/T60,21.0,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: Les Makes/T60
@@ -42,49 +42,49 @@ NAO-2m,NAO-2m,23.0,,,GRB_GUIDELINE_2025,R,true,Late-time/project-oriented observ
 NUTTelA-TAO,NUTTelA-TAO,21.0,g/r,40 min,GRB_GUIDELINE_2025,F,true,Automatically responds to observable Swift/SVOM/EP alerts; manual observations are not normally performed.,GRB guideline: 21 mag in 40 min in r/g
 OAJ/T80,OAJ/T80,22.0,,<=1 h,GRANDMA_HDR_2026,VR,true,,HDR Table 1.1: OAJ/T80
 OHP/IRIS,OHP/IRIS,20.0,,<=1 h,GRANDMA_HDR_2026,VR,true,,HDR Table 1.1: IRIS OHP
-OHP/MISTRAL,OHP/MISTRAL,23.0,,,EXPERT_FEEDBACK_2026,,true,Use 23 for imaging in this MVP; expert separately notes spectroscopy around 19 mag.,Sarah expert feedback: 23 imaging; spectro 19 ignored for photometric Mlim
+OHP/MISTRAL,OHP/MISTRAL,23.0,,,EXPERT_FEEDBACK_2026,,true,The 23 mag value is retained for imaging; the separately reported spectroscopic value around 19 mag is not stored as photometric Mlim.,Sarah expert feedback: 23 imaging; spectro 19 ignored for photometric Mlim
 OHP/T120,OHP/T120,21.5,,<=1 h,GRANDMA_HDR_2026,VR,true,Expert feedback: not robotic. This is not real-time availability.,HDR Table 1.1: T120; expert metadata correction
 OPD/1.6m,OPD/1.6m,23.0,C/U/B/V/Rc/Ic or g/r/i/z,1 h,GRB_GUIDELINE_2025,O,true,Prefer confirmed candidates and longer-term/revisit observations.,GRB guideline: OPD 0.6 m and 1.6 m grouped as 22 and 23 mag in 1 h; mapped by aperture
 OPD/60cm,OPD/60cm,22.0,C/U/B/V/Rc/Ic or g/r/i/z,1 h,GRB_GUIDELINE_2025,O,true,Prefer confirmed candidates and longer-term/revisit observations.,GRB guideline: OPD 0.6 m and 1.6 m grouped as 22 and 23 mag in 1 h
 OSN/T150,OSN/T150,22.5,,<=1 h,GRANDMA_HDR_2026,VR,true,,HDR Table 1.1: OSN/T150
 OST-CDK,OST-CDK,17.0,"R,I",,GRB_GUIDELINE_2025,O,true,Night observations generally need to be planned beforehand.,GRB guideline: OST CDK
 OWL,OWL,21.0,L,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21 mag; L
-Palomar 1.5m,SEDM,21.0,,,EXPERT_FEEDBACK_2026,,true,Expert linked this value to ZTF; preserve this as expert-provided rather than re-deriving the instrument physics.,"Sarah expert feedback: 'ZTF, 21 mag'"
-PAN-STARRS 1.8m,PS1,21.5,,,EXPERT_FEEDBACK_2026,,false,Survey resource; expert says it cannot be repointed for active follow-up.,Sarah expert feedback: 21.5; survey cannot be repointed
-PicduMidi/T1M,PicduMidi/T1M,22.5,,<=1 h,GRANDMA_HDR_2026,R,true,,HDR Table 1.1: TRoPPIC; expert confirmed PicduMidi/T1M = TRoPPIC
+Palomar 1.5m,SEDM,,,,,,true,,No accepted SEDM-specific photometric limiting magnitude is retained.
+PAN-STARRS 1.8m,PS1,21.5,,,EXPERT_FEEDBACK_2026,,false,Non-repointable survey resource.,Sarah expert feedback: 21.5; survey cannot be repointed
+PicduMidi/T1M,PicduMidi/T1M,22.5,gri + IR,<=1 h,GRANDMA_HDR_2026,R,true,,HDR Table 1.1: TRoPPIC; expert confirmed PicduMidi/T1M = TRoPPIC; retained project evidence records gri + IR context
 PicduMidi/T50,PicduMidi/T50,20.5,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 20.5; imager
 REM,REM,20.5,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 20.5
 ROAD,ROAD,21.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21
-Rubin Observatory Simonyi Survey Telescope,LSST,23.0,,,EXPERT_FEEDBACK_2026,,false,Survey resource; expert says it cannot be repointed for active follow-up.,Sarah expert feedback: 23; survey cannot be repointed
-SALT,SALT,20.5,,,EXPERT_FEEDBACK_2026,,false,Expert marked this case as spectroscopy; exclude from active photometric follow-up recommendations in the MVP.,Sarah expert feedback: 20.5; spectro
+Rubin Observatory Simonyi Survey Telescope,LSST,23.0,,,EXPERT_FEEDBACK_2026,,false,Non-repointable survey resource.,Sarah expert feedback: 23; survey cannot be repointed
+SALT,SALT,,,,,,true,ICARE represents this resource as an optical imager; no spectroscopic threshold is stored as photometric Mlim.,Expert feedback described 20.5 mag in spectroscopic context; no accepted imaging-specific limiting magnitude is retained.
 ShAO-T60,ShAO-T60,21.0,,<=1 h,GRANDMA_HDR_2026,VR,true,,HDR Table 1.1: ShAO/T60
-SKYNET,SKYNET/Prompt,19.5,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
-SNO,Artemis,23.5,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
+SKYNET,SKYNET/Prompt,19.0,"BVRI,griz,Green",,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Retained project evidence records 19 mag with BVRI/griz/Green context.
+SNO,Artemis,23.5,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
 SOAR/Spartan,SOAR/Spartan,23.5,"g,r,i,z",,GRB_GUIDELINE_2025,O,true,Restricted access; intended mainly for faint known targets rather than counterpart searches.,GRB guideline: SOAR 4m
-SVOM,VT,,,,,,false,Expert characterized the generic SVOM case as gamma-ray; no optical Mag Limit supplied here.,Sarah expert feedback: gamma-ray; no numeric optical Mlim
-Swift,UVOTXRT,,,,,,false,Expert characterized the generic Swift case as X-ray; no optical Mag Limit supplied here.,Sarah expert feedback: X-ray; no numeric optical Mlim
-T72-iTelescope_117,ML16200_CCD,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Sarah expert feedback: group/network value accepted as similar for this ICARE resource.
+SVOM,VT,,,,,,true,,Instrument-level review: ICARE classifies VT as an Optical imager with optical Gaia-like filters; no accepted instrument-specific photometric limiting magnitude is retained.
+Swift,UVOTXRT,,,,,,true,Combined UVOT/XRT ICARE resource; static eligibility reflects its optical/UV imaging capability rather than the X-ray component.,Instrument-level review: ICARE retains optical/UV filter capability; no accepted instrument-specific photometric limiting magnitude is retained.
+T72-iTelescope_117,ML16200_CCD,20.0,,,EXPERT_GROUP_DEFAULT_2026,,true,,Accepted representative network/group value; not an instrument-specific measured limit. Sarah expert feedback recorded this group-level value as applicable to this ICARE resource.
 TAROT,TAROT,,,,,,false,"Generic TAROT network entry; use TAROT/TCA, TAROT/TCH and TAROT/TRE instead.",Expert feedback: generic TAROT should be ignored because the physical TAROT sites are already represented.
-TAROT/TCA,TAROT/TCA,19.0,,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: TAROT/TCA
-TAROT/TCH,TAROT/TCH,20.0,,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: TAROT/TCH
-TAROT/TRE,TAROT/TRE,17.0,,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: TAROT/TRE
+TAROT/TCA,TAROT/TCA,19.0,ps1::open,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: TAROT/TCA; retained native ICARE/project evidence records ps1::open context
+TAROT/TCH,TAROT/TCH,20.0,gri,<=1 h,GRANDMA_HDR_2026,VF,true,,HDR Table 1.1: TAROT/TCH; retained project evidence records gri context
+TAROT/TRE,TAROT/TRE,18.0,ps1::open,30 s,ICARE_NATIVE_SENSITIVITY,VF,true,,Native ICARE sensitivity metadata: ps1::open limiting magnitude 18 mag at 30 s.
 Terskol/Zeiss-600,Terskol/Zeiss-600,22.0,,<=1 h,GRANDMA_HDR_2026,VR,true,,HDR Table 1.1: Zeiss-600
 Thai National Telescope,TNO,24.0,,<=1 h,GRANDMA_HDR_2026,VR,true,,"HDR Table 1.1: TNT, Thai National Observatory, 2.4 m"
 Thai Robotic Telescope,TRT,,,,,,false,Generic TRT network entry; use site-specific TRT resources instead.,Sarah expert feedback: network TRT
 Thai Robotic Telescope - CTO,TRT-CTO,22.3,V,11x300 s,GRB_GUIDELINE_2025,F,true,Semi-auto; new telescope in the network in the June-2025 guideline.,GRB guideline: 22.3 mag in V with 11x300 s; r reaches 22.1 with 14x600 s
 Thai Robotic Telescope - GAO,TRT-GAO,21.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21
 Thai Robotic Telescope - SBO,TRT-SBO,21.5,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: TRT-SBO; expert confirmed robotic
-Thai Robotic Telescope - SRO,TRT-SRO,21.0,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: TRT-SRO; expert confirmed robotic
+Thai Robotic Telescope - SRO,TRT-SRO,21.0,RV,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: TRT-SRO; expert confirmed robotic; retained project evidence records RV context
 TNOT,TNOT,21.0,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21; imager
 TRAPPIST-South,TRAPPIST-South,21.5,,,EXPERT_FEEDBACK_2026,,true,,Sarah expert feedback: 21.5; imager
 TTT,TTT,23.0,,,EXPERT_FEEDBACK_2026,,true,ICARE has a generic TTT entry while the expert notes TTT-80cm and TTT-2M; use this only at the ICARE TTT resource level.,Sarah expert feedback: 23; TTT-80cm and TTT-2M
 UBAI/AZT-22,UBAI/AZT-22,22.5,,,EXPERT_FEEDBACK_2026,,true,Expert notes this value is already in SkyPortal.,Sarah expert feedback: 22.5
 UBAI/NT-60,UBAI/NT-60,21.5,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: UBAI/NT-60
 UBAI/ST-60,UBAI/ST-60,21.5,,<=1 h,GRANDMA_HDR_2026,F,true,,HDR Table 1.1: UBAI/ST-60
-VIRT,VIRT,21.0,,<=1 h,GRANDMA_HDR_2026,nOP,false,Expert feedback: VIRT is expected to be online in 2027; do not recommend for current follow-up.,HDR Table 1.1: VIRT; newer expert feedback supersedes 2025 status
+VIRT,VIRT,21.0,,<=1 h,GRANDMA_HDR_2026,nOP,true,Reported as expected online in 2027 by a 2026 expert reference; historical availability note only.,HDR Table 1.1: VIRT; 2026 expert reference records expected online in 2027
 Xinglong-2.16m,Xinglong-2.16m,23.0,,<=1 h,GRANDMA_HDR_2026,R,true,,HDR Table 1.1: Xinglong-2.16 photometry row
 Xinglong-TNT,Xinglong-TNT,21.0,,<=1 h,GRANDMA_HDR_2026,R,true,,"HDR Table 1.1: TNT, Xinglong Observatory, 0.8 m"
-Yaoan High Precision Telescope,YAHPT Imager,,,,,,true,GRB guideline mentions ~22.5 mag but marks the value uncertain ('?'); keep Mlim UNKNOWN in the MVP.,GRB guideline 2025: YAPTH 22.5 max ?
-Zadko,Zadko,22.0,,<=1 h,GRANDMA_HDR_2026,nOP,false,HDR lists the resource as not operational.,HDR Table 1.1: Zadko; nOP in HDR
+Yaoan High Precision Telescope,YAHPT Imager,,,,,,true,No accepted nominal limiting magnitude is retained because the guideline marks the approximate value as uncertain.,GRB guideline 2025: YAPTH 22.5 max ?
+Zadko,Zadko,22.0,,<=1 h,GRANDMA_HDR_2026,nOP,true,Reported non-operational in the 2026 reference snapshot; historical availability note only.,HDR Table 1.1: Zadko; nOP in the 2026 reference snapshot
 ZTF,MMATest,21.0,,,EXPERT_FEEDBACK_2026,,true,ZTF collaboration/follow-up is case-by-case; this is not a real-time availability flag.,"Sarah expert feedback for ZTF: 'voir plus haut', linked to 21 mag"
 ZTF,ZTF,21.0,,,EXPERT_FEEDBACK_2026,,true,ZTF collaboration/follow-up is case-by-case; this is not a real-time availability flag.,"Sarah expert feedback for ZTF: 'voir plus haut', linked to 21 mag"
